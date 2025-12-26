@@ -24,18 +24,19 @@
             --success: #10B981;
             --warning: #F59E0B;
             --error: #EF4444;
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-light: #64748b;
             --bg-primary: #ffffff;
-            --bg-secondary: #f9fafb;
-            --border: #e5e7eb;
+            --bg-secondary: #f8fafc;
+            --border: #e2e8f0;
             --radius: 12px;
             --transition: all 0.3s ease;
         }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background: #f3f4f6;
             min-height: 100vh;
             color: var(--text-primary);
         }
@@ -737,6 +738,137 @@
                 flex-direction: column;
             }
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--radius);
+            padding: 2rem;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .modal-header h2 {
+            color: var(--text-primary);
+            font-size: 1.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-cancel {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .btn-cancel:hover {
+            background: var(--bg-secondary);
+        }
+
+        .btn-submit {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            border: none;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            .modal {
+                padding: 1rem;
+            }
+
+            .modal-content {
+                padding: 1.5rem;
+            }
+
+            .modal-footer {
+                flex-direction: column;
+            }
+
+            .btn-cancel,
+            .btn-submit {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -951,23 +1083,23 @@
                     <!-- Forms Gallery -->
                     <h2 style="margin-bottom: 1rem;">📋 Formulários</h2>
                     <div class="forms-gallery">
-                        <div class="form-card" onclick="openGoogleForm('whatsapp')">
+                        <div class="form-card" onclick="openFormModal('whatsapp')">
                             <h3>💬 WhatsApp</h3>
                             <p>Solicitar entrada no grupo WhatsApp da instituição</p>
                         </div>
-                        <div class="form-card" onclick="openGoogleForm('duvidas')">
+                        <div class="form-card" onclick="openFormModal('duvidas')">
                             <h3>❓ Dúvidas</h3>
                             <p>Enviar dúvidas para os representantes</p>
                         </div>
-                        <div class="form-card" onclick="openGoogleForm('relatorios')">
+                        <div class="form-card" onclick="openFormModal('relatorios')">
                             <h3>📊 Relatórios</h3>
                             <p>Atualizar progresso das pesquisas</p>
                         </div>
-                        <div class="form-card" onclick="openGoogleForm('promocao')">
+                        <div class="form-card" onclick="openFormModal('promocao')">
                             <h3>⬆️ Promoção</h3>
                             <p>Solicitar mudança de cargo</p>
                         </div>
-                        <div class="form-card" onclick="openGoogleForm('denuncia')">
+                        <div class="form-card" onclick="openFormModal('denuncia')">
                             <h3>🚨 Denúncia</h3>
                             <p>Denúncia anônima</p>
                         </div>
@@ -1065,6 +1197,187 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Form Modals -->
+        <!-- WhatsApp Modal -->
+        <div id="modal-whatsapp" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>💬 Solicitar Entrada no WhatsApp</h2>
+                    <button class="modal-close" onclick="closeFormModal('whatsapp')">×</button>
+                </div>
+                <form id="form-whatsapp" onsubmit="submitForm(event, 'whatsapp')">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Instituição</label>
+                            <input type="text" id="whatsapp-institution" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Seu Nome</label>
+                            <input type="text" id="whatsapp-name" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Por que deseja entrar no grupo?</label>
+                            <textarea id="whatsapp-reason" rows="4" required placeholder="Explique sua motivação..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-cancel" onclick="closeFormModal('whatsapp')">Cancelar</button>
+                        <button type="submit" class="btn-submit">Enviar Solicitação</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dúvidas Modal -->
+        <div id="modal-duvidas" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>❓ Enviar Dúvida</h2>
+                    <button class="modal-close" onclick="closeFormModal('duvidas')">×</button>
+                </div>
+                <form id="form-duvidas" onsubmit="submitForm(event, 'duvidas')">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Assunto *</label>
+                            <select id="duvidas-subject" required>
+                                <option value="">Selecione...</option>
+                                <option value="pesquisa">Dúvida sobre Pesquisa</option>
+                                <option value="metodologia">Metodologia de Revisão</option>
+                                <option value="prazos">Prazos e Deadlines</option>
+                                <option value="publicacao">Processo de Publicação</option>
+                                <option value="outro">Outro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Sua Dúvida *</label>
+                            <textarea id="duvidas-question" rows="5" required placeholder="Descreva sua dúvida em detalhes..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-cancel" onclick="closeFormModal('duvidas')">Cancelar</button>
+                        <button type="submit" class="btn-submit">Enviar Dúvida</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Relatórios Modal -->
+        <div id="modal-relatorios" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>📊 Atualizar Relatório de Pesquisa</h2>
+                    <button class="modal-close" onclick="closeFormModal('relatorios')">×</button>
+                </div>
+                <form id="form-relatorios" onsubmit="submitForm(event, 'relatorios')">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Título da Pesquisa *</label>
+                            <input type="text" id="relatorios-title" required placeholder="Digite o título da sua pesquisa...">
+                        </div>
+                        <div class="form-group">
+                            <label>Status Atual *</label>
+                            <select id="relatorios-status" required>
+                                <option value="">Selecione...</option>
+                                <option value="planejamento">Planejamento</option>
+                                <option value="coleta">Coleta de Dados</option>
+                                <option value="analise">Análise</option>
+                                <option value="escrita">Escrita do Manuscrito</option>
+                                <option value="revisao">Em Revisão</option>
+                                <option value="submissao">Submetido</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Progresso (%) *</label>
+                            <input type="number" id="relatorios-progress" min="0" max="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Atualizações e Observações *</label>
+                            <textarea id="relatorios-notes" rows="5" required placeholder="Descreva o progresso, dificuldades, próximos passos..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-cancel" onclick="closeFormModal('relatorios')">Cancelar</button>
+                        <button type="submit" class="btn-submit">Enviar Relatório</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Promoção Modal -->
+        <div id="modal-promocao" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>⬆️ Solicitar Promoção de Cargo</h2>
+                    <button class="modal-close" onclick="closeFormModal('promocao')">×</button>
+                </div>
+                <form id="form-promocao" onsubmit="submitForm(event, 'promocao')">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Cargo Atual</label>
+                            <input type="text" id="promocao-current" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Cargo Desejado *</label>
+                            <select id="promocao-desired" required>
+                                <option value="">Selecione...</option>
+                                <option value="ESCRIBA">Escriba</option>
+                                <option value="REPRESENTANTE">Representante</option>
+                                <option value="VETERANO">Veterano</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Justificativa *</label>
+                            <textarea id="promocao-justification" rows="6" required placeholder="Por que você merece esta promoção? Descreva suas contribuições, pesquisas, liderança..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-cancel" onclick="closeFormModal('promocao')">Cancelar</button>
+                        <button type="submit" class="btn-submit">Enviar Solicitação</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Denúncia Modal -->
+        <div id="modal-denuncia" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>🚨 Denúncia Anônima</h2>
+                    <button class="modal-close" onclick="closeFormModal('denuncia')">×</button>
+                </div>
+                <form id="form-denuncia" onsubmit="submitForm(event, 'denuncia')">
+                    <div class="modal-body">
+                        <p style="background: var(--bg-secondary); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; color: var(--text-secondary); font-size: 0.9rem;">
+                            ⚠️ Esta denúncia é completamente anônima. Não coletamos seu nome ou email.
+                        </p>
+                        <div class="form-group">
+                            <label>Tipo de Denúncia *</label>
+                            <select id="denuncia-type" required>
+                                <option value="">Selecione...</option>
+                                <option value="plagio">Plágio ou Má Conduta Científica</option>
+                                <option value="assedio">Assédio ou Bullying</option>
+                                <option value="discriminacao">Discriminação</option>
+                                <option value="abuso">Abuso de Poder</option>
+                                <option value="outro">Outro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Descrição dos Fatos *</label>
+                            <textarea id="denuncia-description" rows="6" required placeholder="Descreva o que aconteceu com o máximo de detalhes possível..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Instituição Envolvida (opcional)</label>
+                            <input type="text" id="denuncia-institution" placeholder="Qual instituição está relacionada?">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-cancel" onclick="closeFormModal('denuncia')">Cancelar</button>
+                        <button type="submit" class="btn-submit">Enviar Denúncia</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -1646,21 +1959,142 @@
             coauthorsFilter.addEventListener('change', applyFilters);
         }
 
-        function openGoogleForm(formType) {
-            const GOOGLE_FORMS = {
-                whatsapp: 'https://forms.gle/example-whatsapp',
-                duvidas: 'https://forms.gle/example-duvidas',
-                relatorios: 'https://forms.gle/example-relatorios',
-                promocao: 'https://forms.gle/example-promocao',
-                denuncia: 'https://forms.gle/example-denuncia'
-            };
+        function openFormModal(formType) {
+            const modal = document.getElementById(`modal-${formType}`);
+            if (!modal) return;
 
-            if (GOOGLE_FORMS[formType]) {
-                window.open(GOOGLE_FORMS[formType], '_blank');
-            } else {
-                alert('Formulário em desenvolvimento!');
+            // Pre-fill user data
+            if (formType === 'whatsapp') {
+                document.getElementById('whatsapp-institution').value = currentUser.medicalSchool;
+                document.getElementById('whatsapp-name').value = currentUser.name;
+            } else if (formType === 'promocao') {
+                document.getElementById('promocao-current').value = currentUser.role;
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeFormModal(formType) {
+            const modal = document.getElementById(`modal-${formType}`);
+            if (!modal) return;
+
+            modal.classList.remove('active');
+
+            // Reset form
+            const form = document.getElementById(`form-${formType}`);
+            if (form) form.reset();
+        }
+
+        async function submitForm(event, formType) {
+            event.preventDefault();
+
+            const form = event.target;
+            const submitBtn = form.querySelector('.btn-submit');
+            
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enviando...';
+
+            try {
+                let formData = new FormData();
+                formData.append('action', 'submitForm');
+                formData.append('type', formType);
+                formData.append('userId', currentUser.id);
+
+                // Collect form data based on type
+                let data = {};
+                
+                if (formType === 'whatsapp') {
+                    data = {
+                        institution: document.getElementById('whatsapp-institution').value,
+                        name: document.getElementById('whatsapp-name').value,
+                        reason: document.getElementById('whatsapp-reason').value
+                    };
+                } else if (formType === 'duvidas') {
+                    data = {
+                        subject: document.getElementById('duvidas-subject').value,
+                        question: document.getElementById('duvidas-question').value,
+                        userName: currentUser.name,
+                        userEmail: currentUser.email
+                    };
+                } else if (formType === 'relatorios') {
+                    data = {
+                        title: document.getElementById('relatorios-title').value,
+                        status: document.getElementById('relatorios-status').value,
+                        progress: document.getElementById('relatorios-progress').value,
+                        notes: document.getElementById('relatorios-notes').value,
+                        userName: currentUser.name
+                    };
+                } else if (formType === 'promocao') {
+                    data = {
+                        currentRole: document.getElementById('promocao-current').value,
+                        desiredRole: document.getElementById('promocao-desired').value,
+                        justification: document.getElementById('promocao-justification').value,
+                        userName: currentUser.name,
+                        userEmail: currentUser.email
+                    };
+                } else if (formType === 'denuncia') {
+                    data = {
+                        type: document.getElementById('denuncia-type').value,
+                        description: document.getElementById('denuncia-description').value,
+                        institution: document.getElementById('denuncia-institution').value || 'Não informado'
+                    };
+                }
+
+                formData.append('data', JSON.stringify(data));
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    alert(`✅ ${getFormSuccessMessage(formType)}`);
+                    closeFormModal(formType);
+                } else {
+                    alert(`❌ Erro: ${result.message}`);
+                }
+            } catch (error) {
+                alert('❌ Erro ao enviar formulário. Tente novamente.');
+                console.error(error);
+            } finally {
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.textContent = getFormButtonText(formType);
             }
         }
+
+        function getFormSuccessMessage(formType) {
+            const messages = {
+                whatsapp: 'Solicitação enviada! O representante avaliará em breve.',
+                duvidas: 'Dúvida enviada! Você receberá resposta em breve.',
+                relatorios: 'Relatório atualizado com sucesso!',
+                promocao: 'Solicitação de promoção enviada! Aguarde avaliação.',
+                denuncia: 'Denúncia registrada de forma anônima. Obrigado.'
+            };
+            return messages[formType] || 'Formulário enviado com sucesso!';
+        }
+
+        function getFormButtonText(formType) {
+            const buttons = {
+                whatsapp: 'Enviar Solicitação',
+                duvidas: 'Enviar Dúvida',
+                relatorios: 'Enviar Relatório',
+                promocao: 'Enviar Solicitação',
+                denuncia: 'Enviar Denúncia'
+            };
+            return buttons[formType] || 'Enviar';
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                const formType = event.target.id.replace('modal-', '');
+                closeFormModal(formType);
+            }
+        });
     </script>
 </body>
 </html>

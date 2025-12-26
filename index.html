@@ -308,6 +308,397 @@
             border-top: 1px solid var(--border);
         }
 
+        /* Dashboard Styles */
+        .dashboard {
+            min-height: 100vh;
+            background: var(--bg-secondary);
+        }
+
+        .navbar {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .nav-logo {
+            width: 40px;
+            height: 40px;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--primary);
+        }
+
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background: var(--error);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .logout-btn:hover {
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-card h3 {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Forms Gallery */
+        .forms-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+        }
+
+        .form-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary);
+        }
+
+        .form-card h3 {
+            color: var(--primary);
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        .form-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Members Grid */
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .member-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: var(--transition);
+        }
+
+        .member-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .member-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .member-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .member-info h4 {
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .member-role {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .member-details {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .member-detail {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .member-detail span:first-child {
+            color: var(--text-secondary);
+        }
+
+        .member-detail span:last-child {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Research Cards */
+        .research-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .research-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--primary);
+        }
+
+        .research-header {
+            margin-bottom: 1rem;
+        }
+
+        .research-header h3 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .research-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .tag {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .tag.status {
+            background: var(--success);
+            color: white;
+        }
+
+        .tag.league {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tag.specialty {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        /* Filters */
+        .filters {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Live Card */
+        .live-section {
+            background: white;
+            padding: 2rem;
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .live-section h2 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .live-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 2rem;
+            border-radius: var(--radius);
+            color: white;
+        }
+
+        .live-status {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .live-card h4 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .live-card p {
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+
+        .live-card a {
+            color: white;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .auth-container {
@@ -320,6 +711,29 @@
             }
 
             .phone-input-container {
+                flex-direction: column;
+            }
+
+            .navbar {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .nav-menu {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters {
                 flex-direction: column;
             }
         }
@@ -476,11 +890,202 @@
                 </div>
             </div>
         </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard" class="page">
+            <!-- Navbar -->
+            <nav class="navbar">
+                <div class="nav-brand">
+                    <span>UP Research</span>
+                </div>
+                <div class="nav-menu">
+                    <a class="nav-link active" onclick="showDashboardPage('home-page')">Home</a>
+                    <a class="nav-link" onclick="showDashboardPage('members-page')">Membros</a>
+                    <a class="nav-link" onclick="showDashboardPage('research-page')">Pesquisas</a>
+                </div>
+                <div class="nav-user">
+                    <div class="user-avatar" id="user-avatar">M</div>
+                    <span id="user-name-nav">Usuário</span>
+                    <button class="logout-btn" onclick="logout()">Sair</button>
+                </div>
+            </nav>
+
+            <!-- Home Page -->
+            <div id="home-page" class="dashboard-page active">
+                <div class="container">
+                    <div class="page-header">
+                        <h1>Bem-vindo, <span id="user-name-home">Usuário</span>!</h1>
+                        <p>Acompanhe suas atividades no UP Research</p>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Pesquisas</h3>
+                            <div class="stat-value" id="stat-research">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Membros</h3>
+                            <div class="stat-value" id="stat-members">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Cargo</h3>
+                            <div class="stat-value" id="stat-role" style="font-size: 1.5rem;">Membro</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Deadlines</h3>
+                            <div class="stat-value" id="stat-deadlines">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Live Section -->
+                    <div class="live-section">
+                        <h2>📺 Próxima Live</h2>
+                        <div class="live-card">
+                            <div class="live-status">Em breve</div>
+                            <h4>Aguardando programação</h4>
+                            <p>O link será liberado por um superior após a <a href="#" onclick="alert('Funcionalidade em desenvolvimento!'); return false;">atualização dos relatórios</a></p>
+                        </div>
+                    </div>
+
+                    <!-- Forms Gallery -->
+                    <h2 style="margin-bottom: 1rem;">📋 Formulários</h2>
+                    <div class="forms-gallery">
+                        <div class="form-card" onclick="openGoogleForm('whatsapp')">
+                            <h3>💬 WhatsApp</h3>
+                            <p>Solicitar entrada no grupo WhatsApp da instituição</p>
+                        </div>
+                        <div class="form-card" onclick="openGoogleForm('duvidas')">
+                            <h3>❓ Dúvidas</h3>
+                            <p>Enviar dúvidas para os representantes</p>
+                        </div>
+                        <div class="form-card" onclick="openGoogleForm('relatorios')">
+                            <h3>📊 Relatórios</h3>
+                            <p>Atualizar progresso das pesquisas</p>
+                        </div>
+                        <div class="form-card" onclick="openGoogleForm('promocao')">
+                            <h3>⬆️ Promoção</h3>
+                            <p>Solicitar mudança de cargo</p>
+                        </div>
+                        <div class="form-card" onclick="openGoogleForm('denuncia')">
+                            <h3>🚨 Denúncia</h3>
+                            <p>Denúncia anônima</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Members Page -->
+            <div id="members-page" class="dashboard-page" style="display: none;">
+                <div class="container">
+                    <div class="page-header">
+                        <h1>👥 Membros da Instituição</h1>
+                        <p id="institution-name">Carregando...</p>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label>Buscar</label>
+                            <input type="text" id="search-members" placeholder="Nome ou email...">
+                        </div>
+                        <div class="filter-group">
+                            <label>Cargo</label>
+                            <select id="filter-role">
+                                <option value="">Todos</option>
+                                <option value="FUNDADOR">Fundador</option>
+                                <option value="CHEFE">Chefe</option>
+                                <option value="VETERANO">Veterano</option>
+                                <option value="REPRESENTANTE">Representante</option>
+                                <option value="MEMBRO">Membro</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Liga</label>
+                            <select id="filter-league">
+                                <option value="">Todas</option>
+                                <option value="clinica">Clínica</option>
+                                <option value="cirurgia">Cirurgia</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Members Grid -->
+                    <div id="members-grid" class="members-grid">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Carregando membros...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Research Page -->
+            <div id="research-page" class="dashboard-page" style="display: none;">
+                <div class="container">
+                    <div class="page-header">
+                        <h1>🔬 Pesquisas</h1>
+                        <p>Projetos de revisão sistemática da instituição</p>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label>Status</label>
+                            <select id="filter-status">
+                                <option value="">Todos</option>
+                                <option value="Em Progresso">Em Progresso</option>
+                                <option value="Finalizada">Finalizada</option>
+                                <option value="Arquivada">Arquivada</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Liga</label>
+                            <select id="filter-research-league">
+                                <option value="">Todas</option>
+                                <option value="clinica">Clínica</option>
+                                <option value="cirurgia">Cirurgia</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Aceitando Coautores</label>
+                            <select id="filter-coauthors">
+                                <option value="">Todos</option>
+                                <option value="true">Sim</option>
+                                <option value="false">Não</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Research Grid -->
+                    <div id="research-grid" class="research-grid">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Carregando pesquisas...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
         // URL do Google Apps Script
         const API_URL = 'https://script.google.com/macros/s/AKfycbyJTnV0BkePPNx0UM5QF7tn7HJVhHbnrjK5ZI1k4Oo9QQKlpuHssoK9LouhWxldpi0q/exec';
+
+        // Current User
+        let currentUser = null;
+
+        // Role Colors
+        const ROLE_COLORS = {
+            'FUNDADOR': '#0f1829',
+            'SENIOR': '#8b3838',
+            'CHEFE': '#a64d4d',
+            'VETERANO': '#1a2847',
+            'REPRESENTANTE': '#2d4563',
+            'ESCRIBA': '#4a6b8a',
+            'MEMBRO': '#6b8cae'
+        };
 
         // Utility Functions
         function showPage(pageId) {
@@ -727,13 +1332,12 @@
 
                 if (result.status === 'success') {
                     localStorage.setItem('upresearch_user', JSON.stringify(result.data.user));
+                    currentUser = result.data.user;
                     
                     if (result.data.user.approved === false) {
                         showPage('pending-approval-page');
                     } else {
-                        // Redirecionar para dashboard (implementar depois)
-                        alert('Login realizado! Dashboard em construção.');
-                        showPage('login-page');
+                        loadDashboard();
                     }
                 } else {
                     showPage('login-page');
@@ -809,17 +1413,254 @@
             setupMedicalSchoolAutocomplete();
 
             // Check if user is logged in
-            const user = localStorage.getItem('upresearch_user');
-            if (user) {
-                const userData = JSON.parse(user);
-                if (userData.approved === false) {
+            const userStr = localStorage.getItem('upresearch_user');
+            if (userStr) {
+                currentUser = JSON.parse(userStr);
+                if (currentUser.approved === false) {
                     showPage('pending-approval-page');
                 } else {
-                    // Redirecionar para dashboard
-                    showPage('login-page'); // Temporário até criar dashboard
+                    loadDashboard();
                 }
             }
         });
+
+        // Dashboard Functions
+        function loadDashboard() {
+            showPage('dashboard');
+            
+            // Set user info
+            document.getElementById('user-name-nav').textContent = currentUser.name.split(' ')[0];
+            document.getElementById('user-name-home').textContent = currentUser.name.split(' ')[0];
+            document.getElementById('user-avatar').textContent = currentUser.name[0].toUpperCase();
+            document.getElementById('user-avatar').style.background = ROLE_COLORS[currentUser.role] || ROLE_COLORS['MEMBRO'];
+            document.getElementById('stat-role').textContent = currentUser.role;
+            document.getElementById('stat-deadlines').textContent = currentUser.deadlinesMissed || 0;
+            
+            // Load data
+            loadMembers();
+            loadResearch();
+        }
+
+        function showDashboardPage(pageId) {
+            // Update nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Show page
+            document.querySelectorAll('.dashboard-page').forEach(page => {
+                page.style.display = 'none';
+            });
+            document.getElementById(pageId).style.display = 'block';
+        }
+
+        async function loadMembers() {
+            try {
+                const response = await fetch(`${API_URL}?action=getMembers&institution=${encodeURIComponent(currentUser.medicalSchool)}`);
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    const members = result.data.members;
+                    document.getElementById('stat-members').textContent = members.length;
+                    document.getElementById('institution-name').textContent = currentUser.medicalSchool;
+                    
+                    displayMembers(members);
+                } else {
+                    document.getElementById('members-grid').innerHTML = '<div class="empty-state"><p>Erro ao carregar membros</p></div>';
+                }
+            } catch (error) {
+                console.error('Erro ao carregar membros:', error);
+                document.getElementById('members-grid').innerHTML = '<div class="empty-state"><p>Erro ao carregar membros</p></div>';
+            }
+        }
+
+        function displayMembers(members) {
+            const grid = document.getElementById('members-grid');
+            
+            if (members.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><p>Nenhum membro encontrado</p></div>';
+                return;
+            }
+
+            grid.innerHTML = members.map(member => `
+                <div class="member-card">
+                    <div class="member-header">
+                        <div class="member-avatar" style="background: ${ROLE_COLORS[member.role] || ROLE_COLORS['MEMBRO']}">
+                            ${member.name[0].toUpperCase()}
+                        </div>
+                        <div class="member-info">
+                            <h4>${member.name}</h4>
+                            <span class="member-role" style="background: ${ROLE_COLORS[member.role] || ROLE_COLORS['MEMBRO']}">${member.role}</span>
+                        </div>
+                    </div>
+                    <div class="member-details">
+                        <div class="member-detail">
+                            <span>Email:</span>
+                            <span>${member.email}</span>
+                        </div>
+                        ${member.league ? `
+                        <div class="member-detail">
+                            <span>Liga:</span>
+                            <span>${member.league === 'clinica' ? 'Clínica' : 'Cirurgia'}</span>
+                        </div>
+                        ` : ''}
+                        ${member.specialty ? `
+                        <div class="member-detail">
+                            <span>Especialidade:</span>
+                            <span>${member.specialty}</span>
+                        </div>
+                        ` : ''}
+                        ${member.deadlinesMissed > 0 ? `
+                        <div class="member-detail">
+                            <span>Deadlines:</span>
+                            <span style="color: var(--error)">❌ ${member.deadlinesMissed}</span>
+                        </div>
+                        ` : ''}
+                        <div class="member-detail">
+                            <span>WhatsApp:</span>
+                            <span><a href="https://wa.me/${member.whatsapp}" target="_blank" style="color: var(--success)">💬 Conversar</a></span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Setup filters
+            setupMemberFilters(members);
+        }
+
+        function setupMemberFilters(members) {
+            const searchInput = document.getElementById('search-members');
+            const roleFilter = document.getElementById('filter-role');
+            const leagueFilter = document.getElementById('filter-league');
+
+            function applyFilters() {
+                const search = searchInput.value.toLowerCase();
+                const role = roleFilter.value;
+                const league = leagueFilter.value;
+
+                const filtered = members.filter(m => {
+                    const matchSearch = !search || m.name.toLowerCase().includes(search) || m.email.toLowerCase().includes(search);
+                    const matchRole = !role || m.role === role;
+                    const matchLeague = !league || m.league === league;
+                    return matchSearch && matchRole && matchLeague;
+                });
+
+                displayMembers(filtered);
+            }
+
+            searchInput.addEventListener('input', applyFilters);
+            roleFilter.addEventListener('change', applyFilters);
+            leagueFilter.addEventListener('change', applyFilters);
+        }
+
+        async function loadResearch() {
+            try {
+                const response = await fetch(`${API_URL}?action=getResearch&institution=${encodeURIComponent(currentUser.medicalSchool)}`);
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    const research = result.data.research;
+                    document.getElementById('stat-research').textContent = research.length;
+                    
+                    displayResearch(research);
+                } else {
+                    document.getElementById('research-grid').innerHTML = '<div class="empty-state"><p>Erro ao carregar pesquisas</p></div>';
+                }
+            } catch (error) {
+                console.error('Erro ao carregar pesquisas:', error);
+                document.getElementById('research-grid').innerHTML = '<div class="empty-state"><p>Erro ao carregar pesquisas</p></div>';
+            }
+        }
+
+        function displayResearch(research) {
+            const grid = document.getElementById('research-grid');
+            
+            if (research.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><p>Nenhuma pesquisa encontrada</p></div>';
+                return;
+            }
+
+            grid.innerHTML = research.map(r => `
+                <div class="research-card">
+                    <div class="research-header">
+                        <h3>${r.title}</h3>
+                    </div>
+                    <div class="research-tags">
+                        <span class="tag status">${r.status}</span>
+                        <span class="tag league">${r.league === 'clinica' ? 'Clínica' : 'Cirurgia'}</span>
+                        ${r.specialty ? `<span class="tag specialty">${r.specialty}</span>` : ''}
+                        ${r.acceptingCoauthors ? '<span class="tag" style="background: var(--success); color: white">Aceitando Coautores</span>' : ''}
+                    </div>
+                    ${r.description ? `<p style="color: var(--text-secondary); margin-bottom: 1rem;">${r.description}</p>` : ''}
+                    <div class="member-details">
+                        <div class="member-detail">
+                            <span>Primeiro Autor:</span>
+                            <span>${r.firstAuthor}</span>
+                        </div>
+                        ${r.coauthors && r.coauthors.length > 0 ? `
+                        <div class="member-detail">
+                            <span>Coautores:</span>
+                            <span>${r.coauthors.length}</span>
+                        </div>
+                        ` : ''}
+                        <div class="member-detail">
+                            <span>Início:</span>
+                            <span>${new Date(r.startDate).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                        ${r.whatsappLink ? `
+                        <div class="member-detail" style="margin-top: 1rem;">
+                            <a href="${r.whatsappLink}" target="_blank" class="btn-primary" style="display: inline-block; padding: 0.5rem 1rem; text-align: center; text-decoration: none; border-radius: 6px;">💬 Contatar Autor</a>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            // Setup filters
+            setupResearchFilters(research);
+        }
+
+        function setupResearchFilters(research) {
+            const statusFilter = document.getElementById('filter-status');
+            const leagueFilter = document.getElementById('filter-research-league');
+            const coauthorsFilter = document.getElementById('filter-coauthors');
+
+            function applyFilters() {
+                const status = statusFilter.value;
+                const league = leagueFilter.value;
+                const coauthors = coauthorsFilter.value;
+
+                const filtered = research.filter(r => {
+                    const matchStatus = !status || r.status === status;
+                    const matchLeague = !league || r.league === league;
+                    const matchCoauthors = !coauthors || r.acceptingCoauthors.toString() === coauthors;
+                    return matchStatus && matchLeague && matchCoauthors;
+                });
+
+                displayResearch(filtered);
+            }
+
+            statusFilter.addEventListener('change', applyFilters);
+            leagueFilter.addEventListener('change', applyFilters);
+            coauthorsFilter.addEventListener('change', applyFilters);
+        }
+
+        function openGoogleForm(formType) {
+            const GOOGLE_FORMS = {
+                whatsapp: 'https://forms.gle/example-whatsapp',
+                duvidas: 'https://forms.gle/example-duvidas',
+                relatorios: 'https://forms.gle/example-relatorios',
+                promocao: 'https://forms.gle/example-promocao',
+                denuncia: 'https://forms.gle/example-denuncia'
+            };
+
+            if (GOOGLE_FORMS[formType]) {
+                window.open(GOOGLE_FORMS[formType], '_blank');
+            } else {
+                alert('Formulário em desenvolvimento!');
+            }
+        }
     </script>
 </body>
 </html>

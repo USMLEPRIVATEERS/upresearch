@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="UP Research - Grupo de Revisão Sistemática e Meta-Análise da maior comunidade USMLE do Brasil">
+    <meta name="theme-color" content="#1a2847">
+    <title>UP Research - USMLE Privateers</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1a2847;
+            --primary-dark: #0f1829;
+            --secondary: #a64d4d;
+            --accent: #c85a5a;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --error: #EF4444;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --border: #e5e7eb;
+            --radius: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Auth Container */
+        .auth-container {
+            max-width: 500px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: var(--radius);
+            padding: 2.5rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            max-width: 150px;
+            height: auto;
+            margin-bottom: 1rem;
+        }
+
+        .logo-section h1 {
+            color: var(--primary);
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tagline {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .social-links a {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .form-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(26, 40, 71, 0.1);
+        }
+
+        /* Phone Input */
+        .phone-input-container {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .country-code-select {
+            flex-shrink: 0;
+            width: 140px;
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .phone-number-inputs {
+            display: flex;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .phone-part {
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .phone-part:first-child {
+            flex: 1;
+        }
+
+        .phone-part:nth-child(2) {
+            flex: 2;
+        }
+
+        .phone-part:last-child {
+            flex: 1;
+        }
+
+        .helper-text {
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        #phone-preview {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(26, 40, 71, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .text-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .text-link a {
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .alert.error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+
+        .alert.success {
+            background: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+
+        /* Dropdown autocomplete */
+        .dropdown-container {
+            position: relative;
+        }
+
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            border: 2px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none;
+        }
+
+        .dropdown-item {
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .dropdown-item.add-new {
+            color: var(--primary);
+            font-weight: 600;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .auth-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+
+            .country-code-select {
+                width: 100%;
+            }
+
+            .phone-input-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Login Page -->
+        <div id="login-page" class="page active">
+            <div class="auth-container">
+                <div class="logo-section">
+                    <h1>UP Research</h1>
+                    <p class="tagline">Grupo de Revisão Sistemática e Meta-Análise</p>
+                    <p class="subtitle">Maior comunidade USMLE do Brasil 🇺🇸</p>
+                    <div class="social-links">
+                        <a href="https://twitter.com/upresearchusmle" target="_blank">@upresearchusmle</a>
+                        <a href="https://instagram.com/usmleprivateers" target="_blank">@usmleprivateers</a>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2>Login</h2>
+                    <div id="alert-box" class="alert" style="display: none;"></div>
+                    
+                    <form id="login-form">
+                        <div class="form-group">
+                            <label for="login-email">E-mail ou Usuário *</label>
+                            <input type="text" id="login-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Senha *</label>
+                            <input type="password" id="login-password" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Entrar</button>
+                    </form>
+
+                    <div class="text-link">
+                        Não tem conta? <a href="#" onclick="showPage('signup-page'); return false;">Criar Conta</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signup Page -->
+        <div id="signup-page" class="page">
+            <div class="auth-container">
+                <div class="logo-section">
+                    <h1>UP Research</h1>
+                    <p class="tagline">Cadastro de Novo Membro</p>
+                </div>
+
+                <div class="form-section">
+                    <h2>Criar Conta</h2>
+                    <div id="signup-alert" class="alert" style="display: none;"></div>
+                    
+                    <form id="signup-form">
+                        <div class="form-group">
+                            <label for="name">Nome Completo *</label>
+                            <input type="text" id="name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="whatsapp">WhatsApp *</label>
+                            <div class="phone-input-container">
+                                <select id="country-code" class="country-code-select" required>
+                                    <optgroup label="Principais">
+                                        <option value="+1">🇺🇸 EUA (+1)</option>
+                                        <option value="+55" selected>🇧🇷 Brasil (+55)</option>
+                                    </optgroup>
+                                </select>
+                                <div class="phone-number-inputs">
+                                    <input type="tel" id="phone-area" class="phone-part" placeholder="DDD" maxlength="2" required>
+                                    <input type="tel" id="phone-first" class="phone-part" placeholder="99999" maxlength="5" required>
+                                    <input type="tel" id="phone-second" class="phone-part" placeholder="9999" maxlength="4" required>
+                                </div>
+                            </div>
+                            <small class="helper-text" id="phone-preview"></small>
+                            <input type="hidden" id="whatsapp" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="medical-school">Faculdade de Medicina *</label>
+                            <div class="dropdown-container">
+                                <input type="text" id="medical-school-input" placeholder="Digite para buscar..." required>
+                                <div id="dropdown-list" class="dropdown-list"></div>
+                            </div>
+                            <input type="hidden" id="medical-school" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="student-status">Status *</label>
+                            <select id="student-status" required>
+                                <option value="">Selecione...</option>
+                                <option value="studying">Estudante de Medicina</option>
+                                <option value="graduated">Médico Formado</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">E-mail *</label>
+                            <input type="email" id="email" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Senha *</label>
+                            <input type="password" id="password" minlength="6" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirm-password">Confirmar Senha *</label>
+                            <input type="password" id="confirm-password" minlength="6" required>
+                        </div>
+
+                        <button type="submit" class="btn-primary">Criar Conta</button>
+                    </form>
+
+                    <div class="text-link">
+                        Já tem conta? <a href="#" onclick="showPage('login-page'); return false;">Fazer Login</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Approval Page -->
+        <div id="pending-approval-page" class="page">
+            <div class="auth-container">
+                <div class="logo-section">
+                    <h1>UP Research</h1>
+                </div>
+
+                <div class="form-section" style="text-align: center;">
+                    <h2 style="color: var(--secondary);">⏳ Aguardando Aprovação</h2>
+                    <p style="margin: 1.5rem 0;">Seu cadastro foi realizado com sucesso!</p>
+                    
+                    <div style="background: var(--bg-secondary); padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; text-align: left;">
+                        <p style="font-weight: 600; margin-bottom: 1rem;">Para acessar a plataforma:</p>
+                        <ol>
+                            <li style="margin-bottom: 0.75rem;">Aguarde a aprovação do Representante da sua instituição</li>
+                            <li>Você receberá acesso assim que for aprovado</li>
+                        </ol>
+                    </div>
+
+                    <button class="btn-secondary" onclick="logout()" style="width: auto; padding: 0.75rem 2rem; margin-top: 1rem;">Sair</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Page -->
+        <div id="loading-page" class="page">
+            <div class="auth-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Carregando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // URL do Google Apps Script
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyJTnV0BkePPNx0UM5QF7tn7HJVhHbnrjK5ZI1k4Oo9QQKlpuHssoK9LouhWxldpi0q/exec';
+
+        // Utility Functions
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        function showAlert(elementId, message, type = 'error') {
+            const alert = document.getElementById(elementId);
+            alert.textContent = message;
+            alert.className = `alert ${type}`;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        function logout() {
+            localStorage.removeItem('upresearch_user');
+            showPage('login-page');
+        }
+
+        // Phone Input Setup
+        function setupPhoneInput() {
+            const countryCode = document.getElementById('country-code');
+            const phoneArea = document.getElementById('phone-area');
+            const phoneFirst = document.getElementById('phone-first');
+            const phoneSecond = document.getElementById('phone-second');
+            const phonePreview = document.getElementById('phone-preview');
+            const whatsappHidden = document.getElementById('whatsapp');
+
+            function updatePlaceholders() {
+                const country = countryCode.value;
+                if (country === '+55') {
+                    phoneArea.placeholder = 'DDD';
+                    phoneArea.maxLength = 2;
+                    phoneFirst.placeholder = '99999';
+                    phoneFirst.maxLength = 5;
+                    phoneSecond.placeholder = '9999';
+                    phoneSecond.maxLength = 4;
+                } else if (country === '+1') {
+                    phoneArea.placeholder = 'Area';
+                    phoneArea.maxLength = 3;
+                    phoneFirst.placeholder = '999';
+                    phoneFirst.maxLength = 3;
+                    phoneSecond.placeholder = '9999';
+                    phoneSecond.maxLength = 4;
+                }
+                phoneArea.value = '';
+                phoneFirst.value = '';
+                phoneSecond.value = '';
+                updatePreview();
+            }
+
+            function updatePreview() {
+                const country = countryCode.value;
+                const area = phoneArea.value;
+                const first = phoneFirst.value;
+                const second = phoneSecond.value;
+
+                let formatted = '';
+                let fullNumber = '';
+
+                if (country === '+55') {
+                    if (area || first || second) {
+                        formatted = country;
+                        if (area) formatted += ` (${area})`;
+                        if (first) formatted += ` ${first}`;
+                        if (second) formatted += `-${second}`;
+                        if (area && first && second) {
+                            fullNumber = `${country}${area}${first}${second}`;
+                        }
+                    }
+                } else if (country === '+1') {
+                    if (area || first || second) {
+                        formatted = country;
+                        if (area) formatted += ` (${area})`;
+                        if (first) formatted += ` ${first}`;
+                        if (second) formatted += `-${second}`;
+                        if (area && first && second) {
+                            fullNumber = `${country}${area}${first}${second}`;
+                        }
+                    }
+                }
+
+                phonePreview.textContent = formatted || 'Preview do número';
+                whatsappHidden.value = fullNumber;
+            }
+
+            function autoFocus(current, next) {
+                if (current.value.length === parseInt(current.maxLength) && next) {
+                    next.focus();
+                }
+            }
+
+            countryCode.addEventListener('change', updatePlaceholders);
+            
+            [phoneArea, phoneFirst, phoneSecond].forEach(input => {
+                input.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.replace(/\D/g, '');
+                    updatePreview();
+                });
+
+                input.addEventListener('keyup', () => {
+                    const inputs = [phoneArea, phoneFirst, phoneSecond];
+                    const currentIndex = inputs.indexOf(input);
+                    if (currentIndex < inputs.length - 1) {
+                        autoFocus(input, inputs[currentIndex + 1]);
+                    }
+                });
+            });
+
+            updatePlaceholders();
+        }
+
+        // Medical School Autocomplete
+        let medicalSchools = [];
+
+        async function loadMedicalSchools() {
+            try {
+                const response = await fetch(`${API_URL}?action=getMedicalSchools`);
+                const result = await response.json();
+                if (result.status === 'success') {
+                    medicalSchools = result.data.schools || [];
+                }
+            } catch (error) {
+                console.error('Erro ao carregar faculdades:', error);
+            }
+        }
+
+        function setupMedicalSchoolAutocomplete() {
+            const input = document.getElementById('medical-school-input');
+            const dropdown = document.getElementById('dropdown-list');
+            const hidden = document.getElementById('medical-school');
+
+            input.addEventListener('input', function() {
+                const value = this.value.toLowerCase();
+                hidden.value = '';
+
+                if (value.length < 2) {
+                    dropdown.style.display = 'none';
+                    return;
+                }
+
+                const filtered = medicalSchools.filter(school => 
+                    school.toLowerCase().includes(value)
+                );
+
+                if (filtered.length > 0 || value.length > 3) {
+                    dropdown.innerHTML = filtered.map(school => `
+                        <div class="dropdown-item" onclick="selectSchool('${school}')">${school}</div>
+                    `).join('');
+
+                    if (filtered.length === 0) {
+                        dropdown.innerHTML += `
+                            <div class="dropdown-item add-new" onclick="addNewSchool()">
+                                + Adicionar "${input.value}"
+                            </div>
+                        `;
+                    }
+
+                    dropdown.style.display = 'block';
+                } else {
+                    dropdown.style.display = 'none';
+                }
+            });
+
+            input.addEventListener('focus', function() {
+                if (this.value.length >= 2) {
+                    this.dispatchEvent(new Event('input'));
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.dropdown-container')) {
+                    dropdown.style.display = 'none';
+                }
+            });
+        }
+
+        function selectSchool(school) {
+            document.getElementById('medical-school-input').value = school;
+            document.getElementById('medical-school').value = school;
+            document.getElementById('dropdown-list').style.display = 'none';
+        }
+
+        async function addNewSchool() {
+            const input = document.getElementById('medical-school-input');
+            const name = input.value.trim();
+
+            if (!name.match(/^.+\s\(.+\)$/)) {
+                alert('Por favor, adicione a faculdade no formato: Nome Completo (ABREVIAÇÃO)');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'addMedicalSchool');
+                formData.append('name', name);
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    medicalSchools.push(name);
+                    selectSchool(name);
+                    alert('Faculdade adicionada com sucesso!');
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                alert('Erro ao adicionar faculdade. Tente novamente.');
+                console.error(error);
+            }
+        }
+
+        // Login Handler
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            showPage('loading-page');
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'login');
+                formData.append('email', email);
+                formData.append('password', password);
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    localStorage.setItem('upresearch_user', JSON.stringify(result.data.user));
+                    
+                    if (result.data.user.approved === false) {
+                        showPage('pending-approval-page');
+                    } else {
+                        // Redirecionar para dashboard (implementar depois)
+                        alert('Login realizado! Dashboard em construção.');
+                        showPage('login-page');
+                    }
+                } else {
+                    showPage('login-page');
+                    showAlert('alert-box', result.message, 'error');
+                }
+            } catch (error) {
+                showPage('login-page');
+                showAlert('alert-box', 'Erro ao conectar com o servidor', 'error');
+                console.error(error);
+            }
+        });
+
+        // Signup Handler
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const whatsapp = document.getElementById('whatsapp').value;
+            const medicalSchool = document.getElementById('medical-school').value;
+
+            if (password !== confirmPassword) {
+                showAlert('signup-alert', 'As senhas não coincidem!', 'error');
+                return;
+            }
+
+            if (!whatsapp) {
+                showAlert('signup-alert', 'Por favor, preencha o WhatsApp completo!', 'error');
+                return;
+            }
+
+            if (!medicalSchool) {
+                showAlert('signup-alert', 'Por favor, selecione uma faculdade!', 'error');
+                return;
+            }
+
+            showPage('loading-page');
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'signup');
+                formData.append('name', document.getElementById('name').value);
+                formData.append('whatsapp', whatsapp);
+                formData.append('email', document.getElementById('email').value);
+                formData.append('password', password);
+                formData.append('medicalSchool', medicalSchool);
+                formData.append('studentStatus', document.getElementById('student-status').value);
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showPage('pending-approval-page');
+                } else {
+                    showPage('signup-page');
+                    showAlert('signup-alert', result.message, 'error');
+                }
+            } catch (error) {
+                showPage('signup-page');
+                showAlert('signup-alert', 'Erro ao conectar com o servidor', 'error');
+                console.error(error);
+            }
+        });
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadMedicalSchools();
+            setupPhoneInput();
+            setupMedicalSchoolAutocomplete();
+
+            // Check if user is logged in
+            const user = localStorage.getItem('upresearch_user');
+            if (user) {
+                const userData = JSON.parse(user);
+                if (userData.approved === false) {
+                    showPage('pending-approval-page');
+                } else {
+                    // Redirecionar para dashboard
+                    showPage('login-page'); // Temporário até criar dashboard
+                }
+            }
+        });
+    </script>
+</body>
+</html>

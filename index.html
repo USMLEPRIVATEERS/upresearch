@@ -1384,7 +1384,7 @@
 
     <script>
         // URL do Google Apps Script
-        const API_URL = 'https://script.google.com/macros/s/AKfycbxHiMmv_Fg-yFXjrSASTvD6ul8buAlmi7smQ4v9CwP-nVVUKKUhagCNWexR83sJFxGJ/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwiZhcxUh6Wucfv8ZOU2i2gLFz-kMy-FdUgsrF3cSrq5RVvq-Rya7bOzaPZVK1mRJDe/exec';
 
         // Current User
         let currentUser = null;
@@ -1769,22 +1769,57 @@
         }
 
         async function loadMembers() {
+            const grid = document.getElementById('members-grid');
+            
             try {
-                const response = await fetch(`${API_URL}?action=getMembers&institution=${encodeURIComponent(currentUser.medicalSchool)}`);
+                // FUNDADORES podem ver TODOS os membros de todas as instituições
+                const isFundador = currentUser.managedInstitutions === 'all';
+                
+                let url = `${API_URL}?action=getMembers`;
+                if (!isFundador) {
+                    url += `&institution=${encodeURIComponent(currentUser.medicalSchool)}`;
+                    console.log('Carregando membros de:', currentUser.medicalSchool);
+                } else {
+                    url += `&all=true`;
+                    console.log('Carregando TODOS os membros (FUNDADOR)');
+                }
+                console.log('URL:', url);
+                
+                const response = await fetch(url);
                 const result = await response.json();
+                
+                console.log('Resultado:', result);
 
                 if (result.status === 'success') {
-                    const members = result.data.members;
+                    const members = result.data.members || [];
                     document.getElementById('stat-members').textContent = members.length;
-                    document.getElementById('institution-name').textContent = currentUser.medicalSchool;
+                    
+                    if (isFundador) {
+                        document.getElementById('institution-name').textContent = 'Todas as Instituições';
+                    } else {
+                        document.getElementById('institution-name').textContent = currentUser.medicalSchool;
+                    }
                     
                     displayMembers(members);
                 } else {
-                    document.getElementById('members-grid').innerHTML = '<div class="empty-state"><p>Erro ao carregar membros</p></div>';
+                    console.error('Erro do servidor:', result.message);
+                    grid.innerHTML = `
+                        <div class="empty-state">
+                            <p style="color: var(--error); font-weight: 600;">❌ Erro ao carregar membros</p>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">${result.message || 'Erro desconhecido'}</p>
+                            <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 1rem;">Verifique se a aba "users" existe no Google Sheets</p>
+                        </div>
+                    `;
                 }
             } catch (error) {
                 console.error('Erro ao carregar membros:', error);
-                document.getElementById('members-grid').innerHTML = '<div class="empty-state"><p>Erro ao carregar membros</p></div>';
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <p style="color: var(--error); font-weight: 600;">❌ Erro de conexão</p>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">Não foi possível conectar ao servidor</p>
+                        <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 1rem;">Erro: ${error.message}</p>
+                    </div>
+                `;
             }
         }
 
@@ -1868,21 +1903,50 @@
         }
 
         async function loadResearch() {
+            const grid = document.getElementById('research-grid');
+            
             try {
-                const response = await fetch(`${API_URL}?action=getResearch&institution=${encodeURIComponent(currentUser.medicalSchool)}`);
+                // FUNDADORES podem ver TODAS as pesquisas de todas as instituições
+                const isFundador = currentUser.managedInstitutions === 'all';
+                
+                let url = `${API_URL}?action=getResearch`;
+                if (!isFundador) {
+                    url += `&institution=${encodeURIComponent(currentUser.medicalSchool)}`;
+                    console.log('Carregando pesquisas de:', currentUser.medicalSchool);
+                } else {
+                    url += `&all=true`;
+                    console.log('Carregando TODAS as pesquisas (FUNDADOR)');
+                }
+                
+                const response = await fetch(url);
                 const result = await response.json();
+                
+                console.log('Pesquisas:', result);
 
                 if (result.status === 'success') {
-                    const research = result.data.research;
+                    const research = result.data.research || [];
                     document.getElementById('stat-research').textContent = research.length;
                     
                     displayResearch(research);
                 } else {
-                    document.getElementById('research-grid').innerHTML = '<div class="empty-state"><p>Erro ao carregar pesquisas</p></div>';
+                    console.error('Erro do servidor:', result.message);
+                    grid.innerHTML = `
+                        <div class="empty-state">
+                            <p style="color: var(--error); font-weight: 600;">❌ Erro ao carregar pesquisas</p>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">${result.message || 'Erro desconhecido'}</p>
+                            <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 1rem;">Verifique se a aba "research" existe no Google Sheets</p>
+                        </div>
+                    `;
                 }
             } catch (error) {
                 console.error('Erro ao carregar pesquisas:', error);
-                document.getElementById('research-grid').innerHTML = '<div class="empty-state"><p>Erro ao carregar pesquisas</p></div>';
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <p style="color: var(--error); font-weight: 600;">❌ Erro de conexão</p>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">Não foi possível conectar ao servidor</p>
+                        <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 1rem;">Erro: ${error.message}</p>
+                    </div>
+                `;
             }
         }
 

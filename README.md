@@ -1,6 +1,8 @@
 # Ward Academy Journal Club
 
-A lightweight web platform for organizing the **Ward Academy / UP Research (USMLE Privateers) Journal Club**: members register, post the days and times they can meet, volunteer as **Host**, **Presenter** or **Attendee**, attach the article they want to discuss, and join the call through the link the host posts.
+A lightweight web platform for organizing the **Ward Academy Journal Club**: members register, post the days and times they can meet, volunteer as **Host**, **Presenter** or **Attendee**, attach the article they want to discuss, and join the call through the link the host posts.
+
+The visual identity follows the Ward Academy brand: **burnt orange, white and black** (role coding: Host = burnt orange, Presenter = black, Attendee = neutral gray).
 
 Built as **static HTML pages hosted on GitHub Pages** with **[Supabase](https://supabase.com)** (free tier) providing authentication and the database. No build step, no server to maintain.
 
@@ -118,5 +120,4 @@ css/styles.css        # design system
 js/config.js          # Supabase credentials (fill in)
 js/common.js          # shared runtime: auth guard, nav, slot expansion, stats
 supabase/schema.sql   # database schema + RLS (run once in Supabase)
-LOGO.jpeg             # UP Research logo
 ```

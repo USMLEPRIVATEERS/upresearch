@@ -372,8 +372,8 @@
     el.innerHTML =
       '<div class="nav-inner container">' +
       '<a class="brand" href="home.html">' +
-      '<img src="LOGO.jpeg" alt="UP Research logo" />' +
-      '<span><strong>Ward Academy</strong><em>Journal Club</em></span></a>' +
+      '<span class="brand-mark">WA</span>' +
+      '<span class="brand-text"><strong>Ward Academy</strong><em>Journal Club</em></span></a>' +
       '<button class="nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>' +
       '<div class="nav-links" id="nav-links">' +
       links.map(([href, label, key]) =>

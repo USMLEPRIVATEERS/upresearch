@@ -1,17 +1,16 @@
 // ============================================================
 // Ward Academy Journal Club — configuration
 //
-// 1. Create a free project at https://supabase.com
-// 2. Run supabase/schema.sql in the SQL Editor
-// 3. Copy your Project URL and anon public key from
-//    Project Settings → API, and paste them below.
+// These are the project's PUBLIC credentials (publishable key).
+// They are safe to publish: every table is protected by Row
+// Level Security, so this key only allows what the policies in
+// supabase/schema.sql permit.
 //
-// The anon key is safe to publish in a public repository:
-// every table is protected by Row Level Security, so the key
-// only allows what the policies in schema.sql permit.
+// NEVER put the service_role key in this file or anywhere in
+// the repository — it bypasses Row Level Security entirely.
 // ============================================================
 
 window.WA_CONFIG = {
-  SUPABASE_URL: "YOUR_SUPABASE_PROJECT_URL",       // e.g. "https://abcdefgh.supabase.co"
-  SUPABASE_ANON_KEY: "YOUR_SUPABASE_ANON_KEY",     // the long "anon public" key
+  SUPABASE_URL: "https://dtifpjgxboufragaxrri.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_4_tN5-3fupPDkTrJhLaN6Q_0Xzb7B7S",
 };

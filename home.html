@@ -58,7 +58,7 @@
           <option value="date">Soonest first</option>
         </select>
       </div>
-      <div id="open-list"></div>
+      <div id="open-list" class="scroll-panel"></div>
     </section>
 
     <section id="empty-all" class="hidden">
@@ -66,6 +66,29 @@
         <h3>No availability posted for the next two weeks</h3>
         <p>Be the first — add the days and times you can join, present or host.</p>
         <a class="btn" href="availability.html">Add my availability</a>
+      </div>
+    </section>
+
+    <section id="board-section">
+      <h2>📌 Shared board</h2>
+      <p class="muted small">A living notepad for the whole club — agendas, session notes, links,
+        AI summaries. Everyone can edit, and changes show up for all members within seconds.
+        Paste from Claude/ChatGPT and the formatting comes along — backgrounds and colors are
+        cleaned automatically, so dark-mode copies paste clean.</p>
+      <div class="card tight">
+        <div class="board-toolbar" id="board-toolbar">
+          <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+          <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+          <button type="button" data-cmd="underline" title="Underline"><u>U</u></button>
+          <button type="button" data-cmd="formatBlock" data-arg="h3" title="Heading">H</button>
+          <button type="button" data-cmd="formatBlock" data-arg="p" title="Normal text">¶</button>
+          <button type="button" data-cmd="insertUnorderedList" title="Bullet list">•≡</button>
+          <button type="button" data-cmd="insertOrderedList" title="Numbered list">1≡</button>
+          <button type="button" data-cmd="removeFormat" title="Clear formatting">⌫</button>
+        </div>
+        <div id="board-editor" class="board-editor" contenteditable="true"
+          data-placeholder="Write here — or paste formatted text from anywhere…"></div>
+        <div class="small muted" id="board-status" style="margin-top:8px"></div>
       </div>
     </section>
   </main>
@@ -402,7 +425,8 @@
         }
         if (open.length) {
           $("open-section").classList.remove("hidden");
-          $("open-list").innerHTML = visibleOpen().slice(0, 12).map(openCard).join("");
+          // The list scrolls inside a fixed-height panel, so show everything.
+          $("open-list").innerHTML = visibleOpen().map(openCard).join("");
         }
         if (!sessions.length && !open.length) $("empty-all").classList.remove("hidden");
         wireCards();
@@ -434,6 +458,135 @@
         });
       });
       }
+
+      /* ---------- shared board ----------
+         One rich-text document the whole club edits. Saves ~1s after
+         you stop typing; other members' changes stream in via Supabase
+         Realtime (with a 15s polling fallback). Conflict model is
+         last-save-wins — fine for a club notepad. */
+      (function boardModule() {
+        const editor = $("board-editor");
+        const statusEl = $("board-status");
+        let lastSeen = null;   // updated_at of the version we show
+        let saveTimer = null;
+        let applying = false;  // true while we overwrite the editor programmatically
+        let lastKeystroke = 0;
+        let setupMissing = false;
+
+        function isEditing() {
+          return document.activeElement === editor && Date.now() - lastKeystroke < 5000;
+        }
+        function fmtStamp(d) {
+          const p = WA.zonedParts(new Date(d));
+          return WA.MONTHS[p.m].slice(0, 3) + " " + p.d + ", " + WA.pad(p.hour) + ":" + WA.pad(p.minute);
+        }
+        function setStatus(html) { statusEl.innerHTML = html; }
+        function editedLine(row) {
+          if (!row.updated_by) return "No edits yet — start writing!";
+          const name = row.editor ? row.editor.full_name : "a member";
+          return "Last edited by " + WA.esc(name) + " · " + fmtStamp(row.updated_at);
+        }
+
+        function applyRemote(row, force) {
+          if (row.updated_at === lastSeen) return;
+          if (!force && isEditing()) return; // don't clobber active typing; next tick applies it
+          applying = true;
+          editor.innerHTML = WA.sanitizeHtml(row.content || "");
+          applying = false;
+          lastSeen = row.updated_at;
+          setStatus(editedLine(row));
+        }
+
+        async function load(initial) {
+          const { data, error } = await WA.client.from("board")
+            .select("*, editor:profiles(full_name)").eq("id", 1).maybeSingle();
+          if (error || !data) {
+            if (initial) {
+              setupMissing = true;
+              editor.setAttribute("contenteditable", "false");
+              setStatus("⚠️ The shared board needs a one-time database update — run the " +
+                "board section of <code>supabase/schema.sql</code> in the Supabase SQL Editor.");
+            }
+            return;
+          }
+          setupMissing = false;
+          editor.setAttribute("contenteditable", "true");
+          applyRemote(data, initial);
+        }
+
+        async function save() {
+          if (setupMissing) return;
+          const content = WA.sanitizeHtml(editor.innerHTML);
+          if (content.length > 200000) {
+            setStatus('<span style="color:var(--err)">The board is too long to save — trim it a little.</span>');
+            return;
+          }
+          setStatus("Saving…");
+          const now = new Date().toISOString();
+          const { error } = await WA.client.from("board")
+            .update({ content, updated_by: user.id, updated_at: now }).eq("id", 1);
+          if (error) {
+            setStatus('<span style="color:var(--err)">Could not save — will retry on your next change.</span>');
+            return;
+          }
+          lastSeen = now;
+          setStatus("✓ Saved · Last edited by you · " + fmtStamp(now));
+        }
+
+        function scheduleSave() {
+          clearTimeout(saveTimer);
+          setStatus("Editing…");
+          saveTimer = setTimeout(save, 1200);
+        }
+
+        editor.addEventListener("input", () => {
+          if (applying) return;
+          lastKeystroke = Date.now();
+          scheduleSave();
+        });
+        editor.addEventListener("blur", () => {
+          if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; save(); }
+        });
+
+        // Paste keeps the structure but never the styling — dark-mode
+        // copies from Claude/ChatGPT land clean, on a white background.
+        editor.addEventListener("paste", (e) => {
+          e.preventDefault();
+          const html = e.clipboardData && e.clipboardData.getData("text/html");
+          const text = e.clipboardData && e.clipboardData.getData("text/plain");
+          const insert = html
+            ? WA.sanitizeHtml(html)
+            : WA.esc(text || "").replace(/\r?\n/g, "<br>");
+          document.execCommand("insertHTML", false, insert);
+          lastKeystroke = Date.now();
+          scheduleSave();
+        });
+
+        const toolbar = $("board-toolbar");
+        toolbar.addEventListener("mousedown", (e) => e.preventDefault()); // keep editor focus
+        toolbar.addEventListener("click", (e) => {
+          const btn = e.target.closest("button[data-cmd]");
+          if (!btn || setupMissing) return;
+          editor.focus();
+          document.execCommand(btn.getAttribute("data-cmd"), false, btn.getAttribute("data-arg") || null);
+          lastKeystroke = Date.now();
+          scheduleSave();
+        });
+
+        // Live updates: Realtime stream + polling fallback.
+        try {
+          if (typeof WA.client.channel === "function") {
+            WA.client.channel("board-live")
+              .on("postgres_changes",
+                { event: "UPDATE", schema: "public", table: "board" },
+                () => load(false))
+              .subscribe();
+          }
+        } catch (e) { /* realtime unavailable → polling still covers it */ }
+        setInterval(() => { if (!document.hidden && !isEditing()) load(false); }, 15000);
+
+        load(true);
+      })();
     })();
   </script>
 </body>

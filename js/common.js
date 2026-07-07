@@ -473,6 +473,66 @@
     }
   };
 
+  /* ---------- rich-text sanitizer (shared board) ----------
+     Keeps the structure of text pasted from anywhere (Claude, ChatGPT,
+     Word, web pages) but strips ALL styling — inline styles, classes,
+     colors and backgrounds — so dark-mode copies don't paste with a
+     dark background or white-on-white text. Also removes anything
+     executable, so member-written HTML is safe to render. */
+
+  WA.sanitizeHtml = function (html) {
+    const ALLOWED = {
+      P: 1, BR: 1, DIV: 1, B: 1, STRONG: 1, I: 1, EM: 1, U: 1, S: 1,
+      H1: 1, H2: 1, H3: 1, H4: 1, UL: 1, OL: 1, LI: 1, A: 1,
+      CODE: 1, PRE: 1, BLOCKQUOTE: 1, HR: 1,
+      TABLE: 1, THEAD: 1, TBODY: 1, TR: 1, TH: 1, TD: 1,
+    };
+    const DROP = {
+      SCRIPT: 1, STYLE: 1, IFRAME: 1, OBJECT: 1, EMBED: 1, FORM: 1,
+      INPUT: 1, BUTTON: 1, SELECT: 1, TEXTAREA: 1, IMG: 1, VIDEO: 1,
+      AUDIO: 1, LINK: 1, META: 1, HEAD: 1, TITLE: 1, SVG: 1, CANVAS: 1,
+    };
+    const src = new DOMParser().parseFromString(String(html || ""), "text/html");
+
+    function cleanNode(node) {
+      if (node.nodeType === 3) return document.createTextNode(node.nodeValue);
+      if (node.nodeType !== 1) return null; // comments etc.
+      let tag = node.tagName;
+      if (DROP[tag]) return null;
+      if (tag === "STRIKE" || tag === "DEL") tag = "S";
+      if (!ALLOWED[tag]) {
+        // Unknown wrapper (span, font, article…) → keep only its children.
+        const frag = document.createDocumentFragment();
+        for (const c of node.childNodes) {
+          const n = cleanNode(c);
+          if (n) frag.appendChild(n);
+        }
+        return frag;
+      }
+      const el = document.createElement(tag);
+      if (tag === "A") {
+        const href = WA.safeUrl(node.getAttribute("href"));
+        if (href) {
+          el.setAttribute("href", href);
+          el.setAttribute("target", "_blank");
+          el.setAttribute("rel", "noopener noreferrer");
+        }
+      }
+      for (const c of node.childNodes) {
+        const n = cleanNode(c);
+        if (n) el.appendChild(n);
+      }
+      return el;
+    }
+
+    const out = document.createElement("div");
+    for (const c of src.body.childNodes) {
+      const n = cleanNode(c);
+      if (n) out.appendChild(n);
+    }
+    return out.innerHTML;
+  };
+
   /* ---------- data access ---------- */
 
   WA.fetchAllAvailabilities = async function () {

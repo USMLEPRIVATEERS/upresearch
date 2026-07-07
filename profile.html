@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile — Ward Academy Journal Club</title>
+  <link rel="icon" type="image/jpeg" href="LOGO.jpeg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <nav id="nav"></nav>
+
+  <main class="container">
+    <div id="loading" class="muted" style="padding-top:10px">Loading profile…</div>
+
+    <div id="profile-view" class="hidden">
+      <div class="card">
+        <div style="display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap">
+          <span class="avatar avatar-lg" id="p-avatar">?</span>
+          <div style="flex:1; min-width:220px">
+            <h1 id="p-name" style="margin-bottom:2px"></h1>
+            <p class="muted" id="p-sub" style="margin-bottom:6px"></p>
+            <p id="p-bio" class="small"></p>
+            <p class="small muted" id="p-since"></p>
+          </div>
+          <button class="btn ghost sm hidden" id="edit-btn">✏️ Edit profile</button>
+        </div>
+
+        <form id="edit-form" class="hidden mt" style="border-top:1px solid var(--border); padding-top:16px">
+          <div class="grid-2">
+            <label class="field">Full name
+              <input type="text" id="e-name" required />
+            </label>
+            <label class="field">Specialty / area of interest
+              <input type="text" id="e-specialty" placeholder="e.g. Internal Medicine" />
+            </label>
+          </div>
+          <label class="field">Institution / medical school
+            <input type="text" id="e-institution" placeholder="e.g. FMUSP" />
+          </label>
+          <label class="field">Short bio
+            <textarea id="e-bio" placeholder="Career stage, research interests, USMLE journey…"></textarea>
+          </label>
+          <div style="display:flex; gap:10px">
+            <button type="submit" class="btn">Save</button>
+            <button type="button" class="btn ghost" id="cancel-edit">Cancel</button>
+          </div>
+          <div class="form-error" id="edit-error"></div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Journal club participation</h2>
+        <p class="muted small">Counted from past slots that actually had a presenter
+          (i.e., sessions that happened), over the last 12 months.</p>
+        <div class="stat-tiles">
+          <div class="stat-tile"><div class="num" id="s-host">0</div><div class="lbl">⭐ Times as Host</div></div>
+          <div class="stat-tile"><div class="num" id="s-presenter">0</div><div class="lbl">📄 Times as Presenter</div></div>
+          <div class="stat-tile"><div class="num" id="s-attendee">0</div><div class="lbl">👥 Times as Attendee</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Upcoming commitments</h2>
+        <div id="upcoming" class="muted small">—</div>
+      </div>
+
+      <div class="card">
+        <h2>Articles submitted</h2>
+        <div id="articles" class="muted small">—</div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site">Ward Academy · UP Research — USMLE Privateers</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    (async function () {
+      const $ = (id) => document.getElementById(id);
+      let ctx;
+      try { ctx = await WA.initAppPage("profile"); } catch (e) { return; }
+      const { user } = ctx;
+
+      const params = new URLSearchParams(window.location.search);
+      const profileId = params.get("id") || user.id;
+      const isOwn = profileId === user.id;
+
+      let profile, allRows, articles;
+      try {
+        const [pRes, aRes, artRes] = await Promise.all([
+          WA.client.from("profiles").select("*").eq("id", profileId).maybeSingle(),
+          WA.fetchAllAvailabilities(),
+          WA.client.from("articles").select("*").eq("presenter_id", profileId)
+            .order("created_at", { ascending: false }),
+        ]);
+        if (pRes.error) throw pRes.error;
+        profile = pRes.data;
+        allRows = aRes;
+        articles = artRes.data || [];
+      } catch (err) {
+        $("loading").textContent = "Could not load profile: " + err.message;
+        return;
+      }
+      if (!profile) { $("loading").textContent = "Member not found."; return; }
+
+      $("loading").classList.add("hidden");
+      $("profile-view").classList.remove("hidden");
+
+      /* ---------- header ---------- */
+      function paintHeader() {
+        $("p-avatar").textContent = WA.initials(profile.full_name);
+        $("p-name").textContent = profile.full_name || "Member";
+        $("p-sub").textContent = [profile.specialty, profile.institution].filter(Boolean).join(" · ") || "";
+        $("p-bio").textContent = profile.bio || "";
+        $("p-since").textContent = "Member since " + WA.fmtDate(new Date(profile.created_at));
+        document.title = (profile.full_name || "Profile") + " — Ward Academy Journal Club";
+      }
+      paintHeader();
+
+      /* ---------- stats ---------- */
+      const stats = WA.computeStats(allRows, 365)[profileId] || { host: 0, presenter: 0, attendee: 0 };
+      $("s-host").textContent = stats.host;
+      $("s-presenter").textContent = stats.presenter;
+      $("s-attendee").textContent = stats.attendee;
+
+      /* ---------- upcoming commitments ---------- */
+      const now = new Date();
+      const mine = allRows.filter((r) => r.user_id === profileId);
+      const occs = WA.expandAvailabilities(mine, now, new Date(now.getTime() + 30 * 86400000))
+        .sort((a, b) => a.date - b.date).slice(0, 12);
+      $("upcoming").innerHTML = occs.length
+        ? occs.map((o) =>
+            "<div class='my-avail-item'><div><strong>" + WA.esc(WA.fmtDateTime(o.date)) + "</strong> " +
+            WA.roleBadge(o.avail.role) +
+            (o.avail.kind === "recurring" ? ' <span class="muted small">(weekly)</span>' : "") +
+            "</div></div>"
+          ).join("")
+        : "No availability posted for the next 30 days.";
+
+      /* ---------- articles ---------- */
+      $("articles").innerHTML = articles.length
+        ? articles.map((a) => {
+            const url = WA.safeUrl(a.article_url);
+            return '<div class="article-block"><h4>' +
+              (url ? '<a href="' + WA.esc(url) + '" target="_blank" rel="noopener noreferrer">📄 ' +
+                WA.esc(a.title) + " ↗</a>" : "📄 " + WA.esc(a.title)) + "</h4>" +
+              '<span class="chip red">' + WA.esc(a.study_design) + "</span>" +
+              '<span class="chip">' + WA.esc(a.specialty) +
+              (a.subspecialty ? " · " + WA.esc(a.subspecialty) : "") + "</span>" +
+              '<p class="small" style="margin:6px 0 0">' + WA.esc(a.summary) + "</p></div>";
+          }).join("")
+        : "No articles submitted yet.";
+
+      /* ---------- editing (own profile only) ---------- */
+      if (isOwn) {
+        $("edit-btn").classList.remove("hidden");
+        $("edit-btn").addEventListener("click", () => {
+          $("e-name").value = profile.full_name || "";
+          $("e-specialty").value = profile.specialty || "";
+          $("e-institution").value = profile.institution || "";
+          $("e-bio").value = profile.bio || "";
+          $("edit-form").classList.remove("hidden");
+          $("edit-btn").classList.add("hidden");
+        });
+        $("cancel-edit").addEventListener("click", () => {
+          $("edit-form").classList.add("hidden");
+          $("edit-btn").classList.remove("hidden");
+        });
+        $("edit-form").addEventListener("submit", async (e) => {
+          e.preventDefault();
+          $("edit-error").textContent = "";
+          const updates = {
+            full_name: $("e-name").value.trim(),
+            specialty: $("e-specialty").value.trim(),
+            institution: $("e-institution").value.trim(),
+            bio: $("e-bio").value.trim(),
+            updated_at: new Date().toISOString(),
+          };
+          const { error } = await WA.client.from("profiles").update(updates).eq("id", user.id);
+          if (error) { $("edit-error").textContent = error.message; return; }
+          Object.assign(profile, updates);
+          paintHeader();
+          WA.renderNav("profile", profile);
+          $("edit-form").classList.add("hidden");
+          $("edit-btn").classList.remove("hidden");
+          WA.toast("Profile updated.", "success");
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

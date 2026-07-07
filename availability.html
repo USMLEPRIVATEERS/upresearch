@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Availability — Ward Academy Journal Club</title>
+  <link rel="icon" type="image/jpeg" href="LOGO.jpeg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <nav id="nav"></nav>
+
+  <main class="container">
+    <div class="page-head">
+      <div>
+        <h1>My availability</h1>
+        <p class="muted" id="tz-note"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Add availability</h2>
+
+      <h3 class="mt">1 · How do you want to participate?</h3>
+      <div class="role-options" id="role-options"></div>
+
+      <div id="article-form" class="hidden" style="margin-top:18px; border-top:1px solid var(--border); padding-top:16px">
+        <h3>📄 Your article</h3>
+        <p class="muted small">Presenters must attach the article they will discuss.
+          <strong>Prefer a link to the full manuscript</strong> (journal website, PubMed Central, DOI).
+          If the full text is not freely available online, upload the PDF to your
+          <strong>Google Drive</strong>, set sharing to “Anyone with the link”, and paste the Drive link here.</p>
+        <div class="grid-2">
+          <label class="field">Article title <span class="req">*</span>
+            <input type="text" id="art-title" placeholder="Exact title of the paper" />
+          </label>
+          <label class="field">Link to the article <span class="req">*</span>
+            <input type="url" id="art-url" placeholder="https:// journal, PMC, DOI or Google Drive link" />
+            <span class="hint">Full manuscript preferred; Google Drive link if paywalled.</span>
+          </label>
+        </div>
+        <div class="grid-2">
+          <label class="field">Study design <span class="req">*</span>
+            <select id="art-design"></select>
+          </label>
+          <label class="field">Medical specialty <span class="req">*</span>
+            <input type="text" id="art-specialty" placeholder="e.g. Internal Medicine, Cardiology…" />
+          </label>
+        </div>
+        <label class="field">Subspecialty <span class="muted">(optional)</span>
+          <input type="text" id="art-subspecialty" placeholder="e.g. Interventional Cardiology" />
+        </label>
+        <label class="field">What caught your attention in this article? <span class="req">*</span>
+          <textarea id="art-summary" placeholder="Surprising result, clever methodology, practice-changing finding, a flaw worth discussing…"></textarea>
+        </label>
+      </div>
+
+      <h3 class="mt">2 · When are you available?</h3>
+      <div class="seg" id="mode-seg">
+        <button type="button" data-mode="single" class="active">Single date</button>
+        <button type="button" data-mode="recurring">Weekly recurrence</button>
+      </div>
+
+      <div id="single-fields" class="mt">
+        <label class="field" style="max-width:260px">Date
+          <input type="date" id="single-date" />
+        </label>
+      </div>
+
+      <div id="recurring-fields" class="mt hidden">
+        <p class="small" style="margin-bottom:2px"><strong>Days of the week</strong> (pick one or more)</p>
+        <div class="day-chips" id="day-chips"></div>
+      </div>
+
+      <p class="small mt" style="margin-bottom:2px"><strong>1-hour time slots</strong>
+        (your local time — pick one or more)</p>
+      <div class="hour-grid" id="hour-grid"></div>
+
+      <div class="checkbox-row" id="open-ended-row">
+        <input type="checkbox" id="open-ended" />
+        <div>
+          <strong>I will keep this availability for more than a month.</strong><br/>
+          <span class="muted">By checking this, you commit to staying available at these times
+            indefinitely, until you edit or remove this availability. If unchecked, it
+            automatically expires one month from today.</span>
+        </div>
+      </div>
+
+      <button class="btn" id="save-btn">Save availability</button>
+      <div class="form-error" id="form-error"></div>
+    </div>
+
+    <div class="card">
+      <h2>My current availability</h2>
+      <div id="my-list" class="muted">Loading…</div>
+    </div>
+  </main>
+
+  <footer class="site">Ward Academy · UP Research — USMLE Privateers</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    (async function () {
+      const $ = (id) => document.getElementById(id);
+      let ctx;
+      try { ctx = await WA.initAppPage("availability"); } catch (e) { return; }
+      const { user } = ctx;
+
+      $("tz-note").textContent = "Times below are in your local timezone (" + WA.timezoneName() + ").";
+
+      /* ---------- build the form controls ---------- */
+
+      let role = "attendee";
+      $("role-options").innerHTML = ["attendee", "presenter", "host"].map((r) => {
+        const meta = WA.ROLES[r];
+        return '<button type="button" class="role-option role-' + r + (r === role ? " selected" : "") +
+          '" data-role="' + r + '">' + WA.roleBadge(r) + "<p>" + WA.esc(meta.blurb) + "</p></button>";
+      }).join("");
+      $("role-options").addEventListener("click", (e) => {
+        const btn = e.target.closest(".role-option");
+        if (!btn) return;
+        role = btn.getAttribute("data-role");
+        document.querySelectorAll(".role-option").forEach((b) =>
+          b.classList.toggle("selected", b === btn));
+        $("article-form").classList.toggle("hidden", role !== "presenter");
+      });
+
+      $("art-design").innerHTML = '<option value="">Select…</option>' +
+        WA.STUDY_DESIGNS.map((d) => "<option>" + WA.esc(d) + "</option>").join("");
+
+      let mode = "single";
+      $("mode-seg").addEventListener("click", (e) => {
+        const btn = e.target.closest("button");
+        if (!btn) return;
+        mode = btn.getAttribute("data-mode");
+        document.querySelectorAll("#mode-seg button").forEach((b) =>
+          b.classList.toggle("active", b === btn));
+        $("single-fields").classList.toggle("hidden", mode !== "single");
+        $("recurring-fields").classList.toggle("hidden", mode !== "recurring");
+        // The >1 month commitment only makes sense for recurring patterns.
+        $("open-ended-row").classList.toggle("hidden", mode !== "recurring");
+      });
+      $("open-ended-row").classList.add("hidden"); // start in single mode
+
+      const selectedDays = new Set();
+      $("day-chips").innerHTML = WA.WEEKDAYS.map((d, i) =>
+        '<button type="button" class="day-chip" data-day="' + i + '">' + d + "</button>").join("");
+      $("day-chips").addEventListener("click", (e) => {
+        const btn = e.target.closest(".day-chip");
+        if (!btn) return;
+        const d = Number(btn.getAttribute("data-day"));
+        if (selectedDays.has(d)) selectedDays.delete(d); else selectedDays.add(d);
+        btn.classList.toggle("selected", selectedDays.has(d));
+      });
+
+      const selectedHours = new Set();
+      $("hour-grid").innerHTML = Array.from({ length: 24 }, (_, h) =>
+        '<button type="button" class="hour-box" data-hour="' + h + '">' + WA.hourRange(h) + "</button>").join("");
+      $("hour-grid").addEventListener("click", (e) => {
+        const btn = e.target.closest(".hour-box");
+        if (!btn) return;
+        const h = Number(btn.getAttribute("data-hour"));
+        if (selectedHours.has(h)) selectedHours.delete(h); else selectedHours.add(h);
+        btn.classList.toggle("selected", selectedHours.has(h));
+      });
+
+      const today = new Date();
+      $("single-date").min = today.getFullYear() + "-" + WA.pad(today.getMonth() + 1) + "-" + WA.pad(today.getDate());
+
+      /* ---------- save ---------- */
+
+      $("save-btn").addEventListener("click", async () => {
+        const err = $("form-error");
+        err.textContent = "";
+
+        if (!selectedHours.size) { err.textContent = "Pick at least one 1-hour slot."; return; }
+        if (mode === "single" && !$("single-date").value) { err.textContent = "Pick a date."; return; }
+        if (mode === "recurring" && !selectedDays.size) { err.textContent = "Pick at least one day of the week."; return; }
+
+        let articleId = null;
+        if (role === "presenter") {
+          const title = $("art-title").value.trim();
+          const url = $("art-url").value.trim();
+          const design = $("art-design").value;
+          const specialty = $("art-specialty").value.trim();
+          const summary = $("art-summary").value.trim();
+          if (!title || !url || !design || !specialty || !summary) {
+            err.textContent = "Presenters must fill in all article fields (title, link, study design, specialty and what caught your attention).";
+            return;
+          }
+          if (!WA.safeUrl(url)) { err.textContent = "The article link must be a valid http(s) URL."; return; }
+        }
+
+        $("save-btn").disabled = true;
+        try {
+          if (role === "presenter") {
+            const { data, error } = await WA.client.from("articles").insert({
+              presenter_id: user.id,
+              title: $("art-title").value.trim(),
+              article_url: $("art-url").value.trim(),
+              study_design: $("art-design").value,
+              specialty: $("art-specialty").value.trim(),
+              subspecialty: $("art-subspecialty").value.trim(),
+              summary: $("art-summary").value.trim(),
+            }).select().single();
+            if (error) throw error;
+            articleId = data.id;
+          }
+
+          const rows = [];
+          if (mode === "single") {
+            const [y, m, d] = $("single-date").value.split("-").map(Number);
+            for (const h of selectedHours) {
+              const slot = new Date(y, m - 1, d, h, 0, 0, 0); // local → Date handles UTC conversion
+              if (slot < new Date()) throw new Error("The slot " + WA.hourRange(h) + " on that date is already in the past.");
+              rows.push({
+                user_id: user.id, role, kind: "single",
+                slot_start: slot.toISOString(),
+                open_ended: false, expires_at: null, article_id: articleId,
+              });
+            }
+          } else {
+            const openEnded = $("open-ended").checked;
+            const expiresAt = openEnded ? null
+              : new Date(Date.now() + 31 * 86400000).toISOString();
+            for (const day of selectedDays) {
+              for (const h of selectedHours) {
+                const utc = WA.localRecurringToUtc(day, h);
+                rows.push({
+                  user_id: user.id, role, kind: "recurring",
+                  weekday_utc: utc.weekday_utc, hour_utc: utc.hour_utc,
+                  open_ended: openEnded, expires_at: expiresAt, article_id: articleId,
+                });
+              }
+            }
+          }
+
+          const { error } = await WA.client.from("availabilities").insert(rows);
+          if (error) throw error;
+
+          WA.toast("Availability saved — it is now visible to all members.", "success");
+          selectedHours.clear(); selectedDays.clear();
+          document.querySelectorAll(".hour-box.selected, .day-chip.selected")
+            .forEach((b) => b.classList.remove("selected"));
+          ["art-title", "art-url", "art-specialty", "art-subspecialty", "art-summary"]
+            .forEach((id) => { $(id).value = ""; });
+          $("art-design").value = "";
+          await renderMyList();
+        } catch (e2) {
+          err.textContent = e2.message || String(e2);
+        } finally {
+          $("save-btn").disabled = false;
+        }
+      });
+
+      /* ---------- my availability list ---------- */
+
+      async function renderMyList() {
+        const box = $("my-list");
+        const { data, error } = await WA.client
+          .from("availabilities")
+          .select("*, article:articles(title)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+        if (error) { box.textContent = "Could not load: " + error.message; return; }
+
+        const nowD = new Date();
+        const rows = (data || []).filter((r) => {
+          if (r.kind === "single") return new Date(r.slot_start) >= new Date(nowD.getTime() - 3600000);
+          return r.open_ended || !r.expires_at || new Date(r.expires_at) >= nowD;
+        });
+
+        if (!rows.length) {
+          box.innerHTML = '<div class="empty-state"><p style="margin:0">Nothing yet — add your first availability above.</p></div>';
+          return;
+        }
+
+        box.innerHTML = rows.map((r) => {
+          let when;
+          if (r.kind === "single") {
+            when = WA.fmtDateTime(new Date(r.slot_start));
+          } else {
+            const loc = WA.utcRecurringToLocal(r.weekday_utc, r.hour_utc);
+            when = "Every " + WA.WEEKDAYS[loc.weekday] + " · " + WA.hourRange(loc.hour);
+          }
+          const expiry = r.kind === "recurring"
+            ? (r.open_ended
+              ? '<span class="badge badge-open">Open-ended commitment</span>'
+              : '<span class="muted small">expires ' + WA.fmtDate(new Date(r.expires_at)) + "</span>")
+            : "";
+          const article = r.article
+            ? '<div class="small muted">📄 ' + WA.esc(r.article.title) + "</div>" : "";
+          const renew = (r.kind === "recurring" && !r.open_ended)
+            ? '<button class="btn sm ghost" data-renew="' + r.id + '">Renew +1 month</button>' : "";
+          return '<div class="my-avail-item"><div>' +
+            "<div><strong>" + WA.esc(when) + "</strong> " + WA.roleBadge(r.role) + " " + expiry + "</div>" +
+            article + "</div>" +
+            '<div style="display:flex; gap:8px; flex-shrink:0">' + renew +
+            '<button class="btn sm danger" data-del="' + r.id + '">Remove</button></div></div>';
+        }).join("");
+
+        box.querySelectorAll("[data-del]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            if (!confirm("Remove this availability? Other members will no longer see you in this slot.")) return;
+            const { error: e } = await WA.client.from("availabilities").delete().eq("id", btn.getAttribute("data-del"));
+            if (e) { WA.toast("Could not remove: " + e.message, "error"); return; }
+            WA.toast("Availability removed.", "success");
+            renderMyList();
+          });
+        });
+        box.querySelectorAll("[data-renew]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const { error: e } = await WA.client.from("availabilities")
+              .update({ expires_at: new Date(Date.now() + 31 * 86400000).toISOString() })
+              .eq("id", btn.getAttribute("data-renew"));
+            if (e) { WA.toast("Could not renew: " + e.message, "error"); return; }
+            WA.toast("Renewed for one more month.", "success");
+            renderMyList();
+          });
+        });
+      }
+
+      renderMyList();
+    })();
+  </script>
+</body>
+</html>

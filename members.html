@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Members — Ward Academy Journal Club</title>
+  <link rel="icon" type="image/jpeg" href="LOGO.jpeg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <nav id="nav"></nav>
+
+  <main class="container">
+    <div class="page-head">
+      <div>
+        <h1>Members</h1>
+        <p class="muted">Everyone in the Ward Academy Journal Club. Click a member to see their profile
+          and participation history.</p>
+      </div>
+    </div>
+
+    <label class="field" style="max-width:380px">Search
+      <input type="text" id="search" placeholder="Name, specialty or institution…" />
+    </label>
+
+    <div id="members-list" class="grid-3 mt muted">Loading…</div>
+  </main>
+
+  <footer class="site">Ward Academy · UP Research — USMLE Privateers</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    (async function () {
+      const $ = (id) => document.getElementById(id);
+      try { await WA.initAppPage("members"); } catch (e) { return; }
+
+      let profiles = [], stats = {};
+      try {
+        const [{ data, error }, rows] = await Promise.all([
+          WA.client.from("profiles").select("*").order("full_name"),
+          WA.fetchAllAvailabilities(),
+        ]);
+        if (error) throw error;
+        profiles = data || [];
+        stats = WA.computeStats(rows, 365);
+      } catch (err) {
+        $("members-list").textContent = "Could not load members: " + err.message;
+        return;
+      }
+
+      function card(p) {
+        const s = stats[p.id] || { host: 0, presenter: 0, attendee: 0 };
+        return '<a class="card tight" style="text-decoration:none; color:inherit" ' +
+          'href="profile.html?id=' + encodeURIComponent(p.id) + '">' +
+          '<div class="member-card">' +
+          '<span class="avatar">' + WA.esc(WA.initials(p.full_name)) + "</span>" +
+          "<div><h3 style='margin:0'>" + WA.esc(p.full_name || "Member") + "</h3>" +
+          '<div class="small muted">' + WA.esc(p.specialty || "—") +
+          (p.institution ? " · " + WA.esc(p.institution) : "") + "</div>" +
+          '<div class="stats">' +
+          '<span class="badge badge-host">⭐ ' + s.host + " hosted</span>" +
+          '<span class="badge badge-presenter">📄 ' + s.presenter + " presented</span>" +
+          '<span class="badge badge-attendee">👥 ' + s.attendee + " attended</span>" +
+          "</div></div></div></a>";
+      }
+
+      function render(filter) {
+        const q = (filter || "").toLowerCase().trim();
+        const list = profiles.filter((p) =>
+          !q ||
+          (p.full_name || "").toLowerCase().includes(q) ||
+          (p.specialty || "").toLowerCase().includes(q) ||
+          (p.institution || "").toLowerCase().includes(q)
+        );
+        $("members-list").innerHTML = list.length
+          ? list.map(card).join("")
+          : '<div class="empty-state" style="grid-column:1/-1">No members match your search.</div>';
+      }
+
+      $("search").addEventListener("input", (e) => render(e.target.value));
+      render("");
+    })();
+  </script>
+</body>
+</html>

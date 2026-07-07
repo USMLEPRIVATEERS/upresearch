@@ -17,6 +17,7 @@ Built as **static HTML pages hosted on GitHub Pages** with **[Supabase](https://
 | `home.html` | Upcoming sessions (slots with a presenter), host highlight, meeting link, slots still looking for a presenter |
 | `availability.html` | Post availability — single date or weekly recurrence, 1-hour clickable slots, role selection, article submission for presenters |
 | `calendar.html` | Week and month calendar of all posted availability |
+| `history.html` | Past sessions: article discussed, presenter, host and attendees, grouped by month, searchable |
 | `members.html` | Member directory with participation stats |
 | `profile.html` | Member profile: bio, stats (times as Host / Presenter / Attendee), upcoming commitments, articles submitted |
 
@@ -102,7 +103,7 @@ That’s it. Share the URL with the club.
 - **Duplicate protection** — signing up twice for the same slot with the same role is detected and skipped.
 - **Editable articles** — presenters can edit their article details from their profile.
 - **Copy meeting link** button and show/hide password toggles.
-- **Timezone selector** — auto-detected, manually overridable (Brazil / US / Europe presets), applied to every time shown on the site including the calendar grid.
+- **Timezone selector** — auto-detected, manually overridable (Brazil / US / Europe presets), applied to every time shown on the site including the calendar grid. An inline picker sits at the top of the Home, Calendar and History pages; the full selector lives on My Availability.
 - **Phone-first design** — optimized for mobile Safari/Chrome: 16px inputs (no iOS zoom-on-focus), large touch targets, safe-area insets, `dvh` viewport fix, no tap-highlight flash, `apple-touch-icon`, and layouts tuned down to 320px-wide screens.
 
 ## Known limitations / future ideas

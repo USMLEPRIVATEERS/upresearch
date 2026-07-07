@@ -200,6 +200,23 @@
     return html;
   };
 
+  /* Compact inline timezone picker: "🌍 All times in [select]".
+     Auto-detected value pre-selected; changing it persists the choice
+     and re-renders the page so every displayed time updates. */
+  WA.tzInlineWidget = function (el, onApplied) {
+    el.innerHTML = '🌍 All times in <span class="tz-inline-slot"></span>';
+    const slot = el.querySelector(".tz-inline-slot");
+    slot.innerHTML = WA.tzSelectHtml("tz-inline-" + Math.floor(Math.random() * 1e9));
+    const sel = slot.querySelector("select");
+    sel.className = "tz-inline";
+    sel.setAttribute("aria-label", "Timezone");
+    sel.addEventListener("change", () => {
+      WA.setTz(sel.value);
+      if (onApplied) onApplied();
+      else window.location.reload();
+    });
+  };
+
   /* ---------- date formatting (always in the active timezone) ---------- */
 
   WA.fmtComps = function (p) {
@@ -502,6 +519,7 @@
       ["home.html", "Home", "home"],
       ["availability.html", "My Availability", "availability"],
       ["calendar.html", "Calendar", "calendar"],
+      ["history.html", "History", "history"],
       ["members.html", "Members", "members"],
     ];
     const name = profile ? profile.full_name || "My Profile" : "";

@@ -98,7 +98,31 @@ create table if not exists public.meetings (
 );
 
 -- ------------------------------------------------------------
--- 5. Row Level Security
+-- 5. Shared board (a single rich-text "mural" every member can edit;
+--    changes stream to everyone via Supabase Realtime)
+-- ------------------------------------------------------------
+create table if not exists public.board (
+  id         smallint primary key default 1 check (id = 1), -- single row
+  content    text not null default '',
+  updated_by uuid references public.profiles (id) on delete set null,
+  updated_at timestamptz not null default now()
+);
+
+insert into public.board (id) values (1) on conflict do nothing;
+
+-- Stream board updates to connected members (idempotent).
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'board'
+  ) then
+    alter publication supabase_realtime add table public.board;
+  end if;
+end $$;
+
+-- ------------------------------------------------------------
+-- 6. Row Level Security
 --    Everything is readable by signed-in members only; each
 --    member can only write their own rows.
 -- ------------------------------------------------------------
@@ -106,6 +130,16 @@ alter table public.profiles       enable row level security;
 alter table public.articles       enable row level security;
 alter table public.availabilities enable row level security;
 alter table public.meetings       enable row level security;
+alter table public.board          enable row level security;
+
+-- board (the single row is seeded above; members can read and edit it)
+drop policy if exists "board readable by members" on public.board;
+create policy "board readable by members"
+  on public.board for select to authenticated using (true);
+
+drop policy if exists "board editable by members" on public.board;
+create policy "board editable by members"
+  on public.board for update to authenticated using (true) with check (true);
 
 -- profiles
 drop policy if exists "profiles readable by members" on public.profiles;

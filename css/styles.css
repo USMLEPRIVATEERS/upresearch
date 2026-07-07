@@ -370,6 +370,52 @@ td.cal-cell.empty:hover { background: var(--orange-soft); }
 .legend .i-pres { background: var(--black-800); }
 .legend .i-att { background: var(--gray-100); }
 
+/* ---------------- scrollable slot list (home) ---------------- */
+
+.scroll-panel {
+  max-height: 520px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 2px 4px 2px 2px; border-radius: var(--radius);
+}
+
+/* ---------------- shared board (home) ---------------- */
+
+.board-toolbar {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;
+}
+.board-toolbar button {
+  border: 1.5px solid var(--border); background: #fff; border-radius: 8px;
+  min-width: 38px; height: 36px; font-family: inherit; font-size: 0.9rem; font-weight: 700;
+  color: var(--black-800); cursor: pointer;
+}
+.board-toolbar button:hover { border-color: var(--orange); background: var(--orange-soft); }
+
+.board-editor {
+  min-height: 180px; max-height: 440px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 4px 2px; font-size: 0.95rem; line-height: 1.6; outline: none;
+}
+.board-editor:empty::before { content: attr(data-placeholder); color: var(--muted); }
+/* Nothing inside the board keeps a pasted background or text color. */
+.board-editor * { background: transparent !important; color: inherit !important; }
+.board-editor a { color: var(--orange) !important; text-decoration: underline; }
+.board-editor h1 { font-size: 1.25rem; margin: 12px 0 6px; }
+.board-editor h2 { font-size: 1.12rem; margin: 12px 0 6px; }
+.board-editor h3, .board-editor h4 { font-size: 1.0rem; margin: 10px 0 4px; }
+.board-editor p { margin: 0 0 8px; }
+.board-editor ul, .board-editor ol { margin: 4px 0 10px; padding-left: 24px; }
+.board-editor pre {
+  background: var(--gray-100) !important; padding: 10px 12px; border-radius: 8px;
+  overflow-x: auto; font-size: 0.85rem; margin: 8px 0;
+}
+.board-editor code { background: var(--gray-100) !important; border-radius: 5px; padding: 1px 5px; font-size: 0.87em; }
+.board-editor blockquote {
+  border-left: 3px solid var(--orange-border); margin: 8px 0; padding: 2px 12px;
+  color: var(--muted) !important;
+}
+.board-editor hr { border: 0; border-top: 1px solid var(--border); margin: 12px 0; }
+.board-editor table { border-collapse: collapse; margin: 8px 0; max-width: 100%; display: block; overflow-x: auto; }
+.board-editor th, .board-editor td { border: 1px solid var(--border); padding: 4px 8px; font-size: 0.85rem; }
+
 /* ---------------- modal ---------------- */
 
 .modal-backdrop {

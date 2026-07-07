@@ -88,12 +88,21 @@ That’s it. Share the URL with the club.
 - **Timezone-aware by construction.** USMLE-oriented communities are spread across countries; storing UTC and rendering local removes a whole class of confusion.
 - **No custom backend.** Supabase RLS enforces all the security rules server-side, so the entire site can be static files on GitHub Pages — free, fast, and trivially maintainable.
 
+## Quality-of-life features
+
+- **Live-updating meeting link** — the home page re-checks every 60 seconds, so the *Join the call* button appears without refreshing when the host posts the link at the last minute. A **“next session / live now” banner** with a countdown sits at the top of the home page.
+- **One-click slot joining** — “Present here”, “volunteer to host”, calendar slot details, and even *empty* calendar cells deep-link into the availability form with the date, hour and role pre-selected.
+- **Add to calendar** — every session offers a Google Calendar link and an `.ics` download (works with Apple/Outlook), including the article and meeting link.
+- **Duplicate protection** — signing up twice for the same slot with the same role is detected and skipped.
+- **Editable articles** — presenters can edit their article details from their profile.
+- **Copy meeting link** button and show/hide password toggles.
+
 ## Known limitations / future ideas
 
 - Attendance stats are based on **signups**, not verified attendance (a host “session log” could refine this later).
 - Two hosts could theoretically volunteer for the same slot; the first to post a meeting link “wins” (others still appear as hosts).
 - Email notifications/reminders would require Supabase Edge Functions or an external cron — a good next step.
-- Realtime updates (link appearing without a refresh) could use Supabase Realtime subscriptions.
+- The 60-second polling could be upgraded to Supabase Realtime subscriptions for instant updates.
 
 ## Repository layout
 

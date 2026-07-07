@@ -26,12 +26,14 @@
 
     <div id="loading" class="muted">Loading sessions…</div>
 
+    <div id="hero" class="hidden"></div>
+
     <section id="sessions-section" class="hidden">
       <h2>📅 Upcoming journal club sessions</h2>
       <p class="muted small">Slots where someone has committed to <strong>present an article</strong>.
         Sessions with a confirmed <strong>Host</strong> are highlighted — the host moderates the
-        discussion and posts the meeting link (sometimes only right when the call starts, so
-        refresh this page if the button isn’t here yet).</p>
+        discussion and posts the meeting link (sometimes only right when the call starts; the
+        <em>Join the call</em> button appears here automatically as soon as it’s posted).</p>
       <div id="sessions-list"></div>
     </section>
 
@@ -122,6 +124,21 @@
           "</div>";
       }
 
+      function calendarExportLinks(g) {
+        const m = meetings.get(g.iso);
+        const title = "Ward Academy Journal Club" +
+          (g.presenters[0] && g.presenters[0].article ? ": " + g.presenters[0].article.title : "");
+        const details = g.presenters
+          .filter((p) => p.article)
+          .map((p) => p.article.title + " — " + p.article.article_url)
+          .join("\n");
+        const loc = m ? m.meeting_url : "";
+        return '<span class="small" style="white-space:nowrap">' +
+          '<a href="' + WA.esc(WA.gcalLink(g.date, title, details, loc)) +
+          '" target="_blank" rel="noopener noreferrer">📆 Google Calendar</a>' +
+          ' · <a href="#" class="ics-link" data-slot="' + WA.esc(g.iso) + '">.ics</a></span>';
+      }
+
       function meetingArea(g) {
         const m = meetings.get(g.iso);
         const iAmHost = g.hosts.some((h) => h.user_id === user.id);
@@ -132,17 +149,21 @@
           if (url) {
             html += '<a class="btn' + (inProgress ? "" : " secondary") + '" href="' + WA.esc(url) +
               '" target="_blank" rel="noopener noreferrer">🎥 Join the call' +
-              (inProgress ? " — live now" : "") + "</a>";
+              (inProgress ? " — live now" : "") + "</a>" +
+              '<button class="btn sm ghost copy-link" data-url="' + WA.esc(url) + '" ' +
+              'title="Copy meeting link">⧉ Copy</button>';
           }
           html += '<span class="muted small">Link posted by ' +
             WA.esc(m.host ? m.host.full_name : "the host") + "</span>";
         } else if (g.hosts.length) {
           html += '<span class="muted small">🎥 The host will post the meeting link here ' +
-            "(possibly right when the call starts — refresh the page).</span>";
+            "(possibly right when the call starts — it appears automatically, no refresh needed).</span>";
         } else {
           html += '<span class="muted small">No host yet — ' +
-            '<a href="availability.html">volunteer to host</a> this slot and post the meeting link.</span>';
+            '<a href="' + WA.esc(WA.slotHref(g.date, "host")) +
+            '">volunteer to host</a> this slot and post the meeting link.</span>';
         }
+        html += calendarExportLinks(g);
         html += "</div>";
 
         if (iAmHost && (!m || m.host_id === user.id)) {
@@ -191,26 +212,111 @@
           most + " member" + (most === 1 ? "" : "s") + " available</span>" +
           "</div>" +
           '<div style="display:flex; align-items:center; gap:10px">' + peopleAvatars(g.all) +
-          '<a class="btn sm ghost" href="availability.html">Present here</a></div>' +
+          '<a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, "presenter")) + '">Present here</a></div>' +
           "</div></div>";
       }
 
+      /* ---------- "next session" hero banner ---------- */
+
+      function renderHero() {
+        const nowT = new Date();
+        const live = sessions.find((g) =>
+          nowT >= g.date && nowT < new Date(g.date.getTime() + 3600000));
+        const next = sessions.find((g) => g.date > nowT);
+        const hero = $("hero");
+        if (!live && !next) { hero.classList.add("hidden"); return; }
+        const g = live || next;
+        const m = meetings.get(g.iso);
+        const url = m && WA.safeUrl(m.meeting_url);
+        let label;
+        if (live) {
+          label = "🔴 Journal club session live now";
+        } else {
+          const mins = Math.round((g.date - nowT) / 60000);
+          label = mins < 60
+            ? "⏰ Next session starts in " + mins + " min"
+            : mins < 48 * 60
+              ? "⏰ Next session in " + Math.floor(mins / 60) + "h " + WA.pad(mins % 60) + "m"
+              : "📅 Next session";
+        }
+        hero.className = "hero-banner" + (live ? " live" : "");
+        hero.innerHTML =
+          "<div><strong>" + label + "</strong>" +
+          '<span class="small" style="opacity:0.85"> · ' + WA.esc(WA.fmtDateTime(g.date)) +
+          (g.presenters[0] && g.presenters[0].article
+            ? " · " + WA.esc(g.presenters[0].article.title) : "") + "</span></div>" +
+          (url
+            ? '<a class="btn' + (live ? "" : " secondary") + ' sm" href="' + WA.esc(url) +
+              '" target="_blank" rel="noopener noreferrer">🎥 Join the call</a>'
+            : '<span class="small" style="opacity:0.85">Meeting link not posted yet</span>');
+      }
+      renderHero();
+      setInterval(renderHero, 30000);
+
+      /* ---------- auto-refresh the meeting links (no reload needed) ----------
+         The host may post the Zoom link right when the call starts, so we
+         re-check every 60s and re-render if anything changed — unless the
+         viewer is in the middle of typing in a form. */
+      setInterval(async () => {
+        try {
+          const fresh = await WA.fetchMeetingsBetween(rangeStart.toISOString(), rangeEnd.toISOString());
+          const changed = fresh.size !== meetings.size ||
+            [...fresh].some(([k, v]) => {
+              const old = meetings.get(k);
+              return !old || old.meeting_url !== v.meeting_url;
+            });
+          const typing = document.activeElement &&
+            ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName);
+          if (changed && !typing) {
+            meetings = fresh;
+            renderSections();
+            renderHero();
+            WA.toast("Meeting link updated.", "info");
+          }
+        } catch (e) { /* transient network error — try again next tick */ }
+      }, 60000);
+
       /* ---------- render ---------- */
 
-      if (sessions.length) {
-        $("sessions-section").classList.remove("hidden");
-        $("sessions-list").innerHTML = sessions.map(sessionCard).join("");
+      function wireCards() {
+        document.querySelectorAll(".ics-link").forEach((a) => {
+          a.addEventListener("click", (e) => {
+            e.preventDefault();
+            const g = sessions.find((s) => s.iso === a.getAttribute("data-slot"));
+            if (!g) return;
+            const title = "Ward Academy Journal Club" +
+              (g.presenters[0] && g.presenters[0].article ? ": " + g.presenters[0].article.title : "");
+            const details = g.presenters.filter((p) => p.article)
+              .map((p) => p.article.title + " — " + p.article.article_url).join("\n");
+            const m = meetings.get(g.iso);
+            WA.downloadIcs(g.date, title, details, m ? m.meeting_url : "");
+          });
+        });
+        document.querySelectorAll(".copy-link").forEach((b) => {
+          b.addEventListener("click", () => WA.copyText(b.getAttribute("data-url")));
+        });
+        wireMeetingForms();
       }
-      if (open.length) {
-        $("open-section").classList.remove("hidden");
-        // Most-populated slots first, then soonest.
-        open.sort((a, b) => (b.all.length - a.all.length) || (a.date - b.date));
-        $("open-list").innerHTML = open.slice(0, 12).map(openCard).join("");
+
+      function renderSections() {
+        if (sessions.length) {
+          $("sessions-section").classList.remove("hidden");
+          $("sessions-list").innerHTML = sessions.map(sessionCard).join("");
+        }
+        if (open.length) {
+          $("open-section").classList.remove("hidden");
+          // Most-populated slots first, then soonest.
+          open.sort((a, b) => (b.all.length - a.all.length) || (a.date - b.date));
+          $("open-list").innerHTML = open.slice(0, 12).map(openCard).join("");
+        }
+        if (!sessions.length && !open.length) $("empty-all").classList.remove("hidden");
+        wireCards();
       }
-      if (!sessions.length && !open.length) $("empty-all").classList.remove("hidden");
+      renderSections();
 
       /* ---------- host posts / updates a meeting link ---------- */
 
+      function wireMeetingForms() {
       document.querySelectorAll(".meeting-form").forEach((form) => {
         form.addEventListener("submit", async (e) => {
           e.preventDefault();
@@ -232,6 +338,7 @@
           setTimeout(() => window.location.reload(), 900);
         });
       });
+      }
     })();
   </script>
 </body>

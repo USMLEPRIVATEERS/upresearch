@@ -99,6 +99,20 @@
       const { data: { session } } = await WA.client.auth.getSession();
       if (session) { window.location.replace("home.html"); return; }
 
+      // Add a show/hide toggle to every password field.
+      document.querySelectorAll('input[type="password"]').forEach((inp) => {
+        const t = document.createElement("button");
+        t.type = "button";
+        t.className = "pw-toggle";
+        t.textContent = "Show";
+        t.addEventListener("click", () => {
+          const showing = inp.type === "text";
+          inp.type = showing ? "password" : "text";
+          t.textContent = showing ? "Show" : "Hide";
+        });
+        inp.insertAdjacentElement("afterend", t);
+      });
+
       const views = { login: $("form-login"), signup: $("form-signup"), forgot: $("form-forgot") };
       function show(view) {
         for (const k in views) views[k].classList.toggle("hidden", k !== view);

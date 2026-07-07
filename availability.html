@@ -171,6 +171,25 @@
       const today = new Date();
       $("single-date").min = today.getFullYear() + "-" + WA.pad(today.getMonth() + 1) + "-" + WA.pad(today.getDate());
 
+      /* ---------- pre-fill from a deep link (?date=&hour=&role=) ----------
+         Home and calendar link here so "Present here" / "volunteer to host"
+         lands with the slot already selected. */
+      (function prefillFromQuery() {
+        const qp = new URLSearchParams(window.location.search);
+        const qRole = qp.get("role"), qDate = qp.get("date"), qHour = qp.get("hour");
+        if (!qRole && !qDate && !qHour) return;
+        if (qRole && WA.ROLES[qRole]) {
+          const btn = document.querySelector('.role-option[data-role="' + qRole + '"]');
+          if (btn) btn.click();
+        }
+        if (qDate && /^\d{4}-\d{2}-\d{2}$/.test(qDate)) $("single-date").value = qDate;
+        if (qHour !== null && /^\d{1,2}$/.test(qHour)) {
+          const btn = document.querySelector('.hour-box[data-hour="' + Number(qHour) + '"]');
+          if (btn && !selectedHours.has(Number(qHour))) btn.click();
+        }
+        WA.toast("Slot pre-selected — review the details below and save.", "info");
+      })();
+
       /* ---------- save ---------- */
 
       $("save-btn").addEventListener("click", async () => {
@@ -197,20 +216,6 @@
 
         $("save-btn").disabled = true;
         try {
-          if (role === "presenter") {
-            const { data, error } = await WA.client.from("articles").insert({
-              presenter_id: user.id,
-              title: $("art-title").value.trim(),
-              article_url: $("art-url").value.trim(),
-              study_design: $("art-design").value,
-              specialty: $("art-specialty").value.trim(),
-              subspecialty: $("art-subspecialty").value.trim(),
-              summary: $("art-summary").value.trim(),
-            }).select().single();
-            if (error) throw error;
-            articleId = data.id;
-          }
-
           const rows = [];
           if (mode === "single") {
             const [y, m, d] = $("single-date").value.split("-").map(Number);
@@ -239,10 +244,53 @@
             }
           }
 
-          const { error } = await WA.client.from("availabilities").insert(rows);
+          /* Skip slots the member already registered with the same role,
+             so double-clicking or re-adding doesn't create duplicates. */
+          const { data: existing, error: exErr } = await WA.client
+            .from("availabilities").select("*").eq("user_id", user.id);
+          if (exErr) throw exErr;
+          const nowRef = new Date();
+          const active = (existing || []).filter((r) =>
+            r.kind === "single" || r.open_ended || !r.expires_at || new Date(r.expires_at) >= nowRef);
+          const isDupe = (row) => active.some((r) => {
+            if (r.role !== row.role) return false;
+            if (row.kind === "single") {
+              const slot = new Date(row.slot_start);
+              if (r.kind === "single") return new Date(r.slot_start).getTime() === slot.getTime();
+              return r.weekday_utc === slot.getUTCDay() && r.hour_utc === slot.getUTCHours() &&
+                WA.isRowActiveAt(r, slot);
+            }
+            return r.kind === "recurring" &&
+              r.weekday_utc === row.weekday_utc && r.hour_utc === row.hour_utc;
+          });
+          const fresh = rows.filter((row) => !isDupe(row));
+          const skipped = rows.length - fresh.length;
+          if (!fresh.length) {
+            throw new Error("You already have this exact availability (same slot and role) — nothing to add.");
+          }
+
+          // Only create the article once we know there is something to insert.
+          if (role === "presenter") {
+            const { data, error: artErr } = await WA.client.from("articles").insert({
+              presenter_id: user.id,
+              title: $("art-title").value.trim(),
+              article_url: $("art-url").value.trim(),
+              study_design: $("art-design").value,
+              specialty: $("art-specialty").value.trim(),
+              subspecialty: $("art-subspecialty").value.trim(),
+              summary: $("art-summary").value.trim(),
+            }).select().single();
+            if (artErr) throw artErr;
+            articleId = data.id;
+            fresh.forEach((r) => { r.article_id = articleId; });
+          }
+
+          const { error } = await WA.client.from("availabilities").insert(fresh);
           if (error) throw error;
 
-          WA.toast("Availability saved — it is now visible to all members.", "success");
+          WA.toast("Availability saved — it is now visible to all members." +
+            (skipped ? " (" + skipped + " duplicate slot" + (skipped > 1 ? "s" : "") + " skipped.)" : ""),
+            "success");
           selectedHours.clear(); selectedDays.clear();
           document.querySelectorAll(".hour-box.selected, .day-chip.selected")
             .forEach((b) => b.classList.remove("selected"));

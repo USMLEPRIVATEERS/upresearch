@@ -128,15 +128,26 @@
           html += '<tr><td class="hour-label">' + WA.hourLabel(h) + "</td>";
           for (let d = 0; d < 7; d++) {
             const g = byKey.get(d + "-" + h);
-            html += '<td class="cal-cell">' + (g
-              ? '<button class="cal-slot ' + slotClass(g) + '" data-slot="' + WA.esc(g.iso) + '">' + slotMark(g) + "</button>"
-              : "") + "</td>";
+            html += g
+              ? '<td class="cal-cell"><button class="cal-slot ' + slotClass(g) + '" data-slot="' + WA.esc(g.iso) + '">' + slotMark(g) + "</button></td>"
+              : '<td class="cal-cell empty" data-day="' + d + '" data-hour="' + h + '" title="Add your availability at this time"></td>';
           }
           html += "</tr>";
         }
         html += "</table></div>";
         $("cal-body").innerHTML = html;
         wireSlotClicks(groups);
+
+        // Clicking an empty cell jumps to the availability form pre-filled
+        // with that date and hour.
+        document.querySelectorAll(".cal-cell.empty").forEach((td) => {
+          td.addEventListener("click", () => {
+            const day = new Date(start.getTime() + Number(td.getAttribute("data-day")) * 86400000);
+            day.setHours(Number(td.getAttribute("data-hour")), 0, 0, 0);
+            if (day < new Date()) return; // past slots aren't bookable
+            window.location.href = WA.slotHref(day);
+          });
+        });
       }
 
       /* ---------- month view ---------- */
@@ -184,7 +195,14 @@
             const day = new Date(btn.getAttribute("data-day"));
             const k = day.getFullYear() + "-" + day.getMonth() + "-" + day.getDate();
             const dayGroups = byDay.get(k) || [];
-            if (!dayGroups.length) return;
+            if (!dayGroups.length) {
+              // Empty day → offer to add availability on that date.
+              if (day >= new Date(new Date().setHours(0, 0, 0, 0))) {
+                window.location.href = "availability.html?date=" +
+                  day.getFullYear() + "-" + WA.pad(day.getMonth() + 1) + "-" + WA.pad(day.getDate());
+              }
+              return;
+            }
             openModal(
               WA.fmtDate(day),
               dayGroups.sort((a, b) => a.date - b.date).map(groupDetail).join("<hr style='border:0;border-top:1px solid var(--border)'/>")
@@ -222,7 +240,7 @@
         }
         if (g.attendees.length)
           html += '<p class="small muted">Attendees: ' + g.attendees.map(personLink).join(", ") + "</p>";
-        html += '<p class="small"><a href="availability.html">Join this slot →</a></p>';
+        html += '<p class="small"><a href="' + WA.esc(WA.slotHref(g.date)) + '">Join this slot →</a></p>';
         return html;
       }
 

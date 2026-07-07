@@ -142,19 +142,82 @@
           ).join("")
         : "No availability posted for the next 30 days.";
 
-      /* ---------- articles ---------- */
-      $("articles").innerHTML = articles.length
-        ? articles.map((a) => {
-            const url = WA.safeUrl(a.article_url);
-            return '<div class="article-block"><h4>' +
-              (url ? '<a href="' + WA.esc(url) + '" target="_blank" rel="noopener noreferrer">📄 ' +
-                WA.esc(a.title) + " ↗</a>" : "📄 " + WA.esc(a.title)) + "</h4>" +
-              '<span class="chip red">' + WA.esc(a.study_design) + "</span>" +
-              '<span class="chip">' + WA.esc(a.specialty) +
-              (a.subspecialty ? " · " + WA.esc(a.subspecialty) : "") + "</span>" +
-              '<p class="small" style="margin:6px 0 0">' + WA.esc(a.summary) + "</p></div>";
-          }).join("")
-        : "No articles submitted yet.";
+      /* ---------- articles (editable on own profile) ---------- */
+      function articleView(a) {
+        const url = WA.safeUrl(a.article_url);
+        return '<div class="article-block" data-art="' + WA.esc(a.id) + '"><h4>' +
+          (url ? '<a href="' + WA.esc(url) + '" target="_blank" rel="noopener noreferrer">📄 ' +
+            WA.esc(a.title) + " ↗</a>" : "📄 " + WA.esc(a.title)) + "</h4>" +
+          '<span class="chip red">' + WA.esc(a.study_design) + "</span>" +
+          '<span class="chip">' + WA.esc(a.specialty) +
+          (a.subspecialty ? " · " + WA.esc(a.subspecialty) : "") + "</span>" +
+          '<p class="small" style="margin:6px 0 0">' + WA.esc(a.summary) + "</p>" +
+          (isOwn ? '<button class="btn sm ghost mt" data-edit-art="' + WA.esc(a.id) + '">✏️ Edit article</button>' : "") +
+          "</div>";
+      }
+
+      function articleEditor(a) {
+        const opts = WA.STUDY_DESIGNS.map((d) =>
+          "<option" + (d === a.study_design ? " selected" : "") + ">" + WA.esc(d) + "</option>").join("");
+        return '<div class="article-block" data-art="' + WA.esc(a.id) + '">' +
+          '<label class="field">Title<input type="text" class="ea-title" value="' + WA.esc(a.title) + '" /></label>' +
+          '<label class="field">Link<input type="url" class="ea-url" value="' + WA.esc(a.article_url) + '" /></label>' +
+          '<div class="grid-2">' +
+          '<label class="field">Study design<select class="ea-design">' + opts + "</select></label>" +
+          '<label class="field">Specialty<input type="text" class="ea-specialty" value="' + WA.esc(a.specialty) + '" /></label>' +
+          "</div>" +
+          '<label class="field">Subspecialty<input type="text" class="ea-subspecialty" value="' + WA.esc(a.subspecialty || "") + '" /></label>' +
+          '<label class="field">What caught your attention<textarea class="ea-summary">' + WA.esc(a.summary) + "</textarea></label>" +
+          '<div style="display:flex; gap:8px">' +
+          '<button class="btn sm" data-save-art="' + WA.esc(a.id) + '">Save</button>' +
+          '<button class="btn sm ghost" data-cancel-art="' + WA.esc(a.id) + '">Cancel</button></div>' +
+          '<div class="form-error ea-error"></div></div>';
+      }
+
+      function renderArticles() {
+        $("articles").innerHTML = articles.length
+          ? articles.map(articleView).join("")
+          : "No articles submitted yet.";
+        if (!isOwn) return;
+        $("articles").querySelectorAll("[data-edit-art]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const a = articles.find((x) => x.id === btn.getAttribute("data-edit-art"));
+            const block = $("articles").querySelector('[data-art="' + a.id + '"]');
+            block.outerHTML = articleEditor(a);
+            wireEditor(a);
+          });
+        });
+      }
+
+      function wireEditor(a) {
+        const block = $("articles").querySelector('[data-art="' + a.id + '"]');
+        block.querySelector("[data-cancel-art]").addEventListener("click", renderArticles);
+        block.querySelector("[data-save-art]").addEventListener("click", async () => {
+          const errBox = block.querySelector(".ea-error");
+          errBox.textContent = "";
+          const updates = {
+            title: block.querySelector(".ea-title").value.trim(),
+            article_url: block.querySelector(".ea-url").value.trim(),
+            study_design: block.querySelector(".ea-design").value,
+            specialty: block.querySelector(".ea-specialty").value.trim(),
+            subspecialty: block.querySelector(".ea-subspecialty").value.trim(),
+            summary: block.querySelector(".ea-summary").value.trim(),
+          };
+          if (!updates.title || !updates.article_url || !updates.specialty || !updates.summary) {
+            errBox.textContent = "Title, link, specialty and summary are required."; return;
+          }
+          if (!WA.safeUrl(updates.article_url)) {
+            errBox.textContent = "The article link must be a valid http(s) URL."; return;
+          }
+          const { error } = await WA.client.from("articles").update(updates).eq("id", a.id);
+          if (error) { errBox.textContent = error.message; return; }
+          Object.assign(a, updates);
+          WA.toast("Article updated.", "success");
+          renderArticles();
+        });
+      }
+
+      renderArticles();
 
       /* ---------- editing (own profile only) ---------- */
       if (isOwn) {

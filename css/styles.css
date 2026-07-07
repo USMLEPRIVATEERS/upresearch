@@ -151,6 +151,11 @@ textarea { resize: vertical; min-height: 90px; }
 .checkbox-row div { font-size: 0.9rem; }
 .checkbox-row strong { color: var(--navy-800); }
 
+.pw-toggle {
+  border: 0; background: none; cursor: pointer; font-family: inherit;
+  color: var(--crimson); font-size: 0.8rem; font-weight: 600; padding: 4px 0 0; float: right;
+}
+
 .form-error { color: var(--crimson); font-size: 0.88rem; margin-top: 8px; min-height: 1.2em; }
 .form-ok { color: var(--teal); font-size: 0.88rem; margin-top: 8px; }
 
@@ -184,6 +189,18 @@ textarea { resize: vertical; min-height: 90px; }
 
 .people-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .people-row .avatar { width: 30px; height: 30px; font-size: 0.7rem; border: 2px solid #fff; }
+
+/* ---------------- hero banner (home) ---------------- */
+
+.hero-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  background: var(--navy-800); color: #fff; border-radius: var(--radius);
+  padding: 14px 18px; margin-bottom: 18px; box-shadow: var(--shadow);
+}
+.hero-banner.live { background: var(--crimson); }
+.hero-banner .btn { background: #fff; color: var(--navy-800) !important; }
+.hero-banner .btn:hover { background: var(--navy-100); }
+.hero-banner.live .btn { color: var(--crimson-dark) !important; }
 
 /* ---------------- session cards (home) ---------------- */
 
@@ -272,6 +289,8 @@ table.cal-week td.hour-label {
   padding: 4px 8px; width: 64px; white-space: nowrap;
 }
 td.cal-cell { height: 34px; padding: 2px; cursor: default; }
+td.cal-cell.empty { cursor: pointer; }
+td.cal-cell.empty:hover { background: var(--navy-100); }
 .cal-slot {
   width: 100%; height: 100%; border: 0; border-radius: 6px; cursor: pointer; font-family: inherit;
   font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 4px;

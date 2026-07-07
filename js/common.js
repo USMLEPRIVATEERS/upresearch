@@ -260,6 +260,66 @@
     return stats;
   };
 
+  /* ---------- calendar export & deep links ---------- */
+
+  const icsStamp = (d) => d.toISOString().replace(/[-:]|\.\d{3}/g, "");
+  const icsEscape = (s) => String(s || "")
+    .replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+
+  WA.gcalLink = function (start, title, details, location) {
+    const end = new Date(start.getTime() + 3600000);
+    const p = new URLSearchParams({
+      action: "TEMPLATE",
+      text: title,
+      dates: icsStamp(start) + "/" + icsStamp(end),
+      details: details || "",
+      location: location || "",
+    });
+    return "https://calendar.google.com/calendar/render?" + p.toString();
+  };
+
+  WA.downloadIcs = function (start, title, details, location) {
+    const end = new Date(start.getTime() + 3600000);
+    const ics = [
+      "BEGIN:VCALENDAR", "VERSION:2.0",
+      "PRODID:-//Ward Academy//Journal Club//EN", "BEGIN:VEVENT",
+      "UID:" + icsStamp(start) + "@wardacademy-journalclub",
+      "DTSTAMP:" + icsStamp(new Date()),
+      "DTSTART:" + icsStamp(start),
+      "DTEND:" + icsStamp(end),
+      "SUMMARY:" + icsEscape(title),
+      "DESCRIPTION:" + icsEscape(details),
+      "LOCATION:" + icsEscape(location),
+      "END:VEVENT", "END:VCALENDAR",
+    ].join("\r\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+    a.download = "journal-club-" + icsStamp(start).slice(0, 8) + ".ics";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
+  };
+
+  /* Deep link into availability.html with the slot pre-selected
+     (uses the viewer's local date/hour). */
+  WA.slotHref = function (date, role) {
+    const p = new URLSearchParams({
+      date: date.getFullYear() + "-" + WA.pad(date.getMonth() + 1) + "-" + WA.pad(date.getDate()),
+      hour: String(date.getHours()),
+    });
+    if (role) p.set("role", role);
+    return "availability.html?" + p.toString();
+  };
+
+  WA.copyText = async function (text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      WA.toast("Copied to clipboard.", "success");
+    } catch (e) {
+      WA.toast("Could not copy — copy it manually.", "error");
+    }
+  };
+
   /* ---------- data access ---------- */
 
   WA.fetchAllAvailabilities = async function () {

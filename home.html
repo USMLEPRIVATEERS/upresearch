@@ -69,9 +69,8 @@
 
       const firstName = (profile.full_name || "").split(" ")[0];
       $("welcome").textContent = firstName ? `Welcome, ${firstName}!` : "Welcome!";
-      $("tz-note").innerHTML = "All times shown in <strong>" + WA.esc(WA.timezoneName()) +
-        "</strong> (" + WA.esc(WA.tzOffsetLabel(WA.getTz())) + ") · " +
-        '<a href="availability.html#timezone">change timezone</a>';
+      // Inline timezone picker — changing it re-renders every time on the page.
+      WA.tzInlineWidget($("tz-note"));
 
       const DAYS_AHEAD = 14;
       const now = new Date();

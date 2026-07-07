@@ -175,6 +175,13 @@ textarea { resize: vertical; min-height: 90px; }
 .checkbox-row div { font-size: 0.9rem; }
 .checkbox-row strong { color: var(--black-800); }
 
+/* compact inline timezone select used in page headers */
+select.tz-inline {
+  display: inline-block; width: auto; max-width: 100%;
+  margin: 0; padding: 4px 26px 4px 10px; font-size: 0.85rem; font-weight: 600;
+  color: var(--black-800); border-radius: 8px; vertical-align: middle;
+}
+
 .pw-toggle {
   border: 0; background: none; cursor: pointer; font-family: inherit;
   color: var(--orange); font-size: 0.8rem; font-weight: 600; padding: 4px 0 0; float: right;

@@ -53,8 +53,8 @@
     (async function () {
       const $ = (id) => document.getElementById(id);
       try { await WA.initAppPage("calendar"); } catch (e) { return; }
-      $("tz-note").textContent = "All times in " + WA.timezoneName() +
-        " (" + WA.tzOffsetLabel(WA.getTz()) + ") — change it on the My Availability page.";
+      // Inline timezone picker — changing it re-renders the whole calendar.
+      WA.tzInlineWidget($("tz-note"));
 
       let rows;
       try { rows = await WA.fetchAllAvailabilities(); }

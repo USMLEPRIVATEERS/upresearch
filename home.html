@@ -36,6 +36,15 @@
         Sessions with a confirmed <strong>Host</strong> are highlighted — the host moderates the
         discussion and posts the meeting link (sometimes only right when the call starts; the
         <em>Join the call</em> button appears here automatically as soon as it’s posted).</p>
+      <div class="filter-bar">
+        <select id="flt-specialty" aria-label="Filter by specialty">
+          <option value="">All specialties</option>
+        </select>
+        <select id="srt-sessions" aria-label="Sort sessions">
+          <option value="date">Soonest first</option>
+          <option value="members">Most members first</option>
+        </select>
+      </div>
       <div id="sessions-list"></div>
     </section>
 
@@ -43,6 +52,12 @@
       <h2>🙋 Slots looking for a presenter</h2>
       <p class="muted small">Members are available at these times, but no one has volunteered to
         present yet. Pick one, attach an article, and make it happen.</p>
+      <div class="filter-bar">
+        <select id="srt-open" aria-label="Sort open slots">
+          <option value="members">Most members first</option>
+          <option value="date">Soonest first</option>
+        </select>
+      </div>
       <div id="open-list"></div>
     </section>
 
@@ -182,6 +197,20 @@
         return html;
       }
 
+      /* One-tap join: adds the viewer as attendee for that exact slot,
+         or shows their current role if they're already in. */
+      function joinArea(g) {
+        const mine = g.all.find((a) => a.user_id === user.id);
+        if (mine) {
+          return '<div style="margin-top:10px">' + WA.roleBadge(mine.role) +
+            ' <span class="small muted">You’re in this slot · <a href="availability.html">manage</a></span></div>';
+        }
+        return '<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">' +
+          '<button class="btn sm join-btn" data-slot="' + WA.esc(g.iso) + '">✋ I’ll attend</button>' +
+          '<a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, "presenter")) + '">📄 Present too</a>' +
+          "</div>";
+      }
+
       function sessionCard(g) {
         const cls = "card session-card has-presenter" + (g.hosts.length ? " has-host" : "");
         let html = '<div class="' + cls + '">';
@@ -189,6 +218,7 @@
           '<span class="session-when">🗓 ' + WA.fmtDateTime(g.date) + "</span>" +
           '<span class="count-pill">👥 ' + g.all.length + " member" + (g.all.length === 1 ? "" : "s") + " in this slot</span>" +
           "</div>";
+        html += joinArea(g);
         if (g.hosts.length) {
           html += '<div class="session-host-line">⭐ Host: ' +
             g.hosts.map(personLink).join(", ") +
@@ -206,6 +236,11 @@
 
       function openCard(g) {
         const most = g.all.length;
+        const mine = g.all.find((a) => a.user_id === user.id);
+        const cta = mine
+          ? WA.roleBadge(mine.role) + ' <span class="small muted">you’re in</span>'
+          : '<button class="btn sm join-btn" data-slot="' + WA.esc(g.iso) + '">✋ I’ll attend</button>' +
+            '<a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, "presenter")) + '">Present here</a>';
         return '<div class="card tight session-card">' +
           '<div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center">' +
           "<div>" +
@@ -214,8 +249,8 @@
           (g.hosts.length ? '⭐ Host available: ' + g.hosts.map(personLink).join(", ") + " · " : "") +
           most + " member" + (most === 1 ? "" : "s") + " available</span>" +
           "</div>" +
-          '<div style="display:flex; align-items:center; gap:10px">' + peopleAvatars(g.all) +
-          '<a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, "presenter")) + '">Present here</a></div>' +
+          '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">' + peopleAvatars(g.all) +
+          cta + "</div>" +
           "</div></div>";
       }
 
@@ -298,19 +333,76 @@
         document.querySelectorAll(".copy-link").forEach((b) => {
           b.addEventListener("click", () => WA.copyText(b.getAttribute("data-url")));
         });
+        document.querySelectorAll(".join-btn").forEach((b) => {
+          b.addEventListener("click", async () => {
+            b.disabled = true;
+            const iso = b.getAttribute("data-slot");
+            const { error } = await WA.client.from("availabilities").insert({
+              user_id: user.id, role: "attendee", kind: "single",
+              slot_start: iso, open_ended: false, expires_at: null, article_id: null,
+            });
+            if (error) {
+              WA.toast("Could not join: " + error.message, "error");
+              b.disabled = false;
+              return;
+            }
+            // Reflect it locally so the card flips to "you're in" without a reload.
+            const g = groups.find((x) => x.iso === iso);
+            if (g) {
+              const me = { user_id: user.id, role: "attendee",
+                profile: { id: user.id, full_name: profile.full_name, specialty: profile.specialty } };
+              g.attendees.push(me);
+              g.all.push(me);
+            }
+            WA.toast("You’re in! Added as attendee for " +
+              (g ? WA.fmtDateTime(g.date) : "this slot") + ".", "success");
+            renderSections();
+            renderHero();
+          });
+        });
         wireMeetingForms();
+      }
+
+      /* ---------- filters & sorting ---------- */
+
+      // Specialty filter options come from the upcoming sessions' articles.
+      const specialties = [...new Set(sessions.flatMap((g) =>
+        g.presenters.filter((p) => p.article).map((p) => p.article.specialty)))].sort();
+      $("flt-specialty").innerHTML = '<option value="">All specialties</option>' +
+        specialties.map((s) => '<option value="' + WA.esc(s) + '">' + WA.esc(s) + "</option>").join("");
+      ["flt-specialty", "srt-sessions", "srt-open"].forEach((id) =>
+        $(id).addEventListener("change", renderSections));
+
+      function visibleSessions() {
+        let list = sessions.slice();
+        const sp = $("flt-specialty").value;
+        if (sp) list = list.filter((g) => g.presenters.some((p) => p.article && p.article.specialty === sp));
+        if ($("srt-sessions").value === "members") {
+          list.sort((a, b) => (b.all.length - a.all.length) || (a.date - b.date));
+        } else {
+          list.sort((a, b) => a.date - b.date);
+        }
+        return list;
+      }
+
+      function visibleOpen() {
+        const list = open.slice();
+        if ($("srt-open").value === "date") list.sort((a, b) => a.date - b.date);
+        else list.sort((a, b) => (b.all.length - a.all.length) || (a.date - b.date));
+        return list;
       }
 
       function renderSections() {
         if (sessions.length) {
           $("sessions-section").classList.remove("hidden");
-          $("sessions-list").innerHTML = sessions.map(sessionCard).join("");
+          const list = visibleSessions();
+          $("sessions-list").innerHTML = list.length
+            ? list.map(sessionCard).join("")
+            : '<div class="empty-state"><p style="margin:0">No upcoming sessions in this specialty — clear the filter to see all.</p></div>';
         }
         if (open.length) {
           $("open-section").classList.remove("hidden");
-          // Most-populated slots first, then soonest.
-          open.sort((a, b) => (b.all.length - a.all.length) || (a.date - b.date));
-          $("open-list").innerHTML = open.slice(0, 12).map(openCard).join("");
+          $("open-list").innerHTML = visibleOpen().slice(0, 12).map(openCard).join("");
         }
         if (!sessions.length && !open.length) $("empty-all").classList.remove("hidden");
         wireCards();

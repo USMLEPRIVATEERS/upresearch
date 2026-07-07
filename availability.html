@@ -85,6 +85,8 @@
 
       <p class="small mt" style="margin-bottom:2px"><strong>1-hour time slots</strong>
         (in your selected timezone — pick one or more)</p>
+      <p class="small muted" id="count-hint" style="margin:0 0 2px">👥 = members already available
+        at that time — join those slots to make a session happen.</p>
       <div class="hour-grid" id="hour-grid"></div>
 
       <div class="checkbox-row" id="open-ended-row">
@@ -131,6 +133,7 @@
         WA.setTz($("tz-select").value);
         paintTzNote();
         setDateMin();
+        renderHourGrid(); // occupancy badges shift with the timezone
         renderMyList(); // re-display existing slots in the new timezone
         WA.toast("Timezone updated — all times now shown in " + WA.timezoneName() + ".", "success");
       });
@@ -166,6 +169,10 @@
         $("recurring-fields").classList.toggle("hidden", mode !== "recurring");
         // The >1 month commitment only makes sense for recurring patterns.
         $("open-ended-row").classList.toggle("hidden", mode !== "recurring");
+        $("count-hint").textContent = mode === "recurring"
+          ? "👥 = members already available at that time on the next occurrence of your selected day(s) — busiest day shown."
+          : "👥 = members already available at that time — join those slots to make a session happen.";
+        renderHourGrid();
       });
       $("open-ended-row").classList.add("hidden"); // start in single mode
 
@@ -178,11 +185,67 @@
         const d = Number(btn.getAttribute("data-day"));
         if (selectedDays.has(d)) selectedDays.delete(d); else selectedDays.add(d);
         btn.classList.toggle("selected", selectedDays.has(d));
+        renderHourGrid();
       });
+      $("single-date").addEventListener("change", renderHourGrid);
+
+      /* ---------- hour grid with live occupancy counts ----------
+         Each 1-hour box shows how many OTHER members are already
+         available at that time on the chosen day(s):
+         👥N = members, ⭐ = a host is there, 📄 = a presenter is there. */
 
       const selectedHours = new Set();
-      $("hour-grid").innerHTML = Array.from({ length: 24 }, (_, h) =>
-        '<button type="button" class="hour-box" data-hour="' + h + '">' + WA.hourRange(h) + "</button>").join("");
+      let allRows = []; // everyone's availability, loaded async below
+
+      function hourCounts() {
+        if (!allRows.length) return {};
+        const others = allRows.filter((r) => r.user_id !== user.id);
+        const dayList = []; // {y, m, d} in the member's timezone
+        if (mode === "single") {
+          if (!$("single-date").value) return {};
+          const [y, m, d] = $("single-date").value.split("-").map(Number);
+          dayList.push({ y, m: m - 1, d });
+        } else {
+          // next occurrence of each selected weekday
+          const p = WA.zonedParts(new Date());
+          for (const wd of selectedDays) {
+            let ms = Date.UTC(p.y, p.m, p.d);
+            while (new Date(ms).getUTCDay() !== wd) ms += 86400000;
+            const c = new Date(ms);
+            dayList.push({ y: c.getUTCFullYear(), m: c.getUTCMonth(), d: c.getUTCDate() });
+          }
+        }
+        const res = {};
+        for (const day of dayList) {
+          const start = WA.zonedToUtc(day.y, day.m, day.d, 0);
+          const end = new Date(WA.zonedToUtc(day.y, day.m, day.d, 23).getTime() + 3599999);
+          const groups = WA.groupOccurrences(WA.expandAvailabilities(others, start, end));
+          for (const g of groups) {
+            const h = WA.zonedParts(g.date).hour;
+            const cur = res[h] || { n: 0, host: false, pres: false };
+            if (g.all.length > cur.n) cur.n = g.all.length; // busiest of the selected days
+            cur.host = cur.host || g.hosts.length > 0;
+            cur.pres = cur.pres || g.presenters.length > 0;
+            res[h] = cur;
+          }
+        }
+        return res;
+      }
+
+      function renderHourGrid() {
+        const counts = hourCounts();
+        $("hour-grid").innerHTML = Array.from({ length: 24 }, (_, h) => {
+          const c = counts[h];
+          const badge = c && c.n
+            ? '<span class="hour-count">' + (c.host ? "⭐" : "") + (c.pres ? "📄" : "") +
+              "👥" + c.n + "</span>"
+            : "";
+          return '<button type="button" class="hour-box' + (selectedHours.has(h) ? " selected" : "") +
+            '" data-hour="' + h + '">' + WA.hourRange(h) + badge + "</button>";
+        }).join("");
+      }
+      renderHourGrid();
+
       $("hour-grid").addEventListener("click", (e) => {
         const btn = e.target.closest(".hour-box");
         if (!btn) return;
@@ -190,6 +253,11 @@
         if (selectedHours.has(h)) selectedHours.delete(h); else selectedHours.add(h);
         btn.classList.toggle("selected", selectedHours.has(h));
       });
+
+      // Load everyone's availability for the occupancy badges.
+      WA.fetchAllAvailabilities()
+        .then((rows) => { allRows = rows; renderHourGrid(); })
+        .catch(() => { /* counts are decorative — page works without them */ });
 
       function setDateMin() {
         const p = WA.zonedParts(new Date());

@@ -76,7 +76,7 @@ That’s it. Share the URL with the club.
 
 - Availability is stored as **1-hour slots**, either a **single date+hour** or a **weekly recurrence** (e.g. every Tuesday and Thursday at 20:00).
 - Recurring availability **expires after 1 month by default**. Checking **“I will keep this availability for more than a month”** makes it open-ended — a standing commitment until the member edits or removes it (there is also a one-click *Renew +1 month* button).
-- All times are stored in **UTC** and displayed in each viewer’s **local timezone**, so an international group sees correct local times automatically. (Caveat: for members in countries with daylight saving time, a recurring slot keeps its UTC time, so its local time can shift by one hour when clocks change.)
+- All times are stored in **UTC** and displayed in each member’s **timezone**. The timezone is auto-detected from the device and can be changed manually (selector on the *My Availability* page, with Brazil / US / Europe presets); the choice is remembered per device. DST in the US/Europe is handled by the conversion. (Caveat: a *recurring* slot keeps its UTC time, so its displayed hour can shift by one hour when clocks change.)
 - **Participation stats** (times as Host / Presenter / Attendee shown on profiles and the member directory) are computed from past slots that had at least one presenter — i.e., slots where a session actually happened.
 - The **meeting link** is attached to a specific slot by a host of that slot. Everyone sees a *Join the call* button on the home page as soon as it’s posted.
 
@@ -98,6 +98,8 @@ That’s it. Share the URL with the club.
 - **Duplicate protection** — signing up twice for the same slot with the same role is detected and skipped.
 - **Editable articles** — presenters can edit their article details from their profile.
 - **Copy meeting link** button and show/hide password toggles.
+- **Timezone selector** — auto-detected, manually overridable (Brazil / US / Europe presets), applied to every time shown on the site including the calendar grid.
+- **Phone-first design** — optimized for mobile Safari/Chrome: 16px inputs (no iOS zoom-on-focus), large touch targets, safe-area insets, `dvh` viewport fix, no tap-highlight flash, `apple-touch-icon`, and layouts tuned down to 320px-wide screens.
 
 ## Known limitations / future ideas
 

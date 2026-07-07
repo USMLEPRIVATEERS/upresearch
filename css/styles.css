@@ -27,7 +27,10 @@
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent; /* no gray flash on tap (iOS) */
+}
 body {
   margin: 0;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -36,6 +39,7 @@ body {
   color: var(--ink);
   font-size: 15.5px;
   line-height: 1.55;
+  touch-action: manipulation; /* kills the 300ms double-tap-to-zoom delay */
 }
 
 h1, h2, h3, h4 { color: var(--black-800); line-height: 1.25; margin: 0 0 0.5rem; }
@@ -154,6 +158,13 @@ input[type="date"], select, textarea {
   width: 100%; margin-top: 6px; padding: 10px 12px; border: 1.5px solid var(--border);
   border-radius: 10px; font-size: 0.95rem; font-family: inherit; background: #fff; color: var(--ink);
 }
+/* iOS Safari adds inner shadows/rounded styling of its own — normalize.
+   (select keeps its native arrow, so appearance stays default there.) */
+input[type="text"], input[type="email"], input[type="password"], input[type="url"],
+input[type="date"], textarea {
+  -webkit-appearance: none; appearance: none;
+}
+input[type="date"] { min-height: 44px; } /* iOS renders date inputs collapsed otherwise */
 input:focus, select:focus, textarea:focus {
   outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(191, 87, 0, 0.15);
 }
@@ -340,8 +351,11 @@ td.cal-cell.empty:hover { background: var(--orange-soft); }
 /* ---------------- modal ---------------- */
 
 .modal-backdrop {
-  position: fixed; inset: 0; background: rgba(18, 18, 18, 0.6); z-index: 100;
+  /* top/right/bottom/left instead of `inset` — older iOS Safari lacks it */
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+  background: rgba(18, 18, 18, 0.6); z-index: 100;
   display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .modal {
   background: #fff; border-radius: var(--radius); max-width: 620px; width: 100%;
@@ -364,7 +378,10 @@ td.cal-cell.empty:hover { background: var(--orange-soft); }
 
 /* ---------------- auth pages ---------------- */
 
-.auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 30px 16px;
+.auth-wrap {
+  /* 100vh is broken by the iOS Safari address bar; dvh fixes it where supported */
+  min-height: 100vh; min-height: 100dvh;
+  display: flex; align-items: center; justify-content: center; padding: 30px 16px;
   background: linear-gradient(160deg, #0d0d0d 0%, var(--black-800) 55%, #3a2113 100%); }
 .auth-card { background: #fff; border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
   width: 100%; max-width: 440px; padding: 32px 34px; }
@@ -381,7 +398,10 @@ td.cal-cell.empty:hover { background: var(--orange-soft); }
 
 /* ---------------- toasts ---------------- */
 
-#wa-toasts { position: fixed; bottom: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+#wa-toasts {
+  position: fixed; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 8px;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px)); /* clear the iPhone home bar */
+}
 .toast {
   background: var(--black-800); color: #fff; padding: 12px 18px; border-radius: 10px;
   box-shadow: 0 6px 24px rgba(0,0,0,0.25); font-size: 0.9rem; max-width: 340px;
@@ -394,5 +414,61 @@ td.cal-cell.empty:hover { background: var(--orange-soft); }
 /* ---------------- footer ---------------- */
 
 footer.site {
-  text-align: center; color: var(--muted); font-size: 0.8rem; padding: 26px 16px 40px;
+  text-align: center; color: var(--muted); font-size: 0.8rem;
+  padding: 26px 16px calc(40px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ---------------- phone-size refinements ----------------
+   Most members use the site on their phones (often iPhone/Safari). */
+
+@media (max-width: 640px) {
+  /* iOS Safari auto-zooms into any focused field with font-size < 16px —
+     keeping inputs at exactly 16px prevents the jarring zoom. */
+  input[type="text"], input[type="email"], input[type="password"], input[type="url"],
+  input[type="date"], select, textarea { font-size: 16px; }
+
+  h1 { font-size: 1.45rem; }
+  main.container { padding-top: 20px; padding-bottom: 48px; }
+  .container { padding: 0 14px; }
+  .card { padding: 16px 14px; }
+  .auth-card { padding: 26px 20px; }
+
+  /* Bigger touch targets */
+  .btn { padding: 12px 18px; }
+  .btn.sm { padding: 9px 14px; }
+  .nav-links a { padding: 13px 14px; font-size: 1rem; }
+  .hour-box { padding: 11px 4px; }
+  .day-chip { padding: 10px 14px; }
+
+  .page-head { align-items: stretch; flex-direction: column; }
+  .page-head > div:last-child .btn { flex: 1; }
+
+  .hero-banner { flex-direction: column; align-items: stretch; text-align: center; }
+  .hero-banner .btn { width: 100%; }
+
+  .hour-grid { grid-template-columns: repeat(3, 1fr); }
+
+  .cal-month { gap: 3px; }
+  .cal-day { min-height: 58px; padding: 4px 5px; font-size: 0.72rem; border-radius: 7px; }
+  .cal-day .dot-line { font-size: 0.58rem; padding: 1px 3px; }
+  .cal-toolbar h2 { font-size: 0.95rem; width: 100%; order: 10; margin: 6px 0 0; }
+
+  .modal-backdrop { padding: 14px 8px; }
+  .modal { padding: 18px 16px; }
+
+  .my-avail-item { flex-direction: column; }
+  .my-avail-item > div:last-child { align-self: flex-end; }
+
+  #wa-toasts { left: 14px; right: 14px; }
+  .toast { max-width: none; }
+
+  .stat-tiles { gap: 8px; }
+  .stat-tile { padding: 10px 6px; }
+  .stat-tile .num { font-size: 1.3rem; }
+  .stat-tile .lbl { font-size: 0.62rem; }
+}
+
+@media (max-width: 380px) {
+  .hour-grid { grid-template-columns: repeat(2, 1fr); }
+  .role-options { grid-template-columns: 1fr; }
 }

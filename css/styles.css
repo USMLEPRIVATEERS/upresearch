@@ -298,6 +298,21 @@ select.tz-inline {
 }
 .hour-box:hover { border-color: var(--orange); }
 .hour-box.selected { background: var(--orange); border-color: var(--orange); color: #fff; }
+.hour-box .hour-count {
+  display: block; font-size: 0.68rem; font-weight: 700; margin-top: 2px;
+  color: var(--orange-dark);
+}
+.hour-box.selected .hour-count { color: #fff; }
+
+/* filter/sort toolbar (home) */
+.filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
+.filter-bar select {
+  width: auto; margin: 0; padding: 7px 28px 7px 10px; font-size: 0.85rem; font-weight: 600;
+  border-radius: 8px; color: var(--black-800);
+}
+@media (max-width: 640px) {
+  .filter-bar select { flex: 1; min-width: 0; }
+}
 
 .my-avail-item {
   display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;

@@ -98,7 +98,9 @@ That’s it. Share the URL with the club.
 ## Quality-of-life features
 
 - **Live-updating meeting link** — the home page re-checks every 60 seconds, so the *Join the call* button appears without refreshing when the host posts the link at the last minute. A **“next session / live now” banner** with a countdown sits at the top of the home page.
-- **One-click slot joining** — “Present here”, “volunteer to host”, calendar slot details, and even *empty* calendar cells deep-link into the availability form with the date, hour and role pre-selected.
+- **One-click slot joining** — “Present here”, “volunteer to host”, calendar slot details, and even *empty* calendar cells deep-link into the availability form with the date, hour and role pre-selected. Session and open-slot cards on the home page have a **one-tap “I’ll attend”** button that registers you as attendee instantly.
+- **Occupancy hints while scheduling** — when adding availability, each 1-hour box shows how many members are already available at that time on the chosen day(s) (👥N, plus ⭐/📄 when a host/presenter is there).
+- **Home filters & sorting** — filter upcoming sessions by specialty and sort by date or member count; open slots sortable by most members or soonest.
 - **Add to calendar** — every session offers a Google Calendar link and an `.ics` download (works with Apple/Outlook), including the article and meeting link.
 - **Duplicate protection** — signing up twice for the same slot with the same role is detected and skipped.
 - **Editable articles** — presenters can edit their article details from their profile.

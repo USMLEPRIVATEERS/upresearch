@@ -44,12 +44,13 @@ In the Supabase dashboard, under **Authentication**:
 1. **Sign In / Up → Email** should be enabled (it is by default).
    - *Confirm email*: if left **on**, new members must click a confirmation link before signing in (recommended). If you want frictionless signup, turn it off.
 2. **URL Configuration**:
-   - **Site URL**: your GitHub Pages URL, e.g. `https://YOUR-USER.github.io/upresearch/`
-   - **Redirect URLs**: add
-     - `https://YOUR-USER.github.io/upresearch/home.html`
-     - `https://YOUR-USER.github.io/upresearch/reset-password.html`
+   - **Site URL**: the production URL, `https://journalward.vercel.app`
+   - **Redirect URLs**: add `https://journalward.vercel.app/*`
+     (and, if you also use GitHub Pages, `https://YOUR-USER.github.io/upresearch/*`)
 
    These make the confirmation and password-reset email links land back on the site.
+   Any URL not on this list is silently replaced by the Site URL, so a wrong list
+   is why reset/confirmation emails would redirect to the wrong place.
 
 ### 3. Connect the site to Supabase
 
@@ -64,9 +65,12 @@ window.WA_CONFIG = {
 
 > The anon key is **safe to commit publicly** — every table is protected by Row Level Security, so the key can only do what the policies allow (signed-in members read the club’s data and write only their own rows).
 
-### 4. Enable GitHub Pages
+### 4. Hosting
 
-Repository **Settings → Pages → Build and deployment**: Source = *Deploy from a branch*, Branch = `main`, folder = `/ (root)`. Your site goes live at `https://YOUR-USER.github.io/upresearch/`.
+The site is plain static files, so it runs anywhere:
+
+- **Vercel (current production)**: the repo is connected to the Vercel project `journalward`; every merge to `main` deploys automatically to `https://journalward.vercel.app` (PR branches get preview URLs). Vercel serves clean URLs, so `/home.html` redirects to `/home` — both work.
+- **GitHub Pages (alternative)**: repository **Settings → Pages** → Source = *Deploy from a branch*, Branch = `main`, folder = `/ (root)` → live at `https://YOUR-USER.github.io/upresearch/`.
 
 That’s it. Share the URL with the club.
 

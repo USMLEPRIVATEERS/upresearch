@@ -71,21 +71,148 @@
   WA.hourLabel = (h) => WA.pad(h) + ":00";
   WA.hourRange = (h) => WA.pad(h) + ":00–" + WA.pad((h + 1) % 24) + ":00";
 
-  WA.fmtDate = function (d) {
-    return WA.WEEKDAYS_SHORT[d.getDay()] + ", " + WA.MONTHS[d.getMonth()].slice(0, 3) +
-      " " + d.getDate() + ", " + d.getFullYear();
-  };
-  WA.fmtDateTime = function (d) {
-    return WA.fmtDate(d) + " · " + WA.hourRange(d.getHours());
+  /* ---------- timezone handling ----------
+     Everything is stored in UTC. Display and slot entry use the
+     member's timezone: auto-detected from the device, but the
+     member can override it (persisted per device in localStorage).
+     All conversions go through Intl.DateTimeFormat so DST is
+     handled correctly for US/EU members. */
+
+  WA.isValidTz = function (tz) {
+    try { new Intl.DateTimeFormat("en-US", { timeZone: tz }); return true; }
+    catch (e) { return false; }
   };
 
-  WA.timezoneName = function () {
+  WA.detectTz = function () {
     try {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone || "your local time";
-    } catch (e) {
-      return "your local time";
-    }
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz && WA.isValidTz(tz)) return tz;
+    } catch (e) { /* fallthrough */ }
+    return "UTC";
   };
+
+  WA._tz = null;
+  WA.getTz = function () {
+    if (WA._tz) return WA._tz;
+    try {
+      const saved = localStorage.getItem("wa_tz");
+      if (saved && WA.isValidTz(saved)) { WA._tz = saved; return saved; }
+    } catch (e) { /* private mode etc. */ }
+    WA._tz = WA.detectTz();
+    return WA._tz;
+  };
+
+  WA.setTz = function (tz) {
+    if (!WA.isValidTz(tz)) return;
+    WA._tz = tz;
+    try { localStorage.setItem("wa_tz", tz); } catch (e) { /* ignore */ }
+  };
+
+  const tzFmtCache = {};
+  function tzFmt(tz) {
+    if (!tzFmtCache[tz]) {
+      tzFmtCache[tz] = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz, year: "numeric", month: "numeric", day: "numeric",
+        hour: "numeric", minute: "numeric", hourCycle: "h23", weekday: "short",
+      });
+    }
+    return tzFmtCache[tz];
+  }
+  const WD_MAP = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
+  /* Calendar components of an instant, as seen in the given timezone. */
+  WA.zonedParts = function (date, tz) {
+    tz = tz || WA.getTz();
+    const parts = {};
+    for (const p of tzFmt(tz).formatToParts(date)) parts[p.type] = p.value;
+    let hour = Number(parts.hour);
+    if (hour === 24) hour = 0; // some engines report midnight as 24
+    return {
+      y: Number(parts.year), m: Number(parts.month) - 1, d: Number(parts.day),
+      hour, minute: Number(parts.minute), weekday: WD_MAP[parts.weekday],
+    };
+  };
+
+  /* The UTC instant at which the given timezone's wall clock shows
+     y-m-d hour:00. Two-pass correction handles DST transitions. */
+  WA.zonedToUtc = function (y, m, d, hour, tz) {
+    tz = tz || WA.getTz();
+    const target = Date.UTC(y, m, d, hour);
+    let t = target;
+    for (let i = 0; i < 2; i++) {
+      const p = WA.zonedParts(new Date(t), tz);
+      const shown = Date.UTC(p.y, p.m, p.d, p.hour, p.minute);
+      t += target - shown;
+    }
+    return new Date(t);
+  };
+
+  WA.tzOffsetLabel = function (tz) {
+    const now = new Date();
+    const p = WA.zonedParts(now, tz);
+    const shown = Date.UTC(p.y, p.m, p.d, p.hour, p.minute);
+    const utcNow = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),
+      now.getUTCHours(), now.getUTCMinutes());
+    const off = Math.round((shown - utcNow) / 60000);
+    const sign = off < 0 ? "-" : "+";
+    const abs = Math.abs(off);
+    return "GMT" + sign + WA.pad(Math.floor(abs / 60)) + ":" + WA.pad(abs % 60);
+  };
+
+  WA.TZ_GROUPS = [
+    ["Brazil", ["America/Sao_Paulo", "America/Bahia", "America/Fortaleza", "America/Recife",
+      "America/Belem", "America/Manaus", "America/Cuiaba", "America/Campo_Grande",
+      "America/Boa_Vista", "America/Rio_Branco", "America/Noronha"]],
+    ["United States & Canada", ["America/New_York", "America/Chicago", "America/Denver",
+      "America/Phoenix", "America/Los_Angeles", "America/Anchorage", "Pacific/Honolulu",
+      "America/Toronto", "America/Vancouver"]],
+    ["Europe", ["Europe/Lisbon", "Europe/London", "Europe/Dublin", "Europe/Madrid",
+      "Europe/Paris", "Europe/Amsterdam", "Europe/Brussels", "Europe/Berlin",
+      "Europe/Zurich", "Europe/Rome", "Europe/Vienna", "Europe/Warsaw", "Europe/Athens"]],
+    ["Other", ["UTC", "America/Mexico_City", "America/Bogota", "America/Lima",
+      "America/Santiago", "America/Argentina/Buenos_Aires", "Asia/Dubai", "Asia/Jerusalem",
+      "Asia/Kolkata", "Asia/Singapore", "Asia/Tokyo", "Australia/Sydney"]],
+  ];
+
+  WA.tzSelectHtml = function (id) {
+    const current = WA.getTz();
+    const detected = WA.detectTz();
+    const listed = new Set(WA.TZ_GROUPS.flatMap((g) => g[1]));
+    let html = '<select id="' + id + '">';
+    html += '<optgroup label="Detected on this device">' +
+      '<option value="' + WA.esc(detected) + '"' + (current === detected ? " selected" : "") + ">" +
+      WA.esc(detected.replace(/_/g, " ")) + " (" + WA.tzOffsetLabel(detected) + ")</option></optgroup>";
+    if (!listed.has(current) && current !== detected) {
+      html += '<option value="' + WA.esc(current) + '" selected>' +
+        WA.esc(current.replace(/_/g, " ")) + " (" + WA.tzOffsetLabel(current) + ")</option>";
+    }
+    for (const [label, zones] of WA.TZ_GROUPS) {
+      html += '<optgroup label="' + WA.esc(label) + '">';
+      for (const z of zones) {
+        if (z === detected) continue;
+        html += '<option value="' + WA.esc(z) + '"' +
+          (current === z && current !== detected ? " selected" : "") + ">" +
+          WA.esc(z.replace(/_/g, " ")) + " (" + WA.tzOffsetLabel(z) + ")</option>";
+      }
+      html += "</optgroup>";
+    }
+    html += "</select>";
+    return html;
+  };
+
+  /* ---------- date formatting (always in the active timezone) ---------- */
+
+  WA.fmtComps = function (p) {
+    return WA.WEEKDAYS_SHORT[p.weekday] + ", " + WA.MONTHS[p.m].slice(0, 3) +
+      " " + p.d + ", " + p.y;
+  };
+  WA.fmtDate = function (d) { return WA.fmtComps(WA.zonedParts(d)); };
+  WA.fmtDateTime = function (d) {
+    const p = WA.zonedParts(d);
+    return WA.fmtComps(p) + " · " + WA.hourRange(p.hour);
+  };
+
+  WA.timezoneName = function () { return WA.getTz().replace(/_/g, " "); };
 
   WA.toast = function (msg, kind) {
     let box = document.getElementById("wa-toasts");
@@ -150,24 +277,30 @@
   /* ---------- recurring-slot time math ----------
      Recurring availabilities are stored as (weekday_utc, hour_utc)
      and single ones as a UTC timestamp; everything is converted to
-     the viewer's local timezone for display. Note: for members in
-     countries with daylight saving time, recurring slots keep their
-     UTC time, so the local time may shift by 1h across DST changes. */
+     the member's chosen timezone for display. Note: recurring slots
+     keep their UTC time, so for members in countries with daylight
+     saving time the displayed hour may shift by 1h across DST changes. */
 
-  WA.localRecurringToUtc = function (weekdayLocal, hourLocal) {
-    const d = new Date();
-    d.setHours(hourLocal, 0, 0, 0);
-    while (d.getDay() !== weekdayLocal) d.setDate(d.getDate() + 1);
-    return { weekday_utc: d.getUTCDay(), hour_utc: d.getUTCHours() };
+  WA.localRecurringToUtc = function (weekdayLocal, hourLocal, tz) {
+    tz = tz || WA.getTz();
+    // Find the next date (in the member's timezone) with that weekday,
+    // then read what UTC weekday/hour that wall-clock time lands on.
+    const p = WA.zonedParts(new Date(), tz);
+    let dayMs = Date.UTC(p.y, p.m, p.d);
+    while (new Date(dayMs).getUTCDay() !== weekdayLocal) dayMs += 86400000;
+    const c = new Date(dayMs);
+    const utc = WA.zonedToUtc(c.getUTCFullYear(), c.getUTCMonth(), c.getUTCDate(), hourLocal, tz);
+    return { weekday_utc: utc.getUTCDay(), hour_utc: utc.getUTCHours() };
   };
 
-  WA.utcRecurringToLocal = function (weekdayUtc, hourUtc) {
+  WA.utcRecurringToLocal = function (weekdayUtc, hourUtc, tz) {
     const now = new Date();
     const d = new Date(Date.UTC(
       now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hourUtc, 0, 0, 0
     ));
     while (d.getUTCDay() !== weekdayUtc) d.setUTCDate(d.getUTCDate() + 1);
-    return { weekday: d.getDay(), hour: d.getHours() };
+    const p = WA.zonedParts(d, tz);
+    return { weekday: p.weekday, hour: p.hour };
   };
 
   /* ---------- occurrence expansion ----------
@@ -252,7 +385,9 @@
       if (g.date > now) continue;
       if (!g.presenters.length) continue; // no presenter → no session happened
       for (const a of g.all) {
-        const s = (stats[a.user_id] ||= { host: 0, presenter: 0, attendee: 0, sessions: 0 });
+        // (no logical-assignment operator here — older iOS Safari lacks it)
+        if (!stats[a.user_id]) stats[a.user_id] = { host: 0, presenter: 0, attendee: 0, sessions: 0 };
+        const s = stats[a.user_id];
         s[a.role] += 1;
         s.sessions += 1;
       }
@@ -301,11 +436,12 @@
   };
 
   /* Deep link into availability.html with the slot pre-selected
-     (uses the viewer's local date/hour). */
+     (date/hour expressed in the member's active timezone). */
   WA.slotHref = function (date, role) {
+    const z = WA.zonedParts(date);
     const p = new URLSearchParams({
-      date: date.getFullYear() + "-" + WA.pad(date.getMonth() + 1) + "-" + WA.pad(date.getDate()),
-      hour: String(date.getHours()),
+      date: z.y + "-" + WA.pad(z.m + 1) + "-" + WA.pad(z.d),
+      hour: String(z.hour),
     });
     if (role) p.set("role", role);
     return "availability.html?" + p.toString();

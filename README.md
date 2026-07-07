@@ -44,12 +44,13 @@ In the Supabase dashboard, under **Authentication**:
 1. **Sign In / Up → Email** should be enabled (it is by default).
    - *Confirm email*: if left **on**, new members must click a confirmation link before signing in (recommended). If you want frictionless signup, turn it off.
 2. **URL Configuration**:
-   - **Site URL**: your GitHub Pages URL, e.g. `https://YOUR-USER.github.io/upresearch/`
-   - **Redirect URLs**: add
-     - `https://YOUR-USER.github.io/upresearch/home.html`
-     - `https://YOUR-USER.github.io/upresearch/reset-password.html`
+   - **Site URL**: the production URL, `https://journalward.vercel.app`
+   - **Redirect URLs**: add `https://journalward.vercel.app/*`
+     (and, if you also use GitHub Pages, `https://YOUR-USER.github.io/upresearch/*`)
 
    These make the confirmation and password-reset email links land back on the site.
+   Any URL not on this list is silently replaced by the Site URL, so a wrong list
+   is why reset/confirmation emails would redirect to the wrong place.
 
 ### 3. Connect the site to Supabase
 
@@ -64,9 +65,12 @@ window.WA_CONFIG = {
 
 > The anon key is **safe to commit publicly** — every table is protected by Row Level Security, so the key can only do what the policies allow (signed-in members read the club’s data and write only their own rows).
 
-### 4. Enable GitHub Pages
+### 4. Hosting
 
-Repository **Settings → Pages → Build and deployment**: Source = *Deploy from a branch*, Branch = `main`, folder = `/ (root)`. Your site goes live at `https://YOUR-USER.github.io/upresearch/`.
+The site is plain static files, so it runs anywhere:
+
+- **Vercel (current production)**: the repo is connected to the Vercel project `journalward`; every merge to `main` deploys automatically to `https://journalward.vercel.app` (PR branches get preview URLs). Vercel serves clean URLs, so `/home.html` redirects to `/home` — both work.
+- **GitHub Pages (alternative)**: repository **Settings → Pages** → Source = *Deploy from a branch*, Branch = `main`, folder = `/ (root)` → live at `https://YOUR-USER.github.io/upresearch/`.
 
 That’s it. Share the URL with the club.
 
@@ -76,7 +80,7 @@ That’s it. Share the URL with the club.
 
 - Availability is stored as **1-hour slots**, either a **single date+hour** or a **weekly recurrence** (e.g. every Tuesday and Thursday at 20:00).
 - Recurring availability **expires after 1 month by default**. Checking **“I will keep this availability for more than a month”** makes it open-ended — a standing commitment until the member edits or removes it (there is also a one-click *Renew +1 month* button).
-- All times are stored in **UTC** and displayed in each viewer’s **local timezone**, so an international group sees correct local times automatically. (Caveat: for members in countries with daylight saving time, a recurring slot keeps its UTC time, so its local time can shift by one hour when clocks change.)
+- All times are stored in **UTC** and displayed in each member’s **timezone**. The timezone is auto-detected from the device and can be changed manually (selector on the *My Availability* page, with Brazil / US / Europe presets); the choice is remembered per device. DST in the US/Europe is handled by the conversion. (Caveat: a *recurring* slot keeps its UTC time, so its displayed hour can shift by one hour when clocks change.)
 - **Participation stats** (times as Host / Presenter / Attendee shown on profiles and the member directory) are computed from past slots that had at least one presenter — i.e., slots where a session actually happened.
 - The **meeting link** is attached to a specific slot by a host of that slot. Everyone sees a *Join the call* button on the home page as soon as it’s posted.
 
@@ -98,6 +102,8 @@ That’s it. Share the URL with the club.
 - **Duplicate protection** — signing up twice for the same slot with the same role is detected and skipped.
 - **Editable articles** — presenters can edit their article details from their profile.
 - **Copy meeting link** button and show/hide password toggles.
+- **Timezone selector** — auto-detected, manually overridable (Brazil / US / Europe presets), applied to every time shown on the site including the calendar grid.
+- **Phone-first design** — optimized for mobile Safari/Chrome: 16px inputs (no iOS zoom-on-focus), large touch targets, safe-area insets, `dvh` viewport fix, no tap-highlight flash, `apple-touch-icon`, and layouts tuned down to 320px-wide screens.
 
 ## Known limitations / future ideas
 

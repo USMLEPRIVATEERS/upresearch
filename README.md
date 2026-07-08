@@ -2,7 +2,7 @@
 
 A lightweight web platform for organizing the **Ward Academy Journal Club**: members register, post the days and times they can meet, volunteer as **Host**, **Presenter** or **Attendee**, attach the article they want to discuss, and join the call through the link the host posts.
 
-The visual identity follows the Ward Academy brand: **burnt orange, white and black** (role coding: Host = burnt orange, Presenter = black, Attendee = neutral gray).
+The visual identity follows the colors of the **American flag** — Old Glory Blue (`#0A3161`), Old Glory Red (`#B31942`) and white (role coding: Host = red, Presenter = navy blue, Attendee = light blue-gray).
 
 Built as **static HTML pages hosted on GitHub Pages** with **[Supabase](https://supabase.com)** (free tier) providing authentication and the database. No build step, no server to maintain.
 

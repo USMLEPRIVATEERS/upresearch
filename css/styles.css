@@ -126,6 +126,10 @@ nav#nav {
 @media (max-width: 860px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
 
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+/* min-width:0 lets flex children shrink below their content's intrinsic
+   width — without it a wide <select> (long timezone names) forces the
+   whole page wider than the phone screen. */
+.page-head > div { min-width: 0; max-width: 100%; }
 .page-head p { margin: 0; }
 
 .setup-warning { border-left: 5px solid var(--orange); margin-top: 24px; }
@@ -177,9 +181,14 @@ textarea { resize: vertical; min-height: 90px; }
 
 /* compact inline timezone select used in page headers */
 select.tz-inline {
-  display: inline-block; width: auto; max-width: 100%;
+  display: inline-block; width: auto; max-width: 100%; min-width: 0;
   margin: 0; padding: 4px 26px 4px 10px; font-size: 0.85rem; font-weight: 600;
   color: var(--black-800); border-radius: 8px; vertical-align: middle;
+}
+@media (max-width: 640px) {
+  /* On phones the picker gets its own full-width line so long timezone
+     names can never push the layout past the screen edge. */
+  select.tz-inline { display: block; width: 100%; margin-top: 4px; }
 }
 
 .pw-toggle {

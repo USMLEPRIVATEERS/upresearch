@@ -17,7 +17,7 @@
   <main class="container">
     <div class="page-head">
       <div>
-        <h1>Members</h1>
+        <h1>Members <span class="count-pill" id="member-count" style="vertical-align:middle; font-size:0.8rem"></span></h1>
         <p class="muted">Everyone in the Ward Academy Journal Club. Click a member to see their profile
           and participation history.</p>
       </div>
@@ -70,6 +70,7 @@
           "</div></div></div></a>";
       }
 
+      const totalCount = profiles.length;
       function render(filter) {
         const q = (filter || "").toLowerCase().trim();
         const list = profiles.filter((p) =>
@@ -78,6 +79,10 @@
           (p.specialty || "").toLowerCase().includes(q) ||
           (p.institution || "").toLowerCase().includes(q)
         );
+        // Discreet total; shows "N of TOTAL" while a search is filtering.
+        $("member-count").textContent = q
+          ? "👥 " + list.length + " of " + totalCount
+          : "👥 " + totalCount + (totalCount === 1 ? " member" : " members");
         $("members-list").innerHTML = list.length
           ? list.map(card).join("")
           : '<div class="empty-state" style="grid-column:1/-1">No members match your search.</div>';

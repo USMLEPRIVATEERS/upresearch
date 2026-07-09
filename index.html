@@ -140,10 +140,13 @@
         });
         $("login-btn").disabled = false;
         if (error) {
-          $("login-error").textContent =
-            /confirm/i.test(error.message)
-              ? "Please confirm your email first — check your inbox (and spam folder)."
-              : "Sign-in failed: " + error.message;
+          if (/confirm/i.test(error.message)) {
+            $("login-error").innerHTML =
+              "Please confirm your email first — click the link we emailed you.<br>" +
+              '<span class="spam-note">📬 It’s most likely in your <strong>spam / junk folder</strong>.</span>';
+          } else {
+            $("login-error").textContent = "Sign-in failed: " + error.message;
+          }
           return;
         }
         window.location.replace("home.html");
@@ -169,8 +172,10 @@
           // Email confirmation disabled in Supabase → signed in immediately.
           window.location.replace("home.html");
         } else {
-          $("signup-ok").textContent =
-            "Account created! Check your email for a confirmation link, then come back and sign in.";
+          $("signup-ok").innerHTML =
+            "Account created! We sent a confirmation link to your email — click it, then come back and sign in.<br>" +
+            '<span class="spam-note">📬 <strong>Important:</strong> the email almost always lands in your ' +
+            "<strong>spam / junk folder</strong> — check there first. (Marking it “not spam” helps future emails arrive.)</span>";
           $("signup-ok").classList.remove("hidden");
         }
       });
@@ -187,8 +192,9 @@
         );
         $("forgot-btn").disabled = false;
         if (error) { $("forgot-error").textContent = error.message; return; }
-        $("forgot-ok").textContent =
-          "If that email is registered, a password-reset link is on its way. Check spam too.";
+        $("forgot-ok").innerHTML =
+          "If that email is registered, a password-reset link is on its way.<br>" +
+          '<span class="spam-note">📬 <strong>Check your spam / junk folder</strong> — that’s where it usually ends up.</span>';
         $("forgot-ok").classList.remove("hidden");
       });
     })();

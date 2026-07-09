@@ -135,22 +135,29 @@
         email: "fernando.vasconcellos@bmc.org",
       };
 
-      let rows;
-      try { rows = await WA.fetchAllAvailabilities(); }
+      let rows, confirmations;
+      try {
+        rows = await WA.fetchAllAvailabilities();
+        confirmations = (await WA.fetchConfirmations()).map;
+      }
       catch (err) { $("cert-list").textContent = "Could not load: " + err.message; return; }
 
       // Past sessions where THIS member presented (one certificate per session/article).
       const now = new Date();
       const lookback = new Date(now.getTime() - 365 * 86400000);
-      const mine = WA.groupOccurrences(WA.expandAvailabilities(rows, lookback, now))
+      const allMine = WA.groupOccurrences(WA.expandAvailabilities(rows, lookback, now))
         .filter((g) => g.date.getTime() + 3600000 <= now.getTime() &&
           g.presenters.some((p) => p.user_id === user.id))
         .reverse()
         .map((g) => {
           const row = g.presenters.find((p) => p.user_id === user.id);
-          return { date: g.date, iso: g.iso, article: row.article };
+          return { date: g.date, iso: g.iso, article: row.article,
+            confirmed: confirmations.has(g.iso) };
         })
         .filter((c) => c.article); // need the article to certify it
+      // A certificate is only issued once the host has confirmed the session.
+      const mine = allMine.filter((c) => c.confirmed);
+      const pending = allMine.filter((c) => !c.confirmed);
 
       // Deterministic reference code (no randomness) so a certificate always
       // carries the same ID — usable for verification.
@@ -217,11 +224,23 @@
       $("cert-viewer").addEventListener("click", (e) => { if (e.target.id === "cert-viewer") closeCert(); });
 
       /* ---------- list ---------- */
-      if (!mine.length) {
+      function pendingCard(c) {
+        const art = c.article;
+        return '<div class="card tight" style="display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; opacity:0.85">' +
+          "<div><strong>📄 " + WA.esc(art.title) + "</strong>" +
+          '<div class="small muted">' + WA.esc([art.study_design, art.specialty].filter(Boolean).join(" · ")) +
+          " · presented " + WA.esc(formalDate(c.date)) + "</div>" +
+          '<div class="small" style="color:#43506a; margin-top:4px">⏳ Awaiting host confirmation that the ' +
+          'session took place — the certificate unlocks once the host confirms it in <a href="history.html">History</a>.</div></div>' +
+          '<button class="btn sm ghost" disabled>🔒 Locked</button></div>';
+      }
+
+      if (!mine.length && !pending.length) {
         $("cert-list").innerHTML =
           '<div class="empty-state"><h3>No certificates yet</h3>' +
-          "<p>Once you present an article at a Journal Club session, an official certificate " +
-          "for that presentation will appear here to download.</p>" +
+          "<p>Once you present an article at a Journal Club session <strong>and the host confirms " +
+          "the session took place</strong>, an official certificate for that presentation will appear " +
+          "here to download.</p>" +
           '<a class="btn" href="availability.html">Sign up to present</a></div>';
         return;
       }
@@ -236,7 +255,7 @@
       }
 
       $("cert-list").className = "";
-      $("cert-list").innerHTML = mine.map((c, i) => {
+      let listHtml = mine.map((c, i) => {
         const art = c.article;
         return '<div class="card tight" style="display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap">' +
           "<div><strong>📄 " + WA.esc(art.title) + "</strong>" +
@@ -244,6 +263,13 @@
           " · presented " + WA.esc(formalDate(c.date)) + "</div></div>" +
           '<button class="btn sm" data-i="' + i + '">🎓 View certificate</button></div>';
       }).join("");
+      if (pending.length) {
+        listHtml += '<h2 style="margin:22px 0 10px; font-size:1.1rem">⏳ Awaiting host confirmation</h2>' +
+          '<p class="muted small" style="margin:0 0 10px">These presentations are recorded, but the ' +
+          "certificate is only issued after the session’s host confirms it actually took place.</p>" +
+          pending.map(pendingCard).join("");
+      }
+      $("cert-list").innerHTML = listHtml;
 
       $("cert-list").querySelectorAll("[data-i]").forEach((btn) => {
         btn.addEventListener("click", () => openCert(mine[Number(btn.getAttribute("data-i"))]));

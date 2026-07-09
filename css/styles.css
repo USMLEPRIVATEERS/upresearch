@@ -279,6 +279,14 @@ select.tz-inline {
   border: 1.5px dashed var(--border); border-radius: var(--radius); background: #fafbfe;
 }
 
+.confirm-line {
+  margin-top: 12px; padding: 10px 12px; border-radius: 10px; font-size: 0.85rem; line-height: 1.5;
+}
+.confirm-line.ok { background: #e9f6ec; border: 1px solid #bfe3c6; color: #1f6b2c; }
+.confirm-line.ok strong { color: #1f6b2c; }
+.confirm-line.pend { background: var(--gray-100); border: 1px solid var(--gray-200); color: #43506a; }
+.confirm-line.pend strong { color: var(--navy-800); }
+
 /* ---------------- slot picker (availability page) ---------------- */
 
 .role-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }

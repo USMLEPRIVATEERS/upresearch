@@ -200,6 +200,14 @@ select.tz-inline {
 .form-error { color: var(--err); font-size: 0.88rem; margin-top: 8px; min-height: 1.2em; }
 .form-ok { color: var(--ok); font-size: 0.88rem; margin-top: 8px; }
 
+/* highlighted "check your spam" callout on the auth screens */
+.spam-note {
+  display: block; margin-top: 8px; padding: 9px 12px; border-radius: 9px;
+  background: var(--red-soft); border: 1px solid var(--red-border);
+  color: var(--red-dark); font-size: 0.84rem; line-height: 1.45;
+}
+.spam-note strong { color: var(--red-dark); }
+
 /* ---------------- badges, avatars, chips ---------------- */
 
 .badge {

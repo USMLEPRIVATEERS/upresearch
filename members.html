@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Members — Ward Academy Journal Club</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23bf5700'/%3E%3Ctext x='32' y='43' font-family='Arial,Helvetica,sans-serif' font-size='26' font-weight='700' fill='%23fff' text-anchor='middle'%3EWA%3C/text%3E%3C/svg%3E" />
-  <meta name="theme-color" content="#121212" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23b31942'/%3E%3Ctext x='32' y='43' font-family='Arial,Helvetica,sans-serif' font-size='26' font-weight='700' fill='%23fff' text-anchor='middle'%3EWA%3C/text%3E%3C/svg%3E" />
+  <meta name="theme-color" content="#0a3161" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -17,7 +17,7 @@
   <main class="container">
     <div class="page-head">
       <div>
-        <h1>Members</h1>
+        <h1>Members <span class="count-pill" id="member-count" style="vertical-align:middle; font-size:0.8rem"></span></h1>
         <p class="muted">Everyone in the Ward Academy Journal Club. Click a member to see their profile
           and participation history.</p>
       </div>
@@ -70,6 +70,7 @@
           "</div></div></div></a>";
       }
 
+      const totalCount = profiles.length;
       function render(filter) {
         const q = (filter || "").toLowerCase().trim();
         const list = profiles.filter((p) =>
@@ -78,6 +79,10 @@
           (p.specialty || "").toLowerCase().includes(q) ||
           (p.institution || "").toLowerCase().includes(q)
         );
+        // Discreet total; shows "N of TOTAL" while a search is filtering.
+        $("member-count").textContent = q
+          ? "👥 " + list.length + " of " + totalCount
+          : "👥 " + totalCount + (totalCount === 1 ? " member" : " members");
         $("members-list").innerHTML = list.length
           ? list.map(card).join("")
           : '<div class="empty-state" style="grid-column:1/-1">No members match your search.</div>';

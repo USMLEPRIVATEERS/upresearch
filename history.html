@@ -44,12 +44,19 @@
   <script>
     (async function () {
       const $ = (id) => document.getElementById(id);
-      try { await WA.initAppPage("history"); } catch (e) { return; }
+      let ctx;
+      try { ctx = await WA.initAppPage("history"); } catch (e) { return; }
+      const { user } = ctx;
 
       WA.tzInlineWidget($("tz-note"));
 
-      let rows;
-      try { rows = await WA.fetchAllAvailabilities(); }
+      let rows, confirmations, confMissing;
+      try {
+        rows = await WA.fetchAllAvailabilities();
+        const c = await WA.fetchConfirmations();
+        confirmations = c.map;
+        confMissing = c.missing;
+      }
       catch (err) { $("history-list").textContent = "Could not load: " + err.message; return; }
 
       /* Past sessions = slots in the last 12 months that had at least one
@@ -87,6 +94,26 @@
           list.map(personLink).join(", ") + "</p>";
       }
 
+      function confirmArea(g) {
+        const conf = confirmations.get(g.iso);
+        const iAmHost = g.hosts.some((h) => h.user_id === user.id);
+        if (conf) {
+          const who = conf.confirmer ? conf.confirmer.full_name : "the host";
+          return '<div class="confirm-line ok">✓ <strong>Session confirmed</strong> by ' +
+            WA.esc(who) + " — certificates available to presenters." +
+            (conf.confirmed_by === user.id
+              ? ' <button class="btn sm ghost" data-unconfirm="' + WA.esc(g.iso) + '">Undo</button>' : "") +
+            "</div>";
+        }
+        if (iAmHost) {
+          return '<div class="confirm-line pend">⏳ <strong>Awaiting your confirmation.</strong> ' +
+            "As the host, confirm this session took place to unlock the presenters’ certificates." +
+            '<div style="margin-top:8px"><button class="btn sm" data-confirm="' + WA.esc(g.iso) +
+            '">✓ Confirm this session took place</button></div></div>';
+        }
+        return '<div class="confirm-line pend">⏳ Awaiting host confirmation before certificates are issued.</div>';
+      }
+
       function sessionCard(g) {
         let html = '<div class="card session-card has-presenter' + (g.hosts.length ? " has-host" : "") + '">';
         html += '<div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center">' +
@@ -114,6 +141,7 @@
         }
         html += peopleLine("⭐", "Host", g.hosts);
         html += peopleLine("👥", "Attendees", g.attendees);
+        if (!confMissing) html += confirmArea(g);
         html += "</div>";
         return html;
       }
@@ -158,6 +186,47 @@
       }
 
       $("search").addEventListener("input", (e) => render(e.target.value));
+
+      // Host confirms / un-confirms a session (event delegation — render rebuilds the list).
+      $("history-list").addEventListener("click", async (e) => {
+        const confirmBtn = e.target.closest("[data-confirm]");
+        const undoBtn = e.target.closest("[data-unconfirm]");
+        if (confirmBtn) {
+          const iso = confirmBtn.getAttribute("data-confirm");
+          confirmBtn.disabled = true;
+          const { error } = await WA.client.from("session_confirmations")
+            .insert({ slot_start: iso, confirmed_by: user.id });
+          if (error) {
+            WA.toast("Could not confirm: " + error.message, "error");
+            confirmBtn.disabled = false;
+            return;
+          }
+          confirmations.set(iso, { slot_start: iso, confirmed_by: user.id,
+            confirmer: { full_name: (ctx.profile.full_name || "You") } });
+          WA.toast("Session confirmed — presenters can now download their certificate.", "success");
+          render($("search").value);
+        } else if (undoBtn) {
+          if (!confirm("Undo confirmation? Presenters’ certificates for this session will be withdrawn until confirmed again.")) return;
+          const iso = undoBtn.getAttribute("data-unconfirm");
+          const { error } = await WA.client.from("session_confirmations")
+            .delete().eq("slot_start", iso);
+          if (error) { WA.toast("Could not undo: " + error.message, "error"); return; }
+          confirmations.delete(iso);
+          WA.toast("Confirmation removed.", "success");
+          render($("search").value);
+        }
+      });
+
+      if (confMissing) {
+        const warn = document.createElement("div");
+        warn.className = "card";
+        warn.style.cssText = "border-left:5px solid var(--red)";
+        warn.innerHTML = "<strong>Session confirmation needs a one-time database update.</strong> " +
+          "Run the <code>session_confirmations</code> section of <code>supabase/schema.sql</code> in the " +
+          "Supabase SQL Editor to let hosts confirm sessions and issue certificates.";
+        $("history-list").parentNode.insertBefore(warn, $("history-list"));
+      }
+
       render("");
     })();
   </script>

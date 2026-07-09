@@ -583,6 +583,26 @@
     return data || [];
   };
 
+  /* Host confirmations that a session actually took place, keyed by the
+     slot's ISO timestamp. Returns { map, missing } — missing=true when the
+     table hasn't been created yet (migration pending). */
+  WA.fetchConfirmations = async function () {
+    const res = await WA.client
+      .from("session_confirmations")
+      .select("*, confirmer:profiles(full_name)");
+    if (res.error) {
+      const msg = res.error.message || "";
+      if (res.error.code === "42P01" || res.error.code === "PGRST205" ||
+          /session_confirmations/.test(msg)) {
+        return { map: new Map(), missing: true };
+      }
+      throw res.error;
+    }
+    const map = new Map();
+    for (const r of res.data || []) map.set(new Date(r.slot_start).toISOString(), r);
+    return { map, missing: false };
+  };
+
   WA.fetchMeetingsBetween = async function (startIso, endIso) {
     const { data, error } = await WA.client
       .from("meetings")

@@ -122,15 +122,44 @@ begin
 end $$;
 
 -- ------------------------------------------------------------
--- 6. Row Level Security
+-- 6. Session confirmations
+--    A host confirms that a specific session actually took place.
+--    A presenter's certificate is only issued once the session is
+--    confirmed. One confirmation per slot (first host wins).
+-- ------------------------------------------------------------
+create table if not exists public.session_confirmations (
+  slot_start   timestamptz primary key,
+  confirmed_by uuid references public.profiles (id) on delete set null,
+  confirmed_at timestamptz not null default now()
+);
+
+-- ------------------------------------------------------------
+-- 7. Row Level Security
 --    Everything is readable by signed-in members only; each
 --    member can only write their own rows.
 -- ------------------------------------------------------------
-alter table public.profiles       enable row level security;
-alter table public.articles       enable row level security;
-alter table public.availabilities enable row level security;
-alter table public.meetings       enable row level security;
-alter table public.board          enable row level security;
+alter table public.profiles              enable row level security;
+alter table public.articles              enable row level security;
+alter table public.availabilities        enable row level security;
+alter table public.meetings              enable row level security;
+alter table public.board                 enable row level security;
+alter table public.session_confirmations enable row level security;
+
+-- session confirmations (readable by all; a member records their own
+-- confirmation — the UI only offers it to a host of that slot)
+drop policy if exists "confirmations readable by members" on public.session_confirmations;
+create policy "confirmations readable by members"
+  on public.session_confirmations for select to authenticated using (true);
+
+drop policy if exists "insert own confirmation" on public.session_confirmations;
+create policy "insert own confirmation"
+  on public.session_confirmations for insert to authenticated
+  with check (confirmed_by = auth.uid());
+
+drop policy if exists "delete own confirmation" on public.session_confirmations;
+create policy "delete own confirmation"
+  on public.session_confirmations for delete to authenticated
+  using (confirmed_by = auth.uid());
 
 -- board (the single row is seeded above; members can read and edit it)
 drop policy if exists "board readable by members" on public.board;

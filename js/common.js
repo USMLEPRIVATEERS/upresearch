@@ -533,6 +533,45 @@
     return out.innerHTML;
   };
 
+  /* Turns bare http(s) URLs in the text into clickable links that open
+     in a new tab. Skips text already inside an <a>, and only emits links
+     that pass safeUrl. Safe to run before or after sanitizeHtml. */
+  WA.linkifyHtml = function (html) {
+    const doc = new DOMParser().parseFromString(String(html || ""), "text/html");
+    const urlRe = /https?:\/\/[^\s<>()]+[^\s<>().,;:!?'"]/g;
+    function walk(node) {
+      for (const child of Array.from(node.childNodes)) {
+        if (child.nodeType === 3) {
+          const text = child.nodeValue;
+          urlRe.lastIndex = 0;
+          if (!urlRe.test(text)) continue;
+          urlRe.lastIndex = 0;
+          const frag = document.createDocumentFragment();
+          let last = 0, m;
+          while ((m = urlRe.exec(text))) {
+            if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+            const safe = WA.safeUrl(m[0]);
+            if (safe) {
+              const a = document.createElement("a");
+              a.href = safe; a.target = "_blank"; a.rel = "noopener noreferrer";
+              a.textContent = m[0];
+              frag.appendChild(a);
+            } else {
+              frag.appendChild(document.createTextNode(m[0]));
+            }
+            last = m.index + m[0].length;
+          }
+          if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+          child.replaceWith(frag);
+        } else if (child.nodeType === 1 && child.tagName !== "A") {
+          walk(child);
+        }
+      }
+    }
+    walk(doc.body);
+    return doc.body.innerHTML;
+  };
+
   /* ---------- data access ---------- */
 
   WA.fetchAllAvailabilities = async function () {
@@ -580,6 +619,7 @@
       ["availability.html", "My Availability", "availability"],
       ["calendar.html", "Calendar", "calendar"],
       ["history.html", "History", "history"],
+      ["certificates.html", "Certificates", "certificates"],
       ["members.html", "Members", "members"],
     ];
     const name = profile ? profile.full_name || "My Profile" : "";

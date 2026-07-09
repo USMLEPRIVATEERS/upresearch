@@ -18,6 +18,7 @@ Built as **static HTML pages hosted on GitHub Pages** with **[Supabase](https://
 | `availability.html` | Post availability — single date or weekly recurrence, 1-hour clickable slots, role selection, article submission for presenters |
 | `calendar.html` | Week and month calendar of all posted availability |
 | `history.html` | Past sessions: article discussed, presenter, host and attendees, grouped by month, searchable |
+| `certificates.html` | Auto-generated, printable Certificate of Presentation for each article a member has presented |
 | `members.html` | Member directory with participation stats |
 | `profile.html` | Member profile: bio, stats (times as Host / Presenter / Attendee), upcoming commitments, articles submitted |
 
@@ -101,7 +102,8 @@ That’s it. Share the URL with the club.
 - **One-click slot joining** — “Present here”, “volunteer to host”, calendar slot details, and even *empty* calendar cells deep-link into the availability form with the date, hour and role pre-selected. Session and open-slot cards on the home page have a **one-tap “I’ll attend”** button that registers you as attendee instantly.
 - **Occupancy hints while scheduling** — when adding availability, each 1-hour box shows how many members are already available at that time on the chosen day(s) (👥N, plus ⭐/📄 when a host/presenter is there).
 - **Home filters & sorting** — filter upcoming sessions by specialty and sort by date or member count; open slots sortable by most members or soonest (the open-slot list scrolls inside a fixed-height panel).
-- **Shared board** — a rich-text “mural” on the home page that every member can edit. Saves automatically ~1s after you stop typing and streams to everyone else within seconds (Supabase Realtime + polling fallback; last save wins). Pasting from Claude/ChatGPT/Word keeps the structure (headings, bold, lists, links, tables) but strips **all** colors and backgrounds, so dark-mode copies paste clean — and everything is sanitized against scripts/embeds before rendering.
+- **Shared board** — a rich-text “mural” on the home page that every member can edit. Saves automatically ~1s after you stop typing and streams to everyone else within seconds (Supabase Realtime + polling fallback; last save wins). Pasting from Claude/ChatGPT/Word keeps the structure (headings, bold, lists, links, tables) but strips **all** colors and backgrounds, so dark-mode copies paste clean — and everything is sanitized against scripts/embeds before rendering. Bare URLs typed or pasted into the board become clickable links that open in a new tab.
+- **Certificates** — members get an official, printable *Certificate of Presentation* for each article they have presented, auto-generated from the session record (name, article, study design/specialty, date), with a deterministic reference code and a named signatory for verification. Print or “Save as PDF” from the browser (a print stylesheet outputs just the certificate on an A4-landscape page).
 - **Add to calendar** — every session offers a Google Calendar link and an `.ics` download (works with Apple/Outlook), including the article and meeting link.
 - **Duplicate protection** — signing up twice for the same slot with the same role is detected and skipped.
 - **Editable articles** — presenters can edit their article details from their profile.

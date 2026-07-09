@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Certificates — Ward Academy Journal Club</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23b31942'/%3E%3Ctext x='32' y='43' font-family='Arial,Helvetica,sans-serif' font-size='26' font-weight='700' fill='%23fff' text-anchor='middle'%3EWA%3C/text%3E%3C/svg%3E" />
+  <meta name="theme-color" content="#0a3161" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    /* ---------- certificate document ---------- */
+    .cert-doc {
+      width: 1040px; max-width: 100%; margin: 0 auto; background: #fff; color: #1a2436;
+      border: 2px solid var(--navy-900);
+      box-shadow: 0 10px 40px rgba(10, 49, 97, 0.18);
+      position: relative;
+    }
+    .cert-frame { border: 1px solid var(--red); margin: 10px; padding: 40px 54px 34px; position: relative; }
+    /* corner flourishes */
+    .cert-frame::before, .cert-frame::after {
+      content: ""; position: absolute; width: 26px; height: 26px; border: 2px solid var(--red);
+    }
+    .cert-frame::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+    .cert-frame::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+    .cert-head { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 6px; }
+    .cert-emblem {
+      width: 62px; height: 62px; border-radius: 50%; background: var(--navy-900); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-family: "Playfair Display", Georgia, serif; font-weight: 800; font-size: 1.5rem;
+      border: 3px solid var(--red);
+    }
+    .cert-org { text-align: left; line-height: 1.1; }
+    .cert-org .o1 { font-family: "Playfair Display", Georgia, serif; font-weight: 700; font-size: 1.15rem; color: var(--navy-900); letter-spacing: 0.5px; }
+    .cert-org .o2 { font-size: 0.72rem; letter-spacing: 3px; text-transform: uppercase; color: var(--red); font-weight: 700; }
+
+    .cert-kicker { text-align: center; letter-spacing: 4px; text-transform: uppercase; font-size: 0.72rem; color: var(--muted); margin: 18px 0 2px; }
+    .cert-title {
+      text-align: center; font-family: "Playfair Display", Georgia, serif; font-weight: 800;
+      font-size: 2.5rem; color: var(--navy-900); line-height: 1.1; margin: 0 0 4px;
+    }
+    .cert-rule { width: 120px; height: 3px; background: var(--red); margin: 10px auto 20px; }
+
+    .cert-line { text-align: center; color: #43506a; font-size: 0.98rem; margin: 0; }
+    .cert-name {
+      text-align: center; font-family: "Playfair Display", Georgia, serif; font-weight: 700;
+      font-size: 2.1rem; color: var(--navy-900); margin: 12px 0 6px; line-height: 1.15;
+      border-bottom: 1px solid var(--border); padding-bottom: 12px; display: inline-block;
+    }
+    .cert-name-wrap { text-align: center; }
+    .cert-body { text-align: center; color: #2c374d; font-size: 1.02rem; line-height: 1.7; margin: 16px auto 0; max-width: 780px; }
+    .cert-article { font-family: "Playfair Display", Georgia, serif; font-style: italic; font-weight: 600; color: var(--navy-900); }
+    .cert-tags { text-align: center; margin: 10px 0 0; font-size: 0.85rem; color: var(--muted); }
+
+    .cert-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-top: 34px; }
+    .cert-sign { text-align: center; min-width: 260px; }
+    .cert-sign-name { font-family: "Playfair Display", Georgia, serif; font-weight: 700; font-size: 1.05rem; color: var(--navy-900); border-top: 1.5px solid var(--navy-900); padding-top: 6px; }
+    .cert-sign-role { font-size: 0.78rem; color: var(--muted); line-height: 1.4; margin-top: 3px; }
+    .cert-seal {
+      width: 92px; height: 92px; border-radius: 50%; border: 3px double var(--red);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+      color: var(--red); flex-shrink: 0; text-align: center;
+    }
+    .cert-seal .s1 { font-size: 1.5rem; line-height: 1; }
+    .cert-seal .s2 { font-size: 0.5rem; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
+    .cert-meta { text-align: right; font-size: 0.72rem; color: var(--muted); line-height: 1.6; }
+    .cert-meta strong { color: #43506a; }
+
+    @media (max-width: 720px) {
+      .cert-frame { padding: 22px 18px 20px; }
+      .cert-title { font-size: 1.7rem; }
+      .cert-name { font-size: 1.5rem; }
+      .cert-body { font-size: 0.92rem; }
+      .cert-foot { flex-direction: column; align-items: center; gap: 20px; }
+      .cert-meta { text-align: center; }
+    }
+
+    /* ---------- viewer overlay ---------- */
+    #cert-viewer { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 120;
+      background: rgba(10, 22, 40, 0.72); overflow-y: auto; padding: 20px 14px 60px; -webkit-overflow-scrolling: touch; }
+    #cert-toolbar { max-width: 1040px; margin: 0 auto 12px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
+    /* ---------- print: only the certificate ---------- */
+    @media print {
+      @page { size: A4 landscape; margin: 8mm; }
+      nav, footer, .page-head, #cert-list, #cert-toolbar, #wa-toasts, #intro { display: none !important; }
+      body { background: #fff !important; }
+      #cert-viewer { position: static !important; background: #fff !important; padding: 0 !important; overflow: visible !important; }
+      .cert-doc { box-shadow: none !important; border-color: #0a3161 !important; width: 100% !important; }
+    }
+  </style>
+</head>
+<body>
+  <nav id="nav"></nav>
+
+  <main class="container">
+    <div class="page-head">
+      <div>
+        <h1>Certificates</h1>
+        <p class="muted" id="intro">Download an official certificate for each article you have presented
+          at the Ward Academy Journal Club. Open one and use <strong>Print / Save as PDF</strong>.</p>
+      </div>
+    </div>
+
+    <div id="cert-list" class="muted">Loading…</div>
+  </main>
+
+  <div id="cert-viewer" class="hidden">
+    <div id="cert-toolbar">
+      <button class="btn" id="print-btn">🖨 Print / Save as PDF</button>
+      <button class="btn ghost" id="close-btn" style="background:#fff">Close</button>
+    </div>
+    <div id="cert-mount"></div>
+  </div>
+
+  <footer class="site">Ward Academy · Journal Club</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    (async function () {
+      const $ = (id) => document.getElementById(id);
+      let ctx;
+      try { ctx = await WA.initAppPage("certificates"); } catch (e) { return; }
+      const { user, profile } = ctx;
+
+      // Signatory (fixed) — the person members can contact to verify a certificate.
+      const SIGNATORY = {
+        name: "Fernando de Nigris Vasconcellos",
+        role: "Neurosurgery Pre-Residency Fellowship<br>Boston Medical Center",
+        email: "fernando.vasconcellos@bmc.org",
+      };
+
+      let rows;
+      try { rows = await WA.fetchAllAvailabilities(); }
+      catch (err) { $("cert-list").textContent = "Could not load: " + err.message; return; }
+
+      // Past sessions where THIS member presented (one certificate per session/article).
+      const now = new Date();
+      const lookback = new Date(now.getTime() - 365 * 86400000);
+      const mine = WA.groupOccurrences(WA.expandAvailabilities(rows, lookback, now))
+        .filter((g) => g.date.getTime() + 3600000 <= now.getTime() &&
+          g.presenters.some((p) => p.user_id === user.id))
+        .reverse()
+        .map((g) => {
+          const row = g.presenters.find((p) => p.user_id === user.id);
+          return { date: g.date, iso: g.iso, article: row.article };
+        })
+        .filter((c) => c.article); // need the article to certify it
+
+      // Deterministic reference code (no randomness) so a certificate always
+      // carries the same ID — usable for verification.
+      function refId(iso, articleId) {
+        const s = user.id + "|" + iso + "|" + (articleId || "");
+        let h = 0;
+        for (let i = 0; i < s.length; i++) h = (Math.imul(h, 31) + s.charCodeAt(i)) >>> 0;
+        const year = new Date(iso).getUTCFullYear();
+        return "WAJC-" + year + "-" + h.toString(36).toUpperCase().padStart(7, "0").slice(0, 7);
+      }
+
+      function formalDate(d) {
+        const p = WA.zonedParts(d);
+        return WA.MONTHS[p.m] + " " + p.d + ", " + p.y;
+      }
+
+      function certHtml(c) {
+        const name = (profile.full_name || "").trim();
+        const art = c.article;
+        const ref = refId(c.iso, art.id);
+        const tags = [art.study_design, art.specialty, art.subspecialty].filter(Boolean).join(" · ");
+        return '<div class="cert-doc"><div class="cert-frame">' +
+          '<div class="cert-head">' +
+          '<span class="cert-emblem">WA</span>' +
+          '<div class="cert-org"><div class="o1">Ward Academy</div><div class="o2">Journal Club</div></div>' +
+          "</div>" +
+          '<div class="cert-kicker">Ward Academy Journal Club</div>' +
+          '<div class="cert-title">Certificate of Presentation</div>' +
+          '<div class="cert-rule"></div>' +
+          '<p class="cert-line">This is to certify that</p>' +
+          '<div class="cert-name-wrap"><span class="cert-name">' +
+          (name ? WA.esc(name) : "____________________") + "</span></div>" +
+          '<p class="cert-body">delivered a critical appraisal of the scientific article<br>' +
+          '<span class="cert-article">“' + WA.esc(art.title) + '”</span>' +
+          (tags ? '<br><span class="cert-tags">' + WA.esc(tags) + "</span>" : "") +
+          "<br><br>at the <strong>Ward Academy Journal Club</strong> on <strong>" +
+          WA.esc(formalDate(c.date)) + "</strong>, contributing to the critical appraisal " +
+          "and discussion of the medical literature.</p>" +
+          '<div class="cert-foot">' +
+          '<div class="cert-sign"><div class="cert-sign-name">' + WA.esc(SIGNATORY.name) + "</div>" +
+          '<div class="cert-sign-role">' + SIGNATORY.role + "</div></div>" +
+          '<div class="cert-seal"><span class="s1">★</span><span class="s2">Ward<br>Academy</span></div>' +
+          '<div class="cert-meta"><strong>Reference:</strong> ' + WA.esc(ref) + "<br>" +
+          "<strong>Issued:</strong> " + WA.esc(formalDate(now)) + "<br>" +
+          "<strong>Verify:</strong> " + WA.esc(SIGNATORY.email) + "</div>" +
+          "</div></div></div>";
+      }
+
+      function openCert(c) {
+        if (!(profile.full_name || "").trim()) {
+          WA.toast("Add your full name on your profile first so it appears on the certificate.", "error");
+        }
+        $("cert-mount").innerHTML = certHtml(c);
+        $("cert-viewer").classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+        $("cert-viewer").scrollTop = 0;
+      }
+      function closeCert() {
+        $("cert-viewer").classList.add("hidden");
+        document.body.style.overflow = "";
+      }
+      $("close-btn").addEventListener("click", closeCert);
+      $("print-btn").addEventListener("click", () => window.print());
+      $("cert-viewer").addEventListener("click", (e) => { if (e.target.id === "cert-viewer") closeCert(); });
+
+      /* ---------- list ---------- */
+      if (!mine.length) {
+        $("cert-list").innerHTML =
+          '<div class="empty-state"><h3>No certificates yet</h3>' +
+          "<p>Once you present an article at a Journal Club session, an official certificate " +
+          "for that presentation will appear here to download.</p>" +
+          '<a class="btn" href="availability.html">Sign up to present</a></div>';
+        return;
+      }
+
+      if (!(profile.full_name || "").trim()) {
+        const warn = document.createElement("div");
+        warn.className = "card";
+        warn.style.cssText = "border-left:5px solid var(--red)";
+        warn.innerHTML = '<strong>Add your full name first.</strong> Your certificates will show a blank ' +
+          'name line until you set it on your <a href="profile.html">profile</a>.';
+        $("cert-list").parentNode.insertBefore(warn, $("cert-list"));
+      }
+
+      $("cert-list").className = "";
+      $("cert-list").innerHTML = mine.map((c, i) => {
+        const art = c.article;
+        return '<div class="card tight" style="display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap">' +
+          "<div><strong>📄 " + WA.esc(art.title) + "</strong>" +
+          '<div class="small muted">' + WA.esc([art.study_design, art.specialty].filter(Boolean).join(" · ")) +
+          " · presented " + WA.esc(formalDate(c.date)) + "</div></div>" +
+          '<button class="btn sm" data-i="' + i + '">🎓 View certificate</button></div>';
+      }).join("");
+
+      $("cert-list").querySelectorAll("[data-i]").forEach((btn) => {
+        btn.addEventListener("click", () => openCert(mine[Number(btn.getAttribute("data-i"))]));
+      });
+    })();
+  </script>
+</body>
+</html>

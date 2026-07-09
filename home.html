@@ -491,7 +491,7 @@
           if (row.updated_at === lastSeen) return;
           if (!force && isEditing()) return; // don't clobber active typing; next tick applies it
           applying = true;
-          editor.innerHTML = WA.sanitizeHtml(row.content || "");
+          editor.innerHTML = WA.linkifyHtml(WA.sanitizeHtml(row.content || ""));
           applying = false;
           lastSeen = row.updated_at;
           setStatus(editedLine(row));
@@ -516,7 +516,8 @@
 
         async function save() {
           if (setupMissing) return;
-          const content = WA.sanitizeHtml(editor.innerHTML);
+          // linkify bare URLs then sanitize, so typed/pasted links persist as clickable.
+          const content = WA.sanitizeHtml(WA.linkifyHtml(editor.innerHTML));
           if (content.length > 200000) {
             setStatus('<span style="color:var(--err)">The board is too long to save — trim it a little.</span>');
             return;
@@ -555,8 +556,8 @@
           const html = e.clipboardData && e.clipboardData.getData("text/html");
           const text = e.clipboardData && e.clipboardData.getData("text/plain");
           const insert = html
-            ? WA.sanitizeHtml(html)
-            : WA.esc(text || "").replace(/\r?\n/g, "<br>");
+            ? WA.linkifyHtml(WA.sanitizeHtml(html))
+            : WA.linkifyHtml(WA.esc(text || "").replace(/\r?\n/g, "<br>"));
           document.execCommand("insertHTML", false, insert);
           lastKeystroke = Date.now();
           scheduleSave();

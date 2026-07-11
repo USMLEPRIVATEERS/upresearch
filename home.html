@@ -549,6 +549,22 @@
           if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; save(); }
         });
 
+        // The board is editable, so clicking a link normally just moves the
+        // caret. Open links on a plain click instead (dragging to select text
+        // to edit doesn't fire a click, so editing still works).
+        editor.addEventListener("click", (e) => {
+          const a = e.target.closest("a");
+          if (!a) return;
+          const sel = window.getSelection && window.getSelection();
+          if (sel && !sel.isCollapsed) return; // user is selecting text — don't open
+          const href = WA.safeUrl(a.getAttribute("href"));
+          if (href) {
+            e.preventDefault();
+            window.open(href, "_blank", "noopener,noreferrer");
+          }
+        });
+        editor.setAttribute("title", "Tip: click a link to open it in a new tab");
+
         // Paste keeps the structure but never the styling — dark-mode
         // copies from Claude/ChatGPT land clean, on a white background.
         editor.addEventListener("paste", (e) => {

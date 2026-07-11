@@ -36,9 +36,10 @@
     <div id="cal-body" class="muted">Loading…</div>
 
     <div class="legend">
-      <span><i class="i-host"></i> Host confirmed</span>
-      <span><i class="i-pres"></i> Presenter confirmed (session on)</span>
+      <span><i class="i-host"></i> Host in slot</span>
+      <span><i class="i-pres"></i> Presenter in slot (session on)</span>
       <span><i class="i-att"></i> Members available</span>
+      <span style="width:100%; margin-top:2px">On each slot: ⭐ = a host · 📄 = a presenter · 👥 = number of members</span>
     </div>
   </main>
 
@@ -110,11 +111,10 @@
         if (g.hosts.length) return "lvl-host";
         return "lvl-att";
       }
+      // Show host (⭐) and presenter (📄) markers independently, then the
+      // headcount, so people can tell at a glance what a slot already has.
       function slotMark(g) {
-        let m = "👥" + g.all.length;
-        if (g.hosts.length) m = "⭐ " + m;
-        else if (g.presenters.length) m = "📄 " + m;
-        return m;
+        return (g.hosts.length ? "⭐" : "") + (g.presenters.length ? "📄" : "") + "👥" + g.all.length;
       }
 
       /* ---------- week view ---------- */

@@ -59,7 +59,7 @@
         return '<a class="card tight" style="text-decoration:none; color:inherit" ' +
           'href="profile.html?id=' + encodeURIComponent(p.id) + '">' +
           '<div class="member-card">' +
-          '<span class="avatar">' + WA.esc(WA.initials(p.full_name)) + "</span>" +
+          WA.avatarHtml(p) +
           "<div><h3 style='margin:0'>" + WA.esc(p.full_name || "Member") + "</h3>" +
           '<div class="small muted">' + WA.esc(p.specialty || "—") +
           (p.institution ? " · " + WA.esc(p.institution) : "") + "</div>" +

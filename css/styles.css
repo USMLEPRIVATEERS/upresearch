@@ -235,6 +235,8 @@ select.tz-inline {
 }
 .avatar-sm { width: 26px; height: 26px; font-size: 0.66rem; background: var(--red); }
 .avatar-lg { width: 72px; height: 72px; font-size: 1.5rem; }
+.avatar-img { background-size: cover; background-position: center; background-repeat: no-repeat; color: transparent; }
+.roster-av { width: 30px; height: 30px; font-size: 0.7rem; }
 
 .people-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .people-row .avatar { width: 30px; height: 30px; font-size: 0.7rem; border: 2px solid #fff; }

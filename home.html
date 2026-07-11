@@ -143,8 +143,7 @@
 
       function peopleAvatars(list) {
         return '<span class="people-row">' + list.map((a) =>
-          '<span class="avatar" title="' + WA.esc(a.profile ? a.profile.full_name : "") + '">' +
-          WA.esc(WA.initials(a.profile ? a.profile.full_name : "?")) + "</span>"
+          WA.avatarHtml(a.profile)
         ).join("") + "</span>";
       }
 
@@ -427,8 +426,7 @@
           list.map((a) =>
             '<a href="profile.html?id=' + encodeURIComponent(a.user_id) + '" ' +
             'style="display:flex; align-items:center; gap:8px; text-decoration:none; color:inherit">' +
-            '<span class="avatar" style="width:30px;height:30px;font-size:0.7rem">' +
-            WA.esc(WA.initials(a.profile ? a.profile.full_name : "?")) + "</span>" +
+            WA.avatarHtml(a.profile, "roster-av", "") +
             "<span>" + WA.esc(a.profile ? a.profile.full_name || "Member" : "Member") +
             (a.profile && a.profile.specialty ? ' <span class="muted small">· ' + WA.esc(a.profile.specialty) + "</span>" : "") +
             "</span></a>"

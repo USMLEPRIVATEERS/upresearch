@@ -54,6 +54,24 @@
     return null;
   };
 
+  /* Renders a member avatar as a .avatar span: their uploaded picture
+     (a tiny base64 data URL stored in profiles.avatar) when present and
+     valid, otherwise their initials. The strict data-URL check prevents
+     a member from injecting markup through the avatar field. */
+  WA.AVATAR_RE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
+  WA.avatarHtml = function (profile, extraClass, title) {
+    const cls = "avatar" + (extraClass ? " " + extraClass : "");
+    const name = profile ? profile.full_name : "";
+    const av = profile && profile.avatar;
+    const t = title == null ? (name || "") : title;
+    if (av && WA.AVATAR_RE.test(av)) {
+      return '<span class="' + cls + ' avatar-img" title="' + WA.esc(t) +
+        '" style="background-image:url(\'' + av + "')\"></span>";
+    }
+    return '<span class="' + cls + '" title="' + WA.esc(t) + '">' +
+      WA.esc(WA.initials(name)) + "</span>";
+  };
+
   WA.initials = function (name) {
     const parts = String(name || "?").trim().split(/\s+/).filter(Boolean);
     if (!parts.length) return "?";
@@ -464,6 +482,52 @@
     return "availability.html?" + p.toString();
   };
 
+  /* Turns an uploaded image File into a tiny square base64 data URL:
+     centre-cropped, downscaled to `size` px, JPEG, with quality stepped
+     down until it is comfortably small. Typically 4–8 KB of text. */
+  WA.imageFileToTinyDataUrl = function (file, size, maxBytes) {
+    size = size || 128;
+    maxBytes = maxBytes || 22000; // ~16 KB of image → base64 text
+    return new Promise((resolve, reject) => {
+      if (!file || !/^image\//.test(file.type)) return reject(new Error("Please choose an image file."));
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Could not read the file."));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("That image could not be loaded."));
+        img.onload = () => {
+          const side = Math.min(img.width, img.height);
+          const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+          const canvas = document.createElement("canvas");
+          canvas.width = size; canvas.height = size;
+          const cx = canvas.getContext("2d");
+          cx.imageSmoothingQuality = "high";
+          cx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+          let q = 0.72, out = canvas.toDataURL("image/jpeg", q);
+          while (out.length > maxBytes && q > 0.35) {
+            q -= 0.1; out = canvas.toDataURL("image/jpeg", q);
+          }
+          if (out.length > maxBytes && size > 96) {
+            // last resort: shrink further
+            return WA.imageFileToTinyDataUrl(file, 96, maxBytes).then(resolve, reject);
+          }
+          resolve(out);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  /* Compresses an already-sized square canvas to a tiny JPEG data URL,
+     stepping quality down until it fits. */
+  WA.canvasToTinyJpeg = function (canvas, maxBytes) {
+    maxBytes = maxBytes || 22000;
+    let q = 0.72, out = canvas.toDataURL("image/jpeg", q);
+    while (out.length > maxBytes && q > 0.35) { q -= 0.1; out = canvas.toDataURL("image/jpeg", q); }
+    return out;
+  };
+
   WA.copyText = async function (text) {
     try {
       await navigator.clipboard.writeText(text);
@@ -577,7 +641,7 @@
   WA.fetchAllAvailabilities = async function () {
     const { data, error } = await WA.client
       .from("availabilities")
-      .select("*, profile:profiles(id, full_name, specialty), article:articles(*)")
+      .select("*, profile:profiles(id, full_name, specialty, avatar), article:articles(*)")
       .order("created_at", { ascending: true });
     if (error) throw error;
     return data || [];
@@ -654,7 +718,7 @@
         '<a href="' + href + '"' + (key === active ? ' class="active"' : "") + ">" + label + "</a>"
       ).join("") +
       '<a href="profile.html"' + (active === "profile" ? ' class="active"' : "") + ' title="My profile">' +
-      '<span class="avatar avatar-sm">' + WA.esc(WA.initials(name)) + "</span> " +
+      WA.avatarHtml(profile, "avatar-sm", "") + " " +
       WA.esc((name || "Profile").split(" ")[0]) + "</a>" +
       '<a href="#" id="nav-signout">Sign out</a>' +
       "</div></div>";

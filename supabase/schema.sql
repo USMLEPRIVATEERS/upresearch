@@ -14,9 +14,13 @@ create table if not exists public.profiles (
   specialty   text not null default '',
   institution text not null default '',
   bio         text not null default '',
+  avatar      text,   -- tiny base64 data URL (128px JPEG, ~4-8 KB), or null for initials
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
+
+-- Existing databases: add the avatar column if it isn't there yet.
+alter table public.profiles add column if not exists avatar text;
 
 -- Auto-create a profile when a user signs up.
 create or replace function public.handle_new_user()

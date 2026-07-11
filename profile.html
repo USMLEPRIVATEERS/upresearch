@@ -10,9 +10,23 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .crop-frame {
+      width: 260px; height: 260px; max-width: 78vw; max-height: 78vw; margin: 0 auto;
+      position: relative; overflow: hidden; border-radius: 50%;
+      background: #0a1830; touch-action: none; cursor: grab; user-select: none;
+      box-shadow: 0 0 0 3px var(--red), 0 0 0 9999px rgba(10, 22, 40, 0.25) inset;
+    }
+    .crop-frame:active { cursor: grabbing; }
+    .crop-frame img { position: absolute; left: 0; top: 0; max-width: none; -webkit-user-drag: none; pointer-events: none; }
+    .crop-hint { text-align: center; color: var(--muted); font-size: 0.82rem; margin: 10px 0 2px; }
+    .crop-zoom { display: flex; align-items: center; gap: 10px; max-width: 300px; margin: 8px auto 0; }
+    .crop-zoom input[type="range"] { flex: 1; accent-color: var(--red); }
+  </style>
 </head>
 <body>
   <nav id="nav"></nav>
+  <div id="crop-root"></div>
 
   <main class="container">
     <div id="loading" class="muted" style="padding-top:10px">Loading profile…</div>
@@ -20,7 +34,12 @@
     <div id="profile-view" class="hidden">
       <div class="card">
         <div style="display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap">
-          <span class="avatar avatar-lg" id="p-avatar">?</span>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px">
+            <span class="avatar avatar-lg" id="p-avatar">?</span>
+            <button class="btn ghost sm hidden" id="photo-btn" style="padding:4px 10px; font-size:0.78rem">📷 Photo</button>
+            <button class="btn ghost sm hidden" id="photo-remove" style="padding:2px 8px; font-size:0.72rem; color:var(--err)">Remove</button>
+            <input type="file" id="photo-input" accept="image/*" class="hidden" />
+          </div>
           <div style="flex:1; min-width:220px">
             <h1 id="p-name" style="margin-bottom:2px"></h1>
             <p class="muted" id="p-sub" style="margin-bottom:6px"></p>
@@ -115,7 +134,16 @@
 
       /* ---------- header ---------- */
       function paintHeader() {
-        $("p-avatar").textContent = WA.initials(profile.full_name);
+        const av = profile.avatar;
+        if (av && WA.AVATAR_RE.test(av)) {
+          $("p-avatar").textContent = "";
+          $("p-avatar").classList.add("avatar-img");
+          $("p-avatar").style.backgroundImage = "url('" + av + "')";
+        } else {
+          $("p-avatar").classList.remove("avatar-img");
+          $("p-avatar").style.backgroundImage = "";
+          $("p-avatar").textContent = WA.initials(profile.full_name);
+        }
         $("p-name").textContent = profile.full_name || "Member";
         $("p-sub").textContent = [profile.specialty, profile.institution].filter(Boolean).join(" · ") || "";
         $("p-bio").textContent = profile.bio || "";
@@ -223,6 +251,148 @@
 
       /* ---------- editing (own profile only) ---------- */
       if (isOwn) {
+        // --- profile photo upload (compressed to a tiny data URL) ---
+        $("photo-btn").classList.remove("hidden");
+        $("photo-btn").addEventListener("click", () => $("photo-input").click());
+        $("photo-input").addEventListener("change", async () => {
+          const file = $("photo-input").files && $("photo-input").files[0];
+          $("photo-input").value = "";
+          if (!file) return;
+          if (!/^image\//.test(file.type)) { WA.toast("Please choose an image file.", "error"); return; }
+          // Let the member frame the photo (drag + zoom) before saving.
+          const dataUrl = await openCropper(file);
+          if (!dataUrl) return;
+          $("photo-btn").disabled = true;
+          try {
+            const { error } = await WA.client.from("profiles")
+              .update({ avatar: dataUrl, updated_at: new Date().toISOString() }).eq("id", user.id);
+            if (error) throw error;
+            profile.avatar = dataUrl;
+            paintHeader();
+            WA.renderNav("profile", profile);
+            WA.toast("Profile photo updated (" + Math.round(dataUrl.length / 1024) + " KB).", "success");
+          } catch (err) {
+            WA.toast(err.message || "Could not update photo.", "error");
+          } finally {
+            $("photo-btn").disabled = false;
+            updatePhotoControls();
+          }
+        });
+
+        /* Circular crop tool: drag to reposition, slider to zoom, then the
+           visible circle is rendered to a 128px square JPEG. */
+        function openCropper(file) {
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onerror = () => { WA.toast("Could not read the file.", "error"); resolve(null); };
+            reader.onload = () => {
+              const img = new Image();
+              img.onerror = () => { WA.toast("That image could not be loaded.", "error"); resolve(null); };
+              img.onload = () => buildCropUI(img, resolve);
+              img.src = reader.result;
+            };
+            reader.readAsDataURL(file);
+          });
+        }
+
+        function buildCropUI(img, resolve) {
+          const FRAME = Math.min(260, Math.floor(window.innerWidth * 0.78));
+          const root = $("crop-root");
+          root.innerHTML =
+            '<div class="modal-backdrop"><div class="modal" style="max-width:360px">' +
+            '<h3>Position your photo</h3>' +
+            '<div class="crop-frame" id="crop-frame"><img id="crop-img" alt="" /></div>' +
+            '<p class="crop-hint">Drag to reposition · use the slider to zoom</p>' +
+            '<div class="crop-zoom">🔍<input type="range" id="crop-zoom" min="1" max="3" step="0.01" value="1" /></div>' +
+            '<div style="display:flex; gap:10px; margin-top:16px">' +
+            '<button class="btn" id="crop-save">Save photo</button>' +
+            '<button class="btn ghost" id="crop-cancel">Cancel</button></div>' +
+            "</div></div>";
+
+          const frameEl = $("crop-frame");
+          frameEl.style.width = FRAME + "px"; frameEl.style.height = FRAME + "px";
+          const imgEl = $("crop-img");
+          imgEl.src = img.src;
+
+          const cover = Math.max(FRAME / img.naturalWidth, FRAME / img.naturalHeight);
+          let zoom = 1, ox = 0, oy = 0;
+          const scale = () => cover * zoom;
+          function clamp() {
+            const dw = img.naturalWidth * scale(), dh = img.naturalHeight * scale();
+            ox = Math.min(0, Math.max(FRAME - dw, ox));
+            oy = Math.min(0, Math.max(FRAME - dh, oy));
+          }
+          function layout() {
+            clamp();
+            const s = scale();
+            imgEl.style.width = (img.naturalWidth * s) + "px";
+            imgEl.style.height = (img.naturalHeight * s) + "px";
+            imgEl.style.left = ox + "px"; imgEl.style.top = oy + "px";
+          }
+          // start centred
+          ox = (FRAME - img.naturalWidth * scale()) / 2;
+          oy = (FRAME - img.naturalHeight * scale()) / 2;
+          layout();
+
+          // drag (mouse + touch via pointer events)
+          let dragging = false, px = 0, py = 0;
+          frameEl.addEventListener("pointerdown", (e) => {
+            dragging = true; px = e.clientX; py = e.clientY;
+            frameEl.setPointerCapture(e.pointerId);
+          });
+          frameEl.addEventListener("pointermove", (e) => {
+            if (!dragging) return;
+            ox += e.clientX - px; oy += e.clientY - py; px = e.clientX; py = e.clientY;
+            layout();
+          });
+          frameEl.addEventListener("pointerup", () => { dragging = false; });
+          frameEl.addEventListener("pointercancel", () => { dragging = false; });
+
+          // zoom around the centre of the frame
+          $("crop-zoom").addEventListener("input", (e) => {
+            const cx = FRAME / 2, cy = FRAME / 2;
+            const oldS = scale();
+            const ix = (cx - ox) / oldS, iy = (cy - oy) / oldS;
+            zoom = Number(e.target.value);
+            const newS = scale();
+            ox = cx - ix * newS; oy = cy - iy * newS;
+            layout();
+          });
+
+          function close() { root.innerHTML = ""; }
+          $("crop-cancel").addEventListener("click", () => { close(); resolve(null); });
+          root.querySelector(".modal-backdrop").addEventListener("click", (e) => {
+            if (e.target.classList.contains("modal-backdrop")) { close(); resolve(null); }
+          });
+          $("crop-save").addEventListener("click", () => {
+            const s = scale();
+            const sx = (-ox) / s, sy = (-oy) / s, ss = FRAME / s;
+            const canvas = document.createElement("canvas");
+            canvas.width = 128; canvas.height = 128;
+            const cxt = canvas.getContext("2d");
+            cxt.imageSmoothingQuality = "high";
+            cxt.drawImage(img, sx, sy, ss, ss, 0, 0, 128, 128);
+            close();
+            resolve(WA.canvasToTinyJpeg(canvas));
+          });
+        }
+        $("photo-remove").addEventListener("click", async () => {
+          if (!confirm("Remove your profile photo?")) return;
+          const { error } = await WA.client.from("profiles")
+            .update({ avatar: null, updated_at: new Date().toISOString() }).eq("id", user.id);
+          if (error) { WA.toast("Could not remove: " + error.message, "error"); return; }
+          profile.avatar = null;
+          paintHeader();
+          WA.renderNav("profile", profile);
+          updatePhotoControls();
+          WA.toast("Profile photo removed.", "success");
+        });
+        function updatePhotoControls() {
+          const has = profile.avatar && WA.AVATAR_RE.test(profile.avatar);
+          $("photo-remove").classList.toggle("hidden", !has);
+        }
+        updatePhotoControls();
+
         $("edit-btn").classList.remove("hidden");
         $("edit-btn").addEventListener("click", () => {
           $("e-name").value = profile.full_name || "";

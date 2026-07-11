@@ -256,6 +256,20 @@ select.tz-inline {
 .session-card { position: relative; border-left: 5px solid var(--gray-200); }
 .session-card.has-presenter { border-left-color: var(--navy-800); }
 .session-card.has-host { border-left-color: var(--red); background: linear-gradient(180deg, #fdf7f8, #fff); }
+
+/* colour-coded event highlight by what the slot already has */
+.session-card.ev-both { border-left-color: var(--red); background: linear-gradient(180deg, #fdf3f5, #fff); }
+.session-card.ev-pres { border-left-color: var(--navy-800); }
+.session-card.ev-host { border-left-color: #c98a00; background: linear-gradient(180deg, #fffdf4, #fff); }
+
+.ev-chip {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.3px; padding: 3px 10px; border-radius: 999px; margin: 6px 0 2px;
+}
+.ev-chip.both { background: var(--red-soft); color: var(--red-dark); border: 1px solid var(--red-border); }
+.ev-chip.pres { background: var(--gray-100); color: var(--navy-800); border: 1px solid var(--gray-200); }
+.ev-chip.host { background: #fbf1d9; color: #8a6100; border: 1px solid #ecd9a6; }
+.ev-chip.none { background: var(--gray-100); color: var(--muted); border: 1px solid var(--gray-200); }
 .session-when { font-weight: 700; color: var(--navy-800); font-size: 1.02rem; }
 .session-host-line {
   display: flex; align-items: center; gap: 8px; margin: 8px 0;

@@ -234,13 +234,24 @@
           "</div>";
       }
 
+      // Colour-coded status so people can tell at a glance what a slot has.
+      function evStatus(g) {
+        const h = g.hosts.length, p = g.presenters.length;
+        if (h && p) return { cls: "both", chip: "⭐📄 Host & Presenter confirmed" };
+        if (p) return { cls: "pres", chip: "📄 Presenter confirmed — needs a host" };
+        if (h) return { cls: "host", chip: "⭐ Host available — needs a presenter" };
+        return { cls: "none", chip: "👥 Members available" };
+      }
+
       function sessionCard(g) {
-        const cls = "card session-card has-presenter" + (g.hosts.length ? " has-host" : "");
+        const st = evStatus(g);
+        const cls = "card session-card has-presenter ev-" + st.cls + (g.hosts.length ? " has-host" : "");
         let html = '<div class="' + cls + '">';
         html += '<div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center">' +
           '<span class="session-when">🗓 ' + WA.fmtDateTime(g.date) + "</span>" +
           '<span class="count-pill">👥 ' + g.all.length + " member" + (g.all.length === 1 ? "" : "s") + " in this slot</span>" +
           "</div>";
+        html += '<div><span class="ev-chip ' + st.cls + '">' + st.chip + "</span></div>";
         html += joinArea(g);
         if (g.hosts.length) {
           html += '<div class="session-host-line">⭐ Host: ' +
@@ -259,17 +270,19 @@
 
       function openCard(g) {
         const most = g.all.length;
+        const st = evStatus(g); // open slots → "host" (needs presenter) or "none"
         const mine = g.all.find((a) => a.user_id === user.id);
         const cta = mine
           ? WA.roleBadge(mine.role) + ' <span class="small muted">you’re in</span>'
           : '<button class="btn sm join-btn" data-slot="' + WA.esc(g.iso) + '">✋ I’ll attend</button>' +
             '<a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, "presenter")) + '">Present here</a>';
-        return '<div class="card tight session-card">' +
+        return '<div class="card tight session-card ev-' + st.cls + '">' +
           '<div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center">' +
           "<div>" +
           '<span class="session-when">' + WA.fmtDateTime(g.date) + "</span><br/>" +
+          '<span class="ev-chip ' + st.cls + '" style="margin-top:4px">' + st.chip + "</span><br/>" +
           '<span class="small muted">' +
-          (g.hosts.length ? '⭐ Host available: ' + g.hosts.map(personLink).join(", ") + " · " : "") +
+          (g.hosts.length ? "⭐ Host: " + g.hosts.map(personLink).join(", ") + " · " : "") +
           most + " member" + (most === 1 ? "" : "s") + " available</span>" +
           "</div>" +
           '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">' + peopleAvatars(g.all) +

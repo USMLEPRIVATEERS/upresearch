@@ -85,8 +85,9 @@
 
       <p class="small mt" style="margin-bottom:2px"><strong>1-hour time slots</strong>
         (in your selected timezone — pick one or more)</p>
-      <p class="small muted" id="count-hint" style="margin:0 0 2px">👥 = members already available
-        at that time — join those slots to make a session happen.</p>
+      <p class="small muted" id="count-hint" style="margin:0 0 2px">👥 = members already available ·
+        ⭐ = a host is in that slot · 📄 = a presenter is in that slot. Join the ones that already
+        have people to make a session happen.</p>
       <div class="hour-grid" id="hour-grid"></div>
 
       <div class="checkbox-row" id="open-ended-row">
@@ -170,8 +171,8 @@
         // The >1 month commitment only makes sense for recurring patterns.
         $("open-ended-row").classList.toggle("hidden", mode !== "recurring");
         $("count-hint").textContent = mode === "recurring"
-          ? "👥 = members already available at that time on the next occurrence of your selected day(s) — busiest day shown."
-          : "👥 = members already available at that time — join those slots to make a session happen.";
+          ? "👥 members · ⭐ host present · 📄 presenter present — on the next occurrence of your selected day(s), busiest day shown."
+          : "👥 members already available · ⭐ a host is in that slot · 📄 a presenter is in that slot.";
         renderHourGrid();
       });
       $("open-ended-row").classList.add("hidden"); // start in single mode

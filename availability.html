@@ -383,7 +383,31 @@
           const { error } = await WA.client.from("availabilities").insert(fresh);
           if (error) throw error;
 
+          /* Switching up from attendee: if you now sign up as presenter or
+             host for a slot, drop any earlier "attendee" row for that same
+             slot so you don't appear in both roles. */
+          let switched = 0;
+          if (role !== "attendee") {
+            const conflicts = (existing || []).filter((r) => r.role === "attendee").filter((r) =>
+              fresh.some((row) => {
+                if (row.kind === "single") {
+                  const slot = new Date(row.slot_start);
+                  if (r.kind === "single") return new Date(r.slot_start).getTime() === slot.getTime();
+                  return r.weekday_utc === slot.getUTCDay() && r.hour_utc === slot.getUTCHours() && WA.isRowActiveAt(r, slot);
+                }
+                if (r.kind === "recurring") return r.weekday_utc === row.weekday_utc && r.hour_utc === row.hour_utc;
+                const sd = new Date(r.slot_start);
+                return sd.getUTCDay() === row.weekday_utc && sd.getUTCHours() === row.hour_utc;
+              }));
+            if (conflicts.length) {
+              const { error: delErr } = await WA.client.from("availabilities")
+                .delete().in("id", conflicts.map((r) => r.id));
+              if (!delErr) switched = conflicts.length;
+            }
+          }
+
           WA.toast("Availability saved — it is now visible to all members." +
+            (switched ? " Switched from attendee to " + role + " for that slot." : "") +
             (skipped ? " (" + skipped + " duplicate slot" + (skipped > 1 ? "s" : "") + " skipped.)" : ""),
             "success");
           selectedHours.clear(); selectedDays.clear();

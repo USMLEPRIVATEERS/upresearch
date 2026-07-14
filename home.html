@@ -226,8 +226,12 @@
       function joinArea(g) {
         const mine = g.all.find((a) => a.user_id === user.id);
         if (mine) {
-          return '<div style="margin-top:10px">' + WA.roleBadge(mine.role) +
-            ' <span class="small muted">You’re in this slot · <a href="availability.html">manage</a></span></div>';
+          return '<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center">' +
+            WA.roleBadge(mine.role) +
+            ' <span class="small muted">You’re in · <a href="availability.html">manage</a></span>' +
+            (mine.role !== "presenter"
+              ? '<a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, "presenter")) + '">📄 Present instead</a>' : "") +
+            "</div>";
         }
         return '<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">' +
           '<button class="btn sm join-btn" data-slot="' + WA.esc(g.iso) + '">✋ I’ll attend</button>' +
@@ -274,7 +278,9 @@
         const st = evStatus(g); // open slots → "host" (needs presenter) or "none"
         const mine = g.all.find((a) => a.user_id === user.id);
         const cta = mine
-          ? WA.roleBadge(mine.role) + ' <span class="small muted">you’re in</span>'
+          ? WA.roleBadge(mine.role) + ' <span class="small muted">you’re in</span>' +
+            (mine.role !== "presenter"
+              ? ' <a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, "presenter")) + '">📄 Present instead</a>' : "")
           : '<button class="btn sm join-btn" data-slot="' + WA.esc(g.iso) + '">✋ I’ll attend</button>' +
             '<a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, "presenter")) + '">Present here</a>';
         return '<div class="card tight session-card ev-' + st.cls + '">' +
@@ -495,6 +501,10 @@
         if (mine) {
           html += '<p class="small" style="margin:0 0 8px">' + WA.roleBadge(mine.role) +
             ' You’re in this slot · <a href="availability.html">manage</a></p>';
+          if (mine.role !== "presenter") {
+            html += '<div style="margin-bottom:8px"><a class="btn sm ghost" href="' +
+              WA.esc(WA.slotHref(g.date, "presenter")) + '">📄 Present instead — volunteer to present the article</a></div>';
+          }
         } else {
           html += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px">' +
             '<button class="btn sm join-btn" data-slot="' + WA.esc(g.iso) + '">✋ I’ll attend</button>' +

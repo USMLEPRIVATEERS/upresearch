@@ -91,16 +91,19 @@ nav#nav {
 .brand span.brand-text { display: flex; flex-direction: column; line-height: 1.15; }
 .brand strong { font-size: 0.98rem; letter-spacing: 0.2px; }
 .brand em { font-style: normal; font-size: 0.74rem; color: #c9d4ea; letter-spacing: 1.4px; text-transform: uppercase; }
-.nav-links { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.nav-links { display: flex; align-items: center; gap: 2px; margin-left: auto; }
 .nav-links a {
-  color: #c9d4ea; text-decoration: none; padding: 8px 12px; border-radius: 8px;
-  font-size: 0.92rem; display: inline-flex; align-items: center; gap: 7px;
+  color: #c9d4ea; text-decoration: none; padding: 8px 10px; border-radius: 8px;
+  font-size: 0.9rem; display: inline-flex; align-items: center; gap: 7px;
+  white-space: nowrap; flex-shrink: 0;
 }
 .nav-links a:hover { background: rgba(255,255,255,0.09); color: #fff; text-decoration: none; }
 .nav-links a.active { background: var(--red); color: #fff; }
 .nav-toggle { display: none; margin-left: auto; background: none; border: 0; color: #fff; font-size: 1.5rem; cursor: pointer; }
 
-@media (max-width: 860px) {
+/* Collapse to a hamburger menu while the full row of links would still be
+   cramped (there are now 7 sections + profile + sign out). */
+@media (max-width: 1080px) {
   .nav-toggle { display: block; }
   .nav-links {
     display: none; position: absolute; top: 62px; left: 0; right: 0;

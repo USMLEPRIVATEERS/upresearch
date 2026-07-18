@@ -23,12 +23,14 @@
     .card { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
     .card-header { padding:1.1rem 1.25rem; border-bottom:1px solid var(--gray-200); }
     .card-body { padding:1.25rem; }
-    .btn { display:inline-flex; align-items:center; justify-content:center; gap:.4rem; padding:.6rem 1rem; border-radius:10px; border:0; cursor:pointer; font:inherit; font-weight:600; font-size:.92rem; background:var(--gray-100); color:var(--text-dark); text-decoration:none; transition:filter .15s,transform .05s,background .15s; }
-    .btn:hover { filter:brightness(.97); } .btn:active { transform:translateY(1px); }
-    .btn-primary { background:var(--accent); color:#fff; } .btn-primary:hover { background:var(--accent-dark); filter:none; }
-    .btn-secondary { background:#fff; border:1.5px solid var(--gray-200); color:var(--gray-600); }
-    .btn-outline { background:#fff; border:1.5px solid var(--gray-200); color:var(--navy); }
-    .btn-danger { background:#fff; border:1.5px solid #dc2626; color:#dc2626; } .btn-danger:hover { background:#fef2f2; filter:none; }
+    /* Note: the global .btn in css/styles.css sets color:#fff !important, so the
+       light-background variants below must use !important to stay readable. */
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:.4rem; padding:.6rem 1rem; border-radius:10px; border:0; cursor:pointer; font:inherit; font-weight:600; font-size:.92rem; background:var(--gray-100); color:var(--text-dark) !important; text-decoration:none; transition:filter .15s,transform .05s,background .15s; }
+    .btn:hover { filter:brightness(.97); background:var(--gray-100); } .btn:active { transform:translateY(1px); }
+    .btn-primary { background:var(--accent); color:#fff !important; } .btn-primary:hover { background:var(--accent-dark); filter:none; }
+    .btn-secondary { background:#fff; border:1.5px solid var(--gray-200); color:var(--gray-600) !important; } .btn-secondary:hover { background:var(--gray-50); }
+    .btn-outline { background:#fff; border:1.5px solid var(--gray-200); color:var(--navy) !important; } .btn-outline:hover { background:var(--gray-50); border-color:var(--gray-500); }
+    .btn-danger { background:#fff; border:1.5px solid #dc2626; color:#dc2626 !important; } .btn-danger:hover { background:#fef2f2; filter:none; }
     .btn-sm { padding:.4rem .7rem; font-size:.82rem; border-radius:8px; }
     .btn-group { display:inline-flex; gap:.5rem; }
     .form-group { margin-bottom:1.1rem; }

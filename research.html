@@ -423,6 +423,11 @@
         });
         el.removeAttribute('style'); el.removeAttribute('class');
       });
+      // Drop empty block elements (e.g. Google Docs spacer paragraphs) that would
+      // otherwise render as big blank gaps. Keep blocks that hold real content.
+      temp.querySelectorAll('p,div,h1,h2,h3,h4,h5,h6').forEach(el => {
+        if (!el.textContent.replace(/[\s ]+/g, '') && !el.querySelector('img,table,hr,iframe')) el.remove();
+      });
       temp.querySelectorAll('a').forEach(a => {
         if (a.href && !a.href.startsWith('javascript:')) {
           a.setAttribute('target', '_blank'); a.setAttribute('rel', 'noopener noreferrer'); a.setAttribute('onclick', 'event.stopPropagation()');
@@ -1044,10 +1049,27 @@
     .project-description { color:#1c2536; font-size:.9rem; line-height:1.5; margin-bottom:1rem; white-space:pre-wrap; word-wrap:break-word; padding:.6rem; border-radius:8px; max-height:80px; overflow:hidden; position:relative; }
     .project-description::after { content:''; position:absolute; bottom:0; left:0; right:0; height:22px; background:linear-gradient(transparent,#fff); }
     .project-description * { color:#1c2536 !important; background:transparent !important; }
-    .project-description-formatted { color:#1c2536; font-size:.95rem; white-space:pre-wrap; word-wrap:break-word; padding:1rem; border-radius:var(--radius-md); border:2px solid var(--gray-200); cursor:pointer; transition:all .2s; min-height:56px; }
+    /* word-wrap only (NOT pre-wrap) — pre-wrap rendered every newline in pasted
+       HTML literally, which is what caused the huge gaps and broken list/table layout. */
+    .project-description-formatted { color:#1c2536; font-size:.95rem; word-wrap:break-word; padding:1rem; border-radius:var(--radius-md); border:2px solid var(--gray-200); cursor:pointer; transition:all .2s; min-height:56px; overflow-x:auto; }
     .project-description-formatted:hover { border-color:var(--accent); background:#fffafb; }
     .project-description-formatted:empty::before { content:'Click to add a description...'; color:#9ca3af; font-style:italic; }
     .project-description-formatted a { color:#b31942 !important; text-decoration:underline; }
+    /* shared rich-text rendering (applies to the read view AND both editors) */
+    .project-description-formatted p, .rich-text-editor p { margin:0 0 .55rem; }
+    .project-description-formatted p:last-child, .rich-text-editor p:last-child { margin-bottom:0; }
+    .project-description-formatted h1, .project-description-formatted h2, .project-description-formatted h3, .project-description-formatted h4,
+    .rich-text-editor h1, .rich-text-editor h2, .rich-text-editor h3, .rich-text-editor h4 { margin:.7rem 0 .35rem; line-height:1.25; color:var(--navy); }
+    .project-description-formatted ul, .project-description-formatted ol, .rich-text-editor ul, .rich-text-editor ol { margin:.4rem 0 .6rem; padding-left:1.5rem; }
+    .project-description-formatted li, .rich-text-editor li { margin:.15rem 0; line-height:1.45; }
+    .project-description-formatted li > p, .rich-text-editor li > p { margin:0; }
+    .project-description-formatted img, .rich-text-editor img { max-width:100%; height:auto; }
+    /* pasted tables: clean borders, header shading, zebra rows */
+    .project-description-formatted table, .rich-text-editor table { border-collapse:collapse; width:auto; max-width:100%; margin:.6rem 0; font-size:.9em; }
+    .project-description-formatted th, .project-description-formatted td, .rich-text-editor th, .rich-text-editor td { border:1px solid var(--gray-200); padding:.4rem .6rem; text-align:left; vertical-align:top; }
+    .project-description-formatted th, .rich-text-editor th { background:var(--navy); color:#fff; font-weight:700; }
+    .project-description-formatted tr:nth-child(even) td, .rich-text-editor tr:nth-child(even) td { background:var(--gray-50); }
+    .project-description-formatted td p, .rich-text-editor td p { margin:0; }
     .description-edit-area { border:2px solid var(--accent); border-radius:var(--radius-md); overflow:hidden; }
     .rich-text-editor { min-height:120px; max-height:340px; padding:1rem; border:1px solid var(--gray-200); border-radius:10px; background:#fff; overflow-y:auto; }
     .rich-text-editor:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(179,25,66,.14); }

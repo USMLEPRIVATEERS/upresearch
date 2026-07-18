@@ -760,4 +760,312 @@
     WA.renderNav(activeNav, profile);
     return { user, profile };
   };
+
+  /* ============================================================
+     Co-author recruitment board ("open positions").
+     Self-contained + page-agnostic: injects its own styles and
+     modals (wapo-* class names) so it renders identically on the
+     Home and Research pages. Reads/writes research_recruitments
+     and research_applications; degrades to hidden if those tables
+     don't exist yet.
+     ============================================================ */
+  WA.positions = (function () {
+    let ctx = null, container = null, onChange = null;
+    let recruitments = [], applications = [], myApps = {}, showHidden = false, wired = false;
+    const HIDDEN_KEY = "wa_research_hidden_positions";
+    const esc = (s) => WA.esc(s);
+    const $ = (id) => document.getElementById(id);
+    const openM = (id) => { const e = $(id); if (e) e.classList.add("active"); };
+    const closeM = (id) => { const e = $(id); if (e) e.classList.remove("active"); };
+    function getHidden() { try { return JSON.parse(localStorage.getItem(HIDDEN_KEY) || "[]") || []; } catch (e) { return []; } }
+    function setHidden(a) { try { localStorage.setItem(HIDDEN_KEY, JSON.stringify(a)); } catch (e) {} }
+    function initials(name) { const p = String(name || "?").trim().split(/\s+/).filter(Boolean); return (p.map((w) => w[0]).slice(0, 2).join("").toUpperCase()) || "?"; }
+    function wc(s) { return ((s || "").trim().match(/\S+/g) || []).length; }
+
+    const STYLE = [
+      "<style id='wapo-styles'>",
+      ".wapo-section{margin:0;}",
+      ".wapo-card{background:#fff;border:1px solid #e2e8f2;border-radius:14px;box-shadow:0 1px 2px rgba(10,49,97,.06);padding:18px 20px;}",
+      ".wapo-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}",
+      ".wapo-title{margin:0;font-size:1.15rem;color:#0a3161;font-weight:800;}",
+      ".wapo-intro{color:#64748b;font-size:.85rem;margin:.35rem 0 1rem;}",
+      ".wapo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem;}",
+      ".wapo-item{border:1px solid #e2e8f2;border-radius:14px;padding:1rem;background:#fff;display:flex;flex-direction:column;gap:.6rem;}",
+      ".wapo-item.mine{border-color:#0a3161;background:linear-gradient(180deg,#f8faff,#fff);}",
+      ".wapo-cardhead{display:flex;align-items:center;gap:.6rem;}",
+      ".wapo-avatar{flex-shrink:0;width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;color:#fff;background:#0a3161;}",
+      ".wapo-name{font-weight:700;color:#0a3161;font-size:.95rem;}",
+      ".wapo-you{font-size:.66rem;font-weight:700;text-transform:uppercase;color:#fff;background:#b31942;padding:1px 6px;border-radius:999px;margin-left:.25rem;}",
+      ".wapo-spec{font-size:.82rem;color:#8e1434;font-weight:600;}",
+      ".wapo-help{font-size:.85rem;color:#334155;line-height:1.4;}",
+      ".wapo-help strong{color:#0a3161;}",
+      ".wapo-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:auto;}",
+      ".wapo-btn{display:inline-flex;align-items:center;justify-content:center;gap:.3rem;padding:.45rem .8rem;border-radius:8px;border:0;cursor:pointer;font:inherit;font-weight:600;font-size:.85rem;text-decoration:none;line-height:1.2;}",
+      ".wapo-btn.primary{background:#b31942;color:#fff;}.wapo-btn.primary:hover{background:#8e1434;}",
+      ".wapo-btn.ghost{background:#fff;border:1.5px solid #e2e8f2;color:#0a3161;}.wapo-btn.ghost:hover{background:#f7f8fb;}",
+      ".wapo-btn.danger{background:#fff;border:1.5px solid #dc2626;color:#dc2626;}.wapo-btn.danger:hover{background:#fef2f2;}",
+      ".wapo-status{font-size:.8rem;font-weight:700;padding:.3rem .6rem;border-radius:999px;}",
+      ".wapo-status.pending{background:#fef3c7;color:#92400e;}.wapo-status.accepted{background:#dcfce7;color:#15803d;}.wapo-status.rejected{background:#eef1f6;color:#64748b;}",
+      ".wapo-overlay{position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(10,22,40,.6);z-index:1000;display:none;align-items:flex-start;justify-content:center;padding:24px 14px;overflow-y:auto;-webkit-overflow-scrolling:touch;}",
+      ".wapo-overlay.active{display:flex;}",
+      ".wapo-modal{background:#fff;border-radius:14px;width:100%;max-width:560px;box-shadow:0 16px 50px rgba(0,0,0,.32);}",
+      ".wapo-mhead{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.25rem;background:#0a3161;color:#fff;border-radius:14px 14px 0 0;}",
+      ".wapo-mtitle{font-size:1.1rem;font-weight:700;}",
+      ".wapo-mclose{background:rgba(255,255,255,.15);border:0;color:#fff;width:34px;height:34px;border-radius:8px;font-size:1.4rem;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;}",
+      ".wapo-mclose:hover{background:rgba(255,255,255,.28);}",
+      ".wapo-mbody{padding:1.25rem;}",
+      ".wapo-mfoot{display:flex;justify-content:flex-end;gap:.6rem;padding:1rem 1.25rem;border-top:1px solid #e2e8f2;background:#f7f8fb;border-radius:0 0 14px 14px;flex-wrap:wrap;}",
+      ".wapo-field{margin-bottom:1rem;}",
+      ".wapo-label{display:block;font-weight:600;font-size:.88rem;color:#0a3161;margin-bottom:.35rem;}",
+      ".wapo-input,.wapo-textarea{width:100%;padding:.6rem .7rem;border:1.5px solid #e2e8f2;border-radius:10px;font:inherit;font-size:16px;background:#fff;color:#1c2536;box-sizing:border-box;}",
+      ".wapo-textarea{min-height:96px;resize:vertical;}",
+      ".wapo-hint{display:block;font-size:.78rem;color:#64748b;margin-top:.3rem;}",
+      ".wapo-optional{font-weight:400;color:#64748b;font-size:.82rem;}",
+      ".wapo-summary{background:#f7f8fb;border:1px solid #e2e8f2;border-radius:12px;padding:.75rem .9rem;margin-bottom:1rem;}",
+      ".wapo-appitem{border:1px solid #e2e8f2;border-radius:12px;padding:.9rem 1rem;margin-bottom:.85rem;display:flex;flex-direction:column;gap:.6rem;}",
+      ".wapo-row{display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap;}",
+      ".wapo-pitch{background:#f7f8fb;border-radius:8px;padding:.6rem .75rem;font-size:.88rem;color:#334155;line-height:1.5;white-space:pre-wrap;}",
+      ".wapo-meta{font-size:.85rem;color:#475569;}",
+      ".wapo-wa{color:#16a34a;font-weight:600;text-decoration:none;}.wapo-wa:hover{text-decoration:underline;}",
+      ".wapo-note{background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;border-radius:10px;padding:.7rem .85rem;font-size:.83rem;line-height:1.5;margin-bottom:1rem;}",
+      ".wapo-empty{color:#94a3b8;font-size:.85rem;}",
+      "@media (max-width:640px){.wapo-modal{max-height:96vh;overflow-y:auto;}}",
+      "</style>",
+    ].join("");
+
+    const MODALS =
+      "<div id='wapo-apply' class='wapo-overlay'><div class='wapo-modal'>" +
+      "<div class='wapo-mhead'><span class='wapo-mtitle'>✋ Apply to join</span><button type='button' class='wapo-mclose' data-close='wapo-apply'>&times;</button></div>" +
+      "<div class='wapo-mbody'><div id='wapo-apply-summary' class='wapo-summary'></div><input type='hidden' id='wapo-apply-rid'>" +
+      "<p class='wapo-hint'>The owner will see your name, specialty, WhatsApp and note, and decide whether to add you as a co-author.</p>" +
+      "<div class='wapo-field'><label class='wapo-label'>WhatsApp number *</label><input type='text' id='wapo-apply-wa' class='wapo-input' placeholder='+55 11 90000-0000'></div>" +
+      "<div class='wapo-field'><label class='wapo-label'>How can you help? <span class='wapo-optional'>(up to 100 words)</span></label><textarea id='wapo-apply-pitch' class='wapo-textarea' placeholder='Your relevant experience and how you can contribute...'></textarea><span class='wapo-hint'><span id='wapo-apply-count'>0</span>/100 words</span></div></div>" +
+      "<div class='wapo-mfoot'><button type='button' class='wapo-btn ghost' data-close='wapo-apply'>Cancel</button><button type='button' class='wapo-btn primary' id='wapo-apply-send'>Send application</button></div>" +
+      "</div></div>" +
+      "<div id='wapo-apps' class='wapo-overlay'><div class='wapo-modal' style='max-width:720px;'>" +
+      "<div class='wapo-mhead'><span class='wapo-mtitle'>📨 Applications</span><button type='button' class='wapo-mclose' data-close='wapo-apps'>&times;</button></div>" +
+      "<div class='wapo-mbody'><div id='wapo-apps-list'></div></div>" +
+      "<div class='wapo-mfoot'><button type='button' class='wapo-btn ghost' data-close='wapo-apps'>Close</button></div>" +
+      "</div></div>" +
+      "<div id='wapo-recruit' class='wapo-overlay'><div class='wapo-modal'>" +
+      "<div class='wapo-mhead'><span class='wapo-mtitle'>🤝 Recruit Co-authors</span><button type='button' class='wapo-mclose' data-close='wapo-recruit'>&times;</button></div>" +
+      "<div class='wapo-mbody'><div id='wapo-recruit-existing' style='display:none;'></div><div id='wapo-recruit-form'>" +
+      "<p class='wapo-hint'>Post an anonymous call. Members see only your name, specialty and what you need — not the project title or links. When you accept someone, they become a co-author and can see the project.</p>" +
+      "<input type='hidden' id='wapo-recruit-pid'>" +
+      "<div class='wapo-field'><label class='wapo-label'>Your specialty *</label><input type='text' id='wapo-recruit-spec' class='wapo-input' placeholder='e.g. Cardiology'></div>" +
+      "<div class='wapo-field'><label class='wapo-label'>What help do you need? <span class='wapo-optional'>(optional)</span></label><input type='text' id='wapo-recruit-help' class='wapo-input' placeholder='e.g. statistical analysis, study screening, writing Methods'></div></div></div>" +
+      "<div class='wapo-mfoot'><button type='button' class='wapo-btn ghost' data-close='wapo-recruit'>Cancel</button><button type='button' class='wapo-btn primary' id='wapo-recruit-send'>Post position</button></div>" +
+      "</div></div>";
+
+    function ensureDom() {
+      if (!document.getElementById("wapo-styles")) document.head.insertAdjacentHTML("beforeend", STYLE);
+      if (!document.getElementById("wapo-apply")) {
+        document.body.insertAdjacentHTML("beforeend", MODALS);
+        // dismissal: backdrop click + Esc
+        Array.prototype.forEach.call(document.querySelectorAll(".wapo-overlay"), (ov) => {
+          ov.addEventListener("mousedown", (e) => { ov._d = e.target === ov; });
+          ov.addEventListener("click", (e) => { if (e.target === ov && ov._d) ov.classList.remove("active"); });
+        });
+        Array.prototype.forEach.call(document.querySelectorAll(".wapo-mclose,[data-close]"), (b) => {
+          b.addEventListener("click", () => closeM(b.getAttribute("data-close")));
+        });
+        document.addEventListener("keydown", (e) => {
+          if (e.key !== "Escape") return;
+          const open = document.querySelectorAll(".wapo-overlay.active");
+          if (open.length) open[open.length - 1].classList.remove("active");
+        });
+        $("wapo-apply-send").addEventListener("click", submitApply);
+        $("wapo-apply-pitch").addEventListener("input", () => {
+          const n = wc($("wapo-apply-pitch").value); const el = $("wapo-apply-count");
+          el.textContent = n; el.style.color = n > 100 ? "#dc2626" : "";
+        });
+        $("wapo-recruit-send").addEventListener("click", submitRecruit);
+        $("wapo-apps-list").addEventListener("click", (e) => {
+          const btn = e.target.closest("button[data-act]"); if (!btn) return;
+          const id = Number(btn.getAttribute("data-id"));
+          if (btn.getAttribute("data-act") === "accept") acceptApp(id);
+          else if (btn.getAttribute("data-act") === "reject") rejectApp(id);
+        });
+      }
+    }
+
+    async function load() {
+      try {
+        const { data: recs, error } = await WA.client.from("research_recruitments")
+          .select("*, owner:created_by(id, full_name, specialty)").eq("status", "open").order("created_at", { ascending: false });
+        if (error) throw error;
+        recruitments = recs || [];
+        const { data: apps } = await WA.client.from("research_applications")
+          .select("*, applicant:applicant_id(id, full_name, specialty)");
+        applications = apps || [];
+        myApps = {}; applications.forEach((a) => { if (a.applicant_id === ctx.user.id) myApps[a.recruitment_id] = a; });
+        render();
+      } catch (e) {
+        console.warn("Open-positions board unavailable (run schema.sql sections 8-9):", (e && e.message) || e);
+        if (container) container.innerHTML = "";
+      }
+    }
+
+    function render() {
+      if (!container) return;
+      if (!recruitments.length) { container.innerHTML = ""; return; }
+      const hidden = getHidden();
+      const hiddenCount = recruitments.filter((r) => r.created_by !== ctx.user.id && hidden.includes(r.id)).length;
+      const toShow = showHidden ? recruitments : recruitments.filter((r) => r.created_by === ctx.user.id || !hidden.includes(r.id));
+      const toggle = hiddenCount > 0
+        ? "<button type='button' class='wapo-btn ghost' data-toggle-hidden>" + (showHidden ? "Hide hidden (" + hiddenCount + ")" : "Show hidden (" + hiddenCount + ")") + "</button>"
+        : "";
+      const cards = toShow.length ? toShow.map((r) => cardHtml(r, hidden.includes(r.id))).join("") : "<p class='wapo-empty'>No open positions right now.</p>";
+      container.innerHTML =
+        "<section class='wapo-section'><div class='wapo-card'>" +
+        "<div class='wapo-head'><h2 class='wapo-title'>🤝 Open positions — co-authors wanted</h2>" + toggle + "</div>" +
+        "<p class='wapo-intro'>Members looking for co-authors. Project titles and links stay private — you'll see the full project only if the owner accepts you.</p>" +
+        "<div class='wapo-grid'>" + cards + "</div></div></section>";
+      const tg = container.querySelector("[data-toggle-hidden]");
+      if (tg) tg.addEventListener("click", () => { showHidden = !showHidden; render(); });
+      Array.prototype.forEach.call(container.querySelectorAll("button[data-act]"), (btn) => {
+        btn.addEventListener("click", () => {
+          const id = Number(btn.getAttribute("data-id")); const act = btn.getAttribute("data-act");
+          if (act === "apply") openApply(id);
+          else if (act === "hide") { const h = getHidden(); if (!h.includes(id)) h.push(id); setHidden(h); render(); }
+          else if (act === "unhide") { setHidden(getHidden().filter((x) => x !== id)); render(); }
+          else if (act === "apps") openApps(id);
+          else if (act === "close") closeRecruitment(id);
+        });
+      });
+    }
+
+    function cardHtml(r, isHidden) {
+      const owner = r.owner || {}; const name = owner.full_name || "Member";
+      const mine = r.created_by === ctx.user.id; const app = myApps[r.id]; let actions = "";
+      if (mine) {
+        const n = applications.filter((a) => a.recruitment_id === r.id).length;
+        actions = "<button type='button' class='wapo-btn primary' data-act='apps' data-id='" + r.id + "'>📨 Applications (" + n + ")</button>" +
+          "<button type='button' class='wapo-btn ghost' data-act='close' data-id='" + r.id + "'>Close position</button>";
+      } else if (app) {
+        actions = app.status === "accepted" ? "<span class='wapo-status accepted'>✓ Accepted — you're a co-author</span>"
+          : (app.status === "rejected" ? "<span class='wapo-status rejected'>Not selected</span>" : "<span class='wapo-status pending'>⏳ Application sent</span>");
+      } else {
+        actions = "<button type='button' class='wapo-btn primary' data-act='apply' data-id='" + r.id + "'>✋ Apply to join</button>" +
+          (isHidden ? "<button type='button' class='wapo-btn ghost' data-act='unhide' data-id='" + r.id + "'>Unhide</button>"
+                    : "<button type='button' class='wapo-btn ghost' data-act='hide' data-id='" + r.id + "'>Hide</button>");
+      }
+      return "<div class='wapo-item" + (mine ? " mine" : "") + "'>" +
+        "<div class='wapo-cardhead'><span class='wapo-avatar'>" + esc(initials(name)) + "</span><div><div class='wapo-name'>" + esc(name) + (mine ? " <span class='wapo-you'>you</span>" : "") + "</div><div class='wapo-spec'>" + esc(r.specialty || "") + "</div></div></div>" +
+        (r.help_area ? "<div class='wapo-help'><strong>Needs help with:</strong> " + esc(r.help_area) + "</div>" : "") +
+        "<div class='wapo-actions'>" + actions + "</div></div>";
+    }
+
+    function openApply(recId) {
+      const r = recruitments.find((x) => x.id === recId); if (!r) return;
+      const owner = r.owner || {}; const name = owner.full_name || "Member";
+      $("wapo-apply-rid").value = recId;
+      $("wapo-apply-summary").innerHTML = "<div class='wapo-cardhead'><span class='wapo-avatar'>" + esc(initials(name)) + "</span><div><div class='wapo-name'>" + esc(name) + "</div><div class='wapo-spec'>" + esc(r.specialty || "") + (r.help_area ? " · " + esc(r.help_area) : "") + "</div></div></div>";
+      $("wapo-apply-wa").value = ""; $("wapo-apply-pitch").value = ""; $("wapo-apply-count").textContent = "0"; $("wapo-apply-count").style.color = "";
+      openM("wapo-apply");
+    }
+    async function submitApply() {
+      const recId = Number($("wapo-apply-rid").value);
+      const whatsapp = $("wapo-apply-wa").value.trim(); const pitch = $("wapo-apply-pitch").value.trim();
+      if (!whatsapp) { WA.toast("Enter your WhatsApp number", "info"); return; }
+      if (wc(pitch) > 100) { WA.toast("Please keep your note under 100 words", "info"); return; }
+      const r = recruitments.find((x) => x.id === recId); if (!r) return;
+      const { error } = await WA.client.from("research_applications").insert({ recruitment_id: recId, project_id: r.project_id, applicant_id: ctx.user.id, whatsapp, pitch: pitch || null, status: "pending" });
+      if (error) {
+        if (error.code === "23505" || /duplicate/i.test(error.message || "")) { WA.toast("You already applied to this position", "info"); closeM("wapo-apply"); }
+        else { console.error(error); WA.toast("Failed to send application", "error"); }
+        return;
+      }
+      closeM("wapo-apply"); WA.toast("Application sent!", "success"); await load();
+    }
+
+    function openApps(recId) {
+      const apps = applications.filter((a) => a.recruitment_id === recId);
+      $("wapo-apps-list").innerHTML = apps.length ? apps.map(appItemHtml).join("") : "<p class='wapo-empty'>No applications yet.</p>";
+      openM("wapo-apps");
+    }
+    function appItemHtml(a) {
+      const ap = a.applicant || {}; const name = ap.full_name || "Member";
+      const wa = a.whatsapp ? String(a.whatsapp) : ""; const digits = wa.replace(/[^0-9]/g, "");
+      const badge = a.status === "accepted" ? "<span class='wapo-status accepted'>✓ Accepted</span>"
+        : (a.status === "rejected" ? "<span class='wapo-status rejected'>Rejected</span>" : "<span class='wapo-status pending'>Pending</span>");
+      let btns = "";
+      if (a.status === "pending") btns = "<button type='button' class='wapo-btn primary' data-act='accept' data-id='" + a.id + "'>✓ Accept as co-author</button><button type='button' class='wapo-btn danger' data-act='reject' data-id='" + a.id + "'>Reject</button>";
+      else if (a.status === "rejected") btns = "<button type='button' class='wapo-btn primary' data-act='accept' data-id='" + a.id + "'>✓ Accept anyway</button>";
+      return "<div class='wapo-appitem'>" +
+        "<div class='wapo-row'><div class='wapo-cardhead'><span class='wapo-avatar'>" + esc(initials(name)) + "</span><div><div class='wapo-name'>" + esc(name) + "</div>" + (ap.specialty ? "<div class='wapo-spec'>" + esc(ap.specialty) + "</div>" : "") + "</div></div>" + badge + "</div>" +
+        (a.pitch ? "<div class='wapo-pitch'>" + esc(a.pitch) + "</div>" : "") +
+        "<div class='wapo-meta'>" + (wa ? "📱 " + esc(wa) + (digits ? " &nbsp;<a href='https://wa.me/" + digits + "' target='_blank' rel='noopener noreferrer' class='wapo-wa'>Open WhatsApp ↗</a>" : "") : "<span class='wapo-empty'>No WhatsApp provided</span>") + "</div>" +
+        "<div class='wapo-actions'>" + btns + "</div></div>";
+    }
+    async function acceptApp(appId) {
+      const a = applications.find((x) => x.id === appId); if (!a) return;
+      if (!confirm("Accept this member as a co-author? They will get full access to the project.")) return;
+      try {
+        const { data: pr } = await WA.client.from("research_projects").select("participants").eq("id", a.project_id).single();
+        const participants = Array.from(new Set([].concat((pr && pr.participants) || [], [a.applicant_id])));
+        const { error: pe } = await WA.client.from("research_projects").update({ participants, updated_at: new Date().toISOString() }).eq("id", a.project_id); if (pe) throw pe;
+        const { error: ae } = await WA.client.from("research_applications").update({ status: "accepted", updated_at: new Date().toISOString() }).eq("id", appId); if (ae) throw ae;
+        WA.toast("Accepted! Added as co-author.", "success");
+        await load(); openApps(a.recruitment_id); if (onChange) try { onChange(); } catch (e) {}
+      } catch (e) { console.error(e); WA.toast("Failed to accept application", "error"); }
+    }
+    async function rejectApp(appId) {
+      const a = applications.find((x) => x.id === appId); if (!a) return;
+      if (!confirm("Reject this application?")) return;
+      const { error } = await WA.client.from("research_applications").update({ status: "rejected", updated_at: new Date().toISOString() }).eq("id", appId);
+      if (error) { WA.toast("Failed to reject", "error"); return; }
+      WA.toast("Application rejected", "info"); await load(); openApps(a.recruitment_id);
+    }
+
+    /* Owner posts / manages a call for a specific project (used by the Research page). */
+    function openRecruitForProject(project) {
+      if (!project) return;
+      ensureDom();
+      const existing = recruitments.find((r) => r.project_id === project.id && r.created_by === ctx.user.id);
+      const form = $("wapo-recruit-form"), ex = $("wapo-recruit-existing"), send = $("wapo-recruit-send");
+      $("wapo-recruit-pid").value = project.id;
+      if (existing) {
+        const n = applications.filter((a) => a.recruitment_id === existing.id).length;
+        ex.style.display = "block"; form.style.display = "none"; send.style.display = "none";
+        ex.innerHTML = "<div class='wapo-note'>This project already has an open position — <strong>" + esc(existing.specialty) + "</strong>" + (existing.help_area ? " · " + esc(existing.help_area) : "") + ". <strong>" + n + "</strong> application" + (n === 1 ? "" : "s") +
+          ".<div style='margin-top:.7rem;display:flex;gap:.5rem;flex-wrap:wrap;'><button type='button' class='wapo-btn primary' data-open-apps='" + existing.id + "'>📨 View applications</button><button type='button' class='wapo-btn ghost' data-close-rec='" + existing.id + "'>Close position</button></div></div>";
+        ex.querySelector("[data-open-apps]").addEventListener("click", () => { closeM("wapo-recruit"); openApps(existing.id); });
+        ex.querySelector("[data-close-rec]").addEventListener("click", () => closeRecruitment(existing.id));
+      } else {
+        ex.style.display = "none"; form.style.display = "block"; send.style.display = "inline-flex";
+        $("wapo-recruit-spec").value = (ctx.profile && ctx.profile.specialty) || ""; $("wapo-recruit-help").value = "";
+      }
+      openM("wapo-recruit");
+    }
+    async function submitRecruit() {
+      const projectId = Number($("wapo-recruit-pid").value);
+      const specialty = $("wapo-recruit-spec").value.trim(); const help = $("wapo-recruit-help").value.trim();
+      if (!specialty) { WA.toast("Enter your specialty", "info"); return; }
+      const { error } = await WA.client.from("research_recruitments").insert({ project_id: projectId, created_by: ctx.user.id, specialty, help_area: help || null, status: "open" });
+      if (error) { console.error(error); WA.toast("Failed to post position", "error"); return; }
+      closeM("wapo-recruit"); WA.toast("Position posted!", "success"); await load();
+    }
+    async function closeRecruitment(recId) {
+      if (!confirm("Close this position? It will be removed from the board.")) return;
+      const { error } = await WA.client.from("research_recruitments").update({ status: "closed", updated_at: new Date().toISOString() }).eq("id", recId);
+      if (error) { WA.toast("Failed to close position", "error"); return; }
+      closeM("wapo-recruit"); closeM("wapo-apps"); WA.toast("Position closed", "info"); await load();
+    }
+
+    /* Post a call for a freshly-created project (used by the Research create flow). */
+    async function postForProject(projectId, specialty, helpArea) {
+      const spec = (specialty || (ctx.profile && ctx.profile.specialty) || "").trim();
+      if (!spec) return { error: "no-specialty" };
+      const { error } = await WA.client.from("research_recruitments").insert({ project_id: projectId, created_by: ctx.user.id, specialty: spec, help_area: (helpArea || "").trim() || null, status: "open" });
+      return { error };
+    }
+
+    function mount(el, context, opts) {
+      container = el; ctx = context; onChange = (opts && opts.onChange) || null;
+      ensureDom();
+      load();
+    }
+    return { mount, reload: load, openRecruitForProject, postForProject };
+  })();
 })();

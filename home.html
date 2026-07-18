@@ -93,6 +93,10 @@
         <div class="small muted" id="board-status" style="margin-top:8px"></div>
       </div>
     </section>
+
+    <section id="positions-section-home">
+      <div id="positions-mount"></div>
+    </section>
   </main>
 
   <div id="modal-root"></div>
@@ -113,6 +117,9 @@
       $("welcome").textContent = firstName ? `Welcome, ${firstName}!` : "Welcome!";
       // Inline timezone picker — changing it re-renders every time on the page.
       WA.tzInlineWidget($("tz-note"));
+
+      // Co-author recruitment board (shared with the Research page).
+      if (WA.positions) WA.positions.mount($("positions-mount"), ctx);
 
       const DAYS_AHEAD = 14;
       const now = new Date();

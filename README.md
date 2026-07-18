@@ -21,6 +21,7 @@ Built as **static HTML pages hosted on GitHub Pages** with **[Supabase](https://
 | `certificates.html` | Auto-generated, printable Certificate of Presentation for each article a member has presented |
 | `members.html` | Member directory with participation stats |
 | `profile.html` | Member profile: bio, stats (times as Host / Presenter / Attendee), upcoming commitments, articles submitted |
+| `research.html` | Research project board: members create systematic-review/meta-analysis projects, add collaborators, track tasks through the research pipeline (stages), set deadlines, tag status, and (optionally) create/upload to Google Drive folders |
 
 ### The three journal club roles
 
@@ -37,7 +38,9 @@ A slot only appears under **“Upcoming journal club sessions”** when at least
 ### 1. Create the Supabase project
 
 1. Go to [supabase.com](https://supabase.com), sign in, and click **New project** (free tier is fine).
-2. Once the project is ready, open **SQL Editor → New query**, paste the entire contents of [`supabase/schema.sql`](supabase/schema.sql), and click **Run**. This creates the tables (`profiles`, `articles`, `availabilities`, `meetings`), the signup trigger, and all Row Level Security policies.
+2. Once the project is ready, open **SQL Editor → New query**, paste the entire contents of [`supabase/schema.sql`](supabase/schema.sql), and click **Run**. This creates the tables (`profiles`, `articles`, `availabilities`, `meetings`, the shared board, session confirmations, and the `research_*` tables), the signup trigger, and all Row Level Security policies.
+
+   > The script is **idempotent** (`create table if not exists`, `drop policy if exists`), so re-running it after an update is safe. If you already ran an earlier version, just run it again to add the newest section — the **Research** page needs the `research_projects`, `research_tasks`, `research_project_folders` and `research_project_files` tables from section 8.
 
 ### 2. Configure authentication
 
@@ -105,6 +108,7 @@ That’s it. Share the URL with the club.
 - **Shared board** — a rich-text “mural” on the home page that every member can edit. Saves automatically ~1s after you stop typing and streams to everyone else within seconds (Supabase Realtime + polling fallback; last save wins). Pasting from Claude/ChatGPT/Word keeps the structure (headings, bold, lists, links, tables) but strips **all** colors and backgrounds, so dark-mode copies paste clean — and everything is sanitized against scripts/embeds before rendering. Bare URLs typed or pasted into the board become clickable links that open in a new tab.
 - **Profile photos** — members can upload a picture on their profile. It’s cropped to a square and compressed **in the browser** to a tiny 128px JPEG, then stored as a base64 text data URL in `profiles.avatar` (typically 4–8 KB) — no file storage/bucket needed. It shows everywhere avatars appear (nav, members, profiles, home rosters); anything that isn’t a valid image data URL falls back to initials, so the field can’t be used to inject markup.
 - **Certificates** — members get an official, printable *Certificate of Presentation* for each article they have presented, auto-generated from the session record (name, article, study design/specialty, date). The wording is a dignified attestation of the accomplishment (it does not instruct the holder how to use it), with a deterministic reference code and a named signatory whose institutional email allows the certificate's authenticity to be verified. Print or “Save as PDF” from the browser (a print stylesheet outputs just the certificate on an A4-landscape page). **A certificate is only issued after the session’s host confirms it actually took place** — on the History page each past session shows the host a “Confirm this session took place” button; until confirmed, the presenter sees the presentation as locked with an “awaiting host confirmation” note. (A session with a presenter but no host can’t be certified, since there’s no one to confirm it.)
+- **Research board** — a collaborative project tracker for the club's systematic reviews / meta-analyses. Any member can create a project (auto-titled from PICO fields — *intervention VS comparison FOR population*), add collaborators, break the work into tasks that move through the full research pipeline (from *finding studies* to *submitting to a journal*), set per-task and per-project deadlines, tag project status (congress / submitted / published / archived), and browse everything on a month/week/year calendar of deadlines. The project creator can delete; any participant can edit. Descriptions are rich text, sanitized and auto-linkified like the shared board. Optional Google Drive integration (via a Google Apps Script deployment) creates a standard folder structure per project and lets members upload/manage files. All of this is stored in the `research_*` tables; if the Apps Script URL isn't configured the board works fully minus the Drive features.
 - **Add to calendar** — every session offers a Google Calendar link and an `.ics` download (works with Apple/Outlook), including the article and meeting link.
 - **Duplicate protection** — signing up twice for the same slot with the same role is detected and skipped.
 - **Editable articles** — presenters can edit their article details from their profile.
@@ -129,6 +133,7 @@ availability.html     # post & manage availability
 calendar.html         # week / month calendar
 members.html          # member directory
 profile.html          # profiles (own + others)
+research.html         # research project board (projects, tasks, collaborators, Drive)
 css/styles.css        # design system
 js/config.js          # Supabase credentials (fill in)
 js/common.js          # shared runtime: auth guard, nav, slot expansion, stats

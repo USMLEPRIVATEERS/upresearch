@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Research — Ward Academy Journal Club</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23b31942'/%3E%3Ctext x='32' y='43' font-family='Arial,Helvetica,sans-serif' font-size='26' font-weight='700' fill='%23fff' text-anchor='middle'%3EWA%3C/text%3E%3C/svg%3E" />
+  <meta name="theme-color" content="#0a3161" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    /* ---- base component primitives (scoped to this research page) ---- */
+    :root {
+      --accent: #b31942; --accent-dark: #8e1434; --accent-soft: #fae9ed;
+      --navy: #0a3161; --gray-50: #f7f8fb; --gray-100: #eef1f6; --gray-200: #e2e8f2;
+      --gray-500: #64748b; --gray-600: #475569; --gray-700: #334155; --text-dark: #1c2536;
+      --radius-sm: 8px; --radius-md: 12px; --radius-lg: 14px;
+      --shadow-sm: 0 1px 2px rgba(10,49,97,.06); --shadow-md: 0 6px 20px rgba(10,49,97,.12);
+    }
+    .rp-main { max-width: 1080px; margin: 0 auto; padding: 24px 20px 64px; }
+    .card { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
+    .card-header { padding:1.1rem 1.25rem; border-bottom:1px solid var(--gray-200); }
+    .card-body { padding:1.25rem; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:.4rem; padding:.6rem 1rem; border-radius:10px; border:0; cursor:pointer; font:inherit; font-weight:600; font-size:.92rem; background:var(--gray-100); color:var(--text-dark); text-decoration:none; transition:filter .15s,transform .05s,background .15s; }
+    .btn:hover { filter:brightness(.97); } .btn:active { transform:translateY(1px); }
+    .btn-primary { background:var(--accent); color:#fff; } .btn-primary:hover { background:var(--accent-dark); filter:none; }
+    .btn-secondary { background:#fff; border:1.5px solid var(--gray-200); color:var(--gray-600); }
+    .btn-outline { background:#fff; border:1.5px solid var(--gray-200); color:var(--navy); }
+    .btn-danger { background:#fff; border:1.5px solid #dc2626; color:#dc2626; } .btn-danger:hover { background:#fef2f2; filter:none; }
+    .btn-sm { padding:.4rem .7rem; font-size:.82rem; border-radius:8px; }
+    .btn-group { display:inline-flex; gap:.5rem; }
+    .form-group { margin-bottom:1.1rem; }
+    .form-label { display:block; font-weight:600; font-size:.88rem; color:var(--navy); margin-bottom:.35rem; }
+    .form-input, .form-textarea { width:100%; padding:.6rem .75rem; border:1.5px solid var(--gray-200); border-radius:10px; font:inherit; font-size:.95rem; background:#fff; color:var(--text-dark); }
+    .form-input:focus, .form-textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(179,25,66,.14); }
+    .form-textarea { resize:vertical; min-height:80px; }
+    .form-hint { display:block; font-size:.78rem; color:var(--gray-500); margin-top:.3rem; }
+    .form-check { display:flex; align-items:flex-start; gap:.5rem; cursor:pointer; font-size:.9rem; }
+    .form-check input { margin-top:.2rem; width:16px; height:16px; accent-color:var(--accent); }
+    .input-group { display:flex; gap:.5rem; align-items:center; }
+    .input-group .form-input { flex:1; }
+    .input-addon { font-weight:600; color:var(--gray-500); font-size:.85rem; }
+    .text-muted { color:var(--gray-500); } .text-center { text-align:center; } .text-danger { color:#dc2626; }
+    .d-flex { display:flex; } .justify-between { justify-content:space-between; } .align-center { align-items:center; }
+    .flex-wrap { flex-wrap:wrap; } .gap-2 { gap:.75rem; }
+    .mb-2 { margin-bottom:.5rem; } .mb-3 { margin-bottom:1rem; } .mb-4 { margin-bottom:1.5rem; }
+    .mt-2 { margin-top:.5rem; } .mt-3 { margin-top:1rem; } .p-2 { padding:.5rem; } .p-4 { padding:1.5rem; }
+    h1 { font-size:1.6rem; color:var(--navy); }
+    .empty-state { padding:2rem 1rem; } .empty-state-icon { font-size:2.6rem; } .empty-state-title { color:var(--navy); margin:.5rem 0; }
+    .modal-overlay { position:fixed; inset:0; background:rgba(10,22,40,.6); z-index:100; display:none; align-items:flex-start; justify-content:center; padding:24px 14px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+    .modal-overlay.active { display:flex; }
+    .modal { background:#fff; border-radius:var(--radius-lg); width:100%; max-width:560px; box-shadow:0 16px 50px rgba(0,0,0,.32); }
+    .modal-lg { max-width:720px; } .modal-xl { max-width:900px; } .modal-xxl { max-width:1140px; }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:1.1rem 1.25rem; border-bottom:1px solid var(--gray-200); background:var(--navy); color:#fff; border-radius:var(--radius-lg) var(--radius-lg) 0 0; }
+    .modal-title { font-size:1.1rem; font-weight:700; color:#fff; }
+    .modal-close { background:rgba(255,255,255,.15); border:0; color:#fff; width:34px; height:34px; border-radius:8px; font-size:1.4rem; line-height:1; cursor:pointer; }
+    .modal-body { padding:1.25rem; }
+    .modal-footer { display:flex; align-items:center; justify-content:flex-end; gap:.6rem; padding:1rem 1.25rem; border-top:1px solid var(--gray-200); background:var(--gray-50); border-radius:0 0 var(--radius-lg) var(--radius-lg); flex-wrap:wrap; }
+    .progress-container { } .progress-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.4rem; }
+    .progress-title { font-weight:600; color:var(--navy); font-size:.9rem; } .progress-text { font-weight:700; color:var(--accent); font-size:.9rem; }
+    .progress-bar { height:9px; background:var(--gray-100); border-radius:999px; overflow:hidden; }
+    .progress-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent-dark)); border-radius:999px; transition:width .3s; }
+    .projects-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem; }
+    #global-loading { position:fixed; inset:0; background:rgba(255,255,255,.6); z-index:300; display:none; align-items:center; justify-content:center; }
+    #global-loading.on { display:flex; }
+    .rp-spinner { width:42px; height:42px; border:4px solid var(--gray-200); border-top-color:var(--accent); border-radius:50%; animation:rpspin .8s linear infinite; }
+    @keyframes rpspin { to { transform:rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <nav id="nav"></nav>
+
+  <main class="rp-main">
+    <div class="d-flex justify-between align-center flex-wrap gap-2 mb-4">
+      <h1>🔬 Projetos de Pesquisa</h1>
+      <div class="d-flex align-center gap-2 flex-wrap">
+        <button class="btn btn-outline" onclick="openCalendarModal()">📅 Ver Calendário</button>
+        <button class="btn btn-primary" onclick="openNewProjectModal()">+ Novo Projeto</button>
+      </div>
+    </div>
+
+    <p class="text-muted mb-4" style="margin-top:-.75rem; font-size:.9rem">
+      Espaço colaborativo de pesquisa da Ward Academy. Crie projetos, adicione coautores, organize tarefas por
+      estágio e centralize os arquivos no Google Drive. Todos os membros podem criar e colaborar.
+    </p>
+
+    <!-- Stats -->
+    <div class="stats-grid mb-4">
+      <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-info"><span class="stat-value" id="total-projects">0</span><span class="stat-label">Projetos Totais</span></div></div>
+      <div class="stat-card"><div class="stat-icon">🔄</div><div class="stat-info"><span class="stat-value" id="active-projects">0</span><span class="stat-label">Em Andamento</span></div></div>
+      <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-info"><span class="stat-value" id="completed-projects">0</span><span class="stat-label">Concluídos</span></div></div>
+    </div>
+
+    <!-- Stage Filter -->
+    <div class="card mb-4">
+      <div class="card-body" style="padding:1rem 1.25rem;">
+        <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+          <span style="font-weight:600; color:var(--navy); white-space:nowrap;">🔍 Filtrar por Estágio:</span>
+          <div style="display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; flex:1;">
+            <select id="task-status-filter" class="form-input" style="width:auto; min-width:160px; padding:.5rem .75rem;">
+              <option value="pending">Apenas pendentes</option>
+              <option value="all">Pendentes + Concluídas</option>
+            </select>
+            <select id="stage-comparison" class="form-input" style="width:auto; min-width:60px; padding:.5rem .75rem;">
+              <option value="=">=</option><option value="<">&lt;</option><option value=">">&gt;</option>
+            </select>
+            <select id="stage-filter" class="form-input" style="flex:1; min-width:200px; max-width:400px; padding:.5rem .75rem;">
+              <option value="">Todos os estágios</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="clearStageFilter()">✕ Limpar</button>
+          </div>
+        </div>
+        <div id="filter-hint" style="margin-top:.5rem; font-size:.8rem; color:var(--gray-500); display:none;"><span id="filter-hint-text"></span></div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="card mb-4">
+      <div class="card-body" style="padding:1rem 1.25rem;">
+        <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+          <div style="flex:1; min-width:200px; position:relative;">
+            <input type="text" id="project-search" class="form-input" placeholder="Buscar projetos por título..." oninput="applySearchFilter()" style="width:100%; padding:.5rem .75rem .5rem 2.25rem;">
+            <span style="position:absolute; left:.75rem; top:50%; transform:translateY(-50%); color:#9ca3af; pointer-events:none;">🔎</span>
+          </div>
+          <label style="display:flex; align-items:center; gap:.4rem; font-size:.85rem; color:var(--gray-700); cursor:pointer; white-space:nowrap;">
+            <input type="checkbox" id="search-description" onchange="applySearchFilter()"> Buscar na descrição
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div id="projects-container"></div>
+    <div id="no-projects" class="card" style="display:none;">
+      <div class="card-body text-center p-4">
+        <div class="empty-state">
+          <div class="empty-state-icon">🔬</div>
+          <h3 class="empty-state-title">Nenhum projeto de pesquisa ainda</h3>
+          <p class="text-muted">Clique em “+ Novo Projeto” para começar.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- New Project Modal -->
+  <div id="new-project-modal" class="modal-overlay">
+    <div class="modal modal-xl">
+      <div class="modal-header"><h3 class="modal-title">➕ Novo Projeto de Pesquisa</h3><button class="modal-close" onclick="closeModal('new-project-modal')">&times;</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">Tipo de Meta-Análise *</label>
+          <select id="project-type" class="form-input" onchange="updateTitleFields()">
+            <option value="double-arm">Double Arm (Intervention vs Comparison)</option>
+            <option value="single-arm">Single Arm</option>
+            <option value="network">Network Meta-Analysis</option>
+            <option value="other">Outro / título livre</option>
+          </select>
+        </div>
+        <div id="double-arm-fields">
+          <div class="input-group">
+            <div class="form-group" style="flex:1"><label class="form-label">Intervention *</label><input type="text" id="project-intervention" class="form-input" placeholder="Ex: Statins" oninput="generateTitle()"></div>
+            <div class="form-group" style="flex:1"><label class="form-label">Comparison *</label><input type="text" id="project-comparison" class="form-input" placeholder="Ex: Placebo" oninput="generateTitle()"></div>
+          </div>
+        </div>
+        <div id="single-arm-fields" style="display:none;"><div class="form-group"><label class="form-label">Intervention *</label><input type="text" id="project-intervention-single" class="form-input" placeholder="Ex: Aspirin" oninput="generateTitle()"></div></div>
+        <div id="network-fields" style="display:none;"><div class="form-group"><label class="form-label">Interventions (separadas por vírgula) *</label><input type="text" id="project-interventions-network" class="form-input" placeholder="Ex: Drug A, Drug B, Drug C" oninput="generateTitle()"></div></div>
+        <div id="other-fields" style="display:none;"><div class="form-group"><label class="form-label">Título do projeto *</label><input type="text" id="project-free-title" class="form-input" placeholder="Escreva o título" oninput="generateTitle()"></div></div>
+        <div class="form-group" id="population-group"><label class="form-label">Population *</label><input type="text" id="project-population" class="form-input" placeholder="Ex: Patients with Diabetes" oninput="generateTitle()"></div>
+        <div class="form-group"><label class="form-label">Título Gerado</label><input type="text" id="project-title" class="form-input" readonly style="background:var(--gray-100); font-weight:600; text-transform:uppercase;"><span class="form-hint">Formato: INTERVENTION [VS COMPARISON] FOR POPULATION</span></div>
+        <div class="form-group"><label class="form-check"><input type="checkbox" id="create-drive-folder" onchange="toggleDriveLinkField()"><span>📁 Criar estrutura de pastas no Google Drive automaticamente</span></label><span class="form-hint">Cria a pasta do projeto com subpastas organizadas (requer o Apps Script configurado).</span></div>
+        <div class="input-group" style="align-items:flex-start">
+          <div class="form-group" style="flex:1"><label class="form-label">Deadline</label><input type="date" id="project-deadline" class="form-input"></div>
+          <div class="form-group" style="flex:1" id="drive-link-group"><label class="form-label">Link Google Drive (opcional)</label><input type="url" id="project-drive-link" class="form-input" placeholder="https://drive.google.com/..."><span class="form-hint">Deixe a criação automática desligada para usar um link próprio.</span></div>
+        </div>
+        <div class="form-group"><label class="form-label" for="project-description">Descrição / Comentários</label><textarea id="project-description" class="form-textarea" rows="3" placeholder="Descrição do projeto..."></textarea></div>
+        <div class="form-group"><label class="form-label">Participantes (Coautores)</label>
+          <div class="author-picker"><input type="text" class="author-search" id="project-participants-search" placeholder="🔍 Buscar por nome..." oninput="filterAuthorPicker('project-participants-list', this.value)"><div id="project-participants-list" class="author-list"></div></div>
+          <span class="form-hint">Clique nos nomes para adicionar/remover. <span data-count-for="project-participants-list" class="author-count-badge"></span></span>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('new-project-modal')">Cancelar</button><button class="btn btn-primary" onclick="createProject()">Criar Projeto</button></div>
+    </div>
+  </div>
+
+  <!-- View Project Modal -->
+  <div id="view-project-modal" class="modal-overlay">
+    <div class="modal modal-xxl" id="view-project-modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="view-project-title"></h3>
+        <div class="modal-header-actions" style="display:flex; gap:.5rem; align-items:center">
+          <button class="modal-close" onclick="copyProjectLink()" title="Copiar link">🔗</button>
+          <button class="modal-close" onclick="closeViewProjectModal()">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="description-container mb-3">
+          <div class="project-description-formatted" id="view-project-description" onclick="enterDescriptionEditMode()" title="Clique para editar"></div>
+          <div class="description-edit-area" id="description-edit-area" style="display:none;">
+            <div class="rich-text-editor" id="inline-description-editor" contenteditable="true" placeholder="Digite a descrição do projeto..."></div>
+            <div class="description-edit-buttons"><button class="btn btn-sm btn-save-desc" onclick="saveInlineDescription()">💾 Salvar</button><button class="btn btn-sm btn-cancel-desc" onclick="cancelDescriptionEdit()">❌ Cancelar</button></div>
+          </div>
+        </div>
+        <div class="project-meta mb-3" id="project-meta"></div>
+        <div id="view-project-tags" class="mb-3"></div>
+        <div class="progress-container mb-4">
+          <div class="progress-header"><span class="progress-title">Progresso do Projeto</span><span class="progress-text" id="project-progress-text">0%</span></div>
+          <div class="progress-bar"><div class="progress-fill" id="project-progress-fill" style="width:0%"></div></div>
+        </div>
+        <div class="mb-4"><h4 class="mb-2">👥 Participantes</h4><div id="participants-list" class="participants-grid"></div></div>
+        <div class="mb-4" id="drive-files-section" style="display:none;"><div class="d-flex justify-between align-center mb-2"><h4>📁 Arquivos do Projeto</h4></div><div id="drive-folders-container" class="folders-accordion"></div></div>
+        <div class="mb-4">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding:1rem 1.25rem; background:var(--gray-50); border-radius:12px; border:1px solid var(--gray-200);">
+            <div style="display:flex; align-items:center; gap:.75rem;"><span style="font-size:1.5rem;">📋</span><div><h4 style="margin:0; font-size:1.1rem; font-weight:700; color:var(--navy);">Tarefas do Projeto</h4><span style="font-size:.8rem; color:var(--gray-500);" id="tasks-count-label">Carregando...</span></div></div>
+            <button class="btn btn-sm btn-primary" onclick="openAddTaskModal()" id="add-task-btn" style="display:none;">+ Nova Tarefa</button>
+          </div>
+          <div id="tasks-list" class="tasks-list"></div>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between">
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn btn-danger" id="delete-project-btn" style="display:none;" onclick="deleteProject()">🗑️ Excluir</button>
+          <button class="btn btn-outline" id="manage-participants-btn" style="display:none;" onclick="openManageParticipantsModal()">👥 Participantes</button>
+          <button class="btn btn-primary" id="edit-project-btn" style="display:none;" onclick="openEditProjectModal()">✏️ Editar</button>
+        </div>
+        <button class="btn btn-secondary" onclick="closeViewProjectModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Project Modal -->
+  <div id="edit-project-modal" class="modal-overlay">
+    <div class="modal modal-lg">
+      <div class="modal-header"><h3 class="modal-title">✏️ Editar Projeto</h3><button class="modal-close" onclick="closeModal('edit-project-modal')">&times;</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-project-id">
+        <div class="form-group"><label class="form-label">Tipo *</label><select id="edit-project-type" class="form-input" onchange="updateEditTitleFields()"><option value="double-arm">Double Arm</option><option value="single-arm">Single Arm / livre</option></select></div>
+        <div id="edit-double-arm-fields"><div class="form-group"><label class="form-label">Título (Intervention vs Comparison for Outcome) *</label><div class="input-group"><input type="text" id="edit-project-intervention" class="form-input" placeholder="Intervention"><span class="input-addon">vs</span><input type="text" id="edit-project-comparison" class="form-input" placeholder="Comparison"><span class="input-addon">for</span><input type="text" id="edit-project-outcome" class="form-input" placeholder="Outcome"></div></div></div>
+        <div id="edit-single-arm-fields" style="display:none;"><div class="form-group"><label class="form-label">Título do Projeto *</label><input type="text" id="edit-project-single-title" class="form-input"></div></div>
+        <div class="form-group"><label class="form-label">Descrição</label><div class="rich-text-editor" id="edit-project-description" contenteditable="true" placeholder="Cole texto formatado ou escreva..."></div></div>
+        <div class="form-group"><label class="form-label">Status</label><select id="edit-project-status" class="form-input"><option value="active">Em andamento</option><option value="completed">Concluído</option></select></div>
+        <div class="form-group" id="edit-tags-group"><label class="form-label">Tags</label>
+          <div class="tags-checkbox-group" id="edit-project-tags">
+            <label class="tag-checkbox-label" data-tag="congresso"><input type="checkbox" value="congresso" onchange="toggleTagCheckbox(this)"> 🎤 Congresso</label>
+            <label class="tag-checkbox-label" data-tag="publicado"><input type="checkbox" value="publicado" onchange="toggleTagCheckbox(this)"> 📄 Publicado</label>
+            <label class="tag-checkbox-label" data-tag="submetido"><input type="checkbox" value="submetido" onchange="toggleTagCheckbox(this)"> 📨 Submetido</label>
+            <label class="tag-checkbox-label" data-tag="revisao"><input type="checkbox" value="revisao" onchange="toggleTagCheckbox(this)"> 🔄 Em Revisão</label>
+            <label class="tag-checkbox-label" data-tag="arquivado"><input type="checkbox" value="arquivado" onchange="toggleTagCheckbox(this)"> 📦 Arquivado</label>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Data Limite</label><input type="date" id="edit-project-deadline" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Link Externo (Drive, etc)</label><input type="url" id="edit-project-link" class="form-input" placeholder="https://..."></div>
+        <div id="edit-create-drive-folder-group" class="form-group" style="display:none;">
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:.75rem; display:flex; align-items:center; gap:.75rem;">
+            <span style="font-size:1.5rem;">📁</span><div style="flex:1;"><div style="font-weight:600; font-size:.85rem; color:#1e40af;">Sem pasta no Google Drive</div><div style="font-size:.75rem; color:#3b82f6;">Crie a estrutura organizada de pastas.</div></div>
+            <button type="button" class="btn btn-primary btn-sm" id="edit-create-drive-btn" onclick="createDriveFolderFromEdit()">📁 Criar Pasta</button>
+          </div>
+        </div>
+        <div id="edit-check-folders-group" class="form-group" style="display:none;">
+          <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:.75rem;">
+            <div style="display:flex; align-items:center; gap:.75rem;"><span style="font-size:1.5rem;">🔍</span><div style="flex:1;"><div style="font-weight:600; font-size:.85rem; color:#166534;">Verificar pastas do Drive</div><div style="font-size:.75rem; color:#16a34a;">Cria subpastas faltantes automaticamente.</div></div><button type="button" class="btn btn-primary btn-sm" id="edit-check-folders-btn" onclick="checkProjectFolders()" style="background:#16a34a;">🔍 Verificar</button></div>
+            <div id="check-folders-result" style="display:none; margin-top:.75rem; padding-top:.75rem; border-top:1px solid #bbf7d0; font-size:.8rem;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('edit-project-modal')">Cancelar</button><button class="btn btn-primary" onclick="saveProjectEdit()">💾 Salvar</button></div>
+    </div>
+  </div>
+
+  <!-- Manage Participants Modal -->
+  <div id="manage-participants-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header"><h3 class="modal-title">👥 Gerenciar Participantes</h3><button class="modal-close" onclick="closeModal('manage-participants-modal')">&times;</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">Adicionar Participantes</label>
+          <div class="author-picker"><input type="text" class="author-search" id="add-participant-search" placeholder="🔍 Buscar por nome..." oninput="filterAuthorPicker('add-participant-list', this.value)"><div id="add-participant-list" class="author-list author-list-sm"></div></div>
+          <button class="btn btn-primary btn-sm mt-2" onclick="addParticipant()">+ Adicionar Selecionados <span data-count-for="add-participant-list" class="author-count-badge on-dark"></span></button>
+        </div>
+        <div class="mt-3"><h4 class="mb-2">Participantes Atuais</h4><div id="current-participants-list"></div></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('manage-participants-modal')">Fechar</button></div>
+    </div>
+  </div>
+
+  <!-- Add Task Modal -->
+  <div id="add-task-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header"><h3 class="modal-title">➕ Nova Tarefa</h3><button class="modal-close" onclick="closeModal('add-task-modal')">&times;</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="task-project-id">
+        <div class="form-group"><label class="form-label" for="task-title">Título da Tarefa *</label><input type="text" id="task-title" class="form-input" placeholder="Nome da tarefa"></div>
+        <div class="form-group"><label class="form-label" for="task-stage">Estágio</label><select id="task-stage" class="form-input"></select></div>
+        <div class="form-group"><label class="form-label" for="task-assignee">Responsável</label><select id="task-assignee" class="form-input"></select></div>
+        <div class="form-group"><label class="form-label" for="task-deadline">Prazo</label><input type="date" id="task-deadline" class="form-input"></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('add-task-modal')">Cancelar</button><button class="btn btn-primary" onclick="createTask()">Criar Tarefa</button></div>
+    </div>
+  </div>
+
+  <!-- Edit Task Modal -->
+  <div id="edit-task-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header"><h3 class="modal-title">✏️ Editar Tarefa</h3><button class="modal-close" onclick="closeModal('edit-task-modal')">&times;</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-task-id">
+        <div class="form-group"><label class="form-label" for="edit-task-title">Título da Tarefa *</label><input type="text" id="edit-task-title" class="form-input"></div>
+        <div class="form-group"><label class="form-label" for="edit-task-stage">Estágio</label><select id="edit-task-stage" class="form-input"></select></div>
+        <div class="form-group"><label class="form-label" for="edit-task-assignee">Responsável</label><select id="edit-task-assignee" class="form-input"></select></div>
+        <div class="form-group"><label class="form-label" for="edit-task-deadline">Prazo</label><input type="date" id="edit-task-deadline" class="form-input"></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-danger" onclick="deleteTask()">Excluir</button><button class="btn btn-secondary" onclick="closeModal('edit-task-modal')">Cancelar</button><button class="btn btn-primary" onclick="updateTask()">Salvar</button></div>
+    </div>
+  </div>
+
+  <!-- Calendar Modal -->
+  <div id="calendar-modal" class="modal-overlay">
+    <div class="modal cal-modal">
+      <div class="modal-header cal-modal-header"><h3 class="modal-title">📅 Calendário de Pesquisa</h3><button class="modal-close" onclick="closeCalendarModal()">&times;</button></div>
+      <div class="cal-toolbar">
+        <div class="cal-nav"><button type="button" class="cal-nav-btn" onclick="calPrev()">‹</button><button type="button" class="cal-today-btn" onclick="calToday()">Hoje</button><button type="button" class="cal-nav-btn" onclick="calNext()">›</button><span id="cal-period-label" class="cal-period"></span></div>
+        <div class="cal-views"><button type="button" class="cal-view-btn" data-view="month" onclick="setCalView('month')">Mês</button><button type="button" class="cal-view-btn" data-view="week" onclick="setCalView('week')">Semana</button><button type="button" class="cal-view-btn" data-view="year" onclick="setCalView('year')">Ano</button></div>
+      </div>
+      <div class="modal-body cal-body"><div id="cal-grid" class="cal-grid-wrap"></div><div class="cal-deadlines"><h4 class="cal-deadlines-title">⏰ Próximos prazos e atrasados</h4><div id="cal-deadlines-list"></div></div></div>
+    </div>
+  </div>
+
+  <div id="global-loading"><div class="rp-spinner"></div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    /* ================= Ward Academy Research (Journal Club edition) =================
+       Ported from the standalone research app, adapted to this project's stack:
+       Supabase Auth + profiles + WA runtime. Everyone is a collaborator; the
+       project creator can delete. Google Drive integration uses the club's
+       Apps Script deployment. (Toolbox removed.) */
+
+    // Google Apps Script deployment + Drive parent folder for research projects.
+    const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKQ0Wu9Rn9cwZgMTp6GDaRzy4mOGDkmYM7L7zza7FdfSl3JgtajGNDxJWqQHB2N07O/exec';
+    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+
+    // Minimal WardApp shim so the ported logic works unchanged.
+    const WardApp = {
+      db: null,
+      showToast: (m, t) => WA.toast(m, t === 'error' ? 'error' : (t === 'success' ? 'success' : 'info')),
+      showLoading: () => document.getElementById('global-loading').classList.add('on'),
+      hideLoading: () => document.getElementById('global-loading').classList.remove('on'),
+      formatDate: (d) => {
+        if (!d) return '';
+        const s = String(d);
+        const dt = new Date(s.length <= 10 ? s + 'T00:00:00' : s);
+        if (isNaN(dt)) return s;
+        return dt.toLocaleDateString('pt-BR');
+      },
+    };
+    const _dn = (v) => v; // names aren't encrypted here
+
+    let userData = null;
+    let allProjects = [];
+    let allUsers = [];
+    let currentProject = null;
+    let isMentor = true; // collaborative: every member can create/edit/manage
+
+    function sortUsersByName(users) {
+      return users.sort((a, b) => (_dn(a.full_name) || '').toLowerCase().localeCompare((_dn(b.full_name) || '').toLowerCase(), 'pt-BR'));
+    }
+    function canEditProject(p) {
+      if (!p) return false;
+      return p.created_by === userData.id || (p.participants || []).includes(userData.id);
+    }
+
+    /* -------- description sanitize + linkify (kept from original) -------- */
+    function formatDescription(text) {
+      if (!text) return '';
+      const temp = document.createElement('div');
+      temp.innerHTML = text;
+      ['script','iframe','object','embed','form','input','button','style','link'].forEach(tag => temp.querySelectorAll(tag).forEach(el => el.remove()));
+      temp.querySelectorAll('*').forEach(el => {
+        Array.from(el.attributes).forEach(attr => {
+          if (attr.name.startsWith('on') || (attr.name === 'href' && attr.value.startsWith('javascript:'))) el.removeAttribute(attr.name);
+        });
+        el.removeAttribute('style'); el.removeAttribute('class');
+      });
+      temp.querySelectorAll('a').forEach(a => {
+        if (a.href && !a.href.startsWith('javascript:')) {
+          a.setAttribute('target', '_blank'); a.setAttribute('rel', 'noopener noreferrer'); a.setAttribute('onclick', 'event.stopPropagation()');
+          a.style.color = '#b31942'; a.style.textDecoration = 'underline';
+        }
+      });
+      const linkify = (node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const re = /(https?:\/\/[^\s<>"]+|www\.[^\s<>"]+)/gi;
+          if (re.test(node.textContent)) {
+            const span = document.createElement('span');
+            span.innerHTML = node.textContent.replace(re, (url) => {
+              const full = url.startsWith('www.') ? 'https://' + url : url;
+              return `<a href="${full}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:#b31942; text-decoration:underline;">${url}</a>`;
+            });
+            node.parentNode.replaceChild(span, node);
+          }
+        } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName !== 'A') {
+          Array.from(node.childNodes).forEach(linkify);
+        }
+      };
+      Array.from(temp.childNodes).forEach(linkify);
+      return temp.innerHTML;
+    }
+    function cleanPastedHtml(html) {
+      const temp = document.createElement('div'); temp.innerHTML = html;
+      ['script','iframe','object','embed','form','input','button','style','link'].forEach(tag => temp.querySelectorAll(tag).forEach(el => el.remove()));
+      temp.querySelectorAll('*').forEach(el => {
+        Array.from(el.attributes).forEach(attr => { if (attr.name.startsWith('on') || (attr.name === 'href' && attr.value.startsWith('javascript:'))) el.removeAttribute(attr.name); });
+        el.removeAttribute('style'); el.removeAttribute('class'); el.removeAttribute('bgcolor'); el.removeAttribute('color');
+      });
+      return temp.innerHTML;
+    }
+
+    const stageLabels = {
+      nova_tarefa:'Nova tarefa', testando_ideia:'Testando ideia', encontrando_estudos:'Encontrando estudos',
+      estrategia_busca:'Estrategia de busca', validando_ideia:'Validando ideia', escrever_protocolo:'Escrever protocolo',
+      exportar_databases:'Exportar de databases', desduplicar:'Desduplicar', revisores_1_2:'Revisores 1 e 2', revisor_3:'Revisor 3',
+      baixando_pdfs:'Baixando PDFs', leitura_completa:'Leitura completa', prisma_flow:'PRISMA Flow Diagram', tabela_pico:'Tabela PICO',
+      extracao_dados:'Extracao de dados', analise_estatistica:'Analise estatistica padrao', analises_adicionais:'Analises estatisticas adicionais',
+      risco_vies_1_2:'Risco de vies revisores 1 e 2', risco_vies_3:'Risco de vies revisor 3', graficos_desfechos:'Graficos de desfechos',
+      graficos_vieses:'Graficos de vieses', grade:'GRADE', submeter_prospero:'Submeter ao PROSPERO', escrever_abstract:'Escrever Abstract',
+      submeter_congresso:'Submeter para congresso', escrever_introduction:'Escrever Introduction', escrever_methods:'Escrever Methods',
+      escrever_results:'Escrever Results', escrever_discussion:'Escrever Discussion', escrever_conclusion:'Escrever Conclusion',
+      escrever_limitations:'Escrever Limitations', escrever_references:'Escrever References', revisar_manuscrito:'Revisar Manuscrito',
+      encontrar_revistas:'Encontrar revistas', escrever_cover_letter:'Escrever Cover Letter', submeter_revista:'Submeter para revista',
+      responder_revisores:'Responder revisores', escrever_rebuttal:'Escrever Rebuttal Letter', ultimos_ajustes:'Ultimos ajustes',
+      tarefa_concluida:'Tarefa concluida'
+    };
+    const stageOrder = Object.keys(stageLabels).filter(s => s !== 'tarefa_concluida');
+    const stageOptionsHtml = Object.keys(stageLabels).map(s => `<option value="${s}">${stageLabels[s]}</option>`).join('');
+
+    let selectedStage = '', selectedComparison = '=', includeCompleted = false, searchQuery = '', showArchived = false;
+    const isArchivedProject = (p) => Array.isArray(p.tags) && p.tags.includes('arquivado');
+    function toggleArchivedProjects() { showArchived = !showArchived; renderProjects(); }
+
+    /* ===================== CALENDÁRIO ===================== */
+    const CAL_MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const CAL_MONTHS_SHORT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+    const CAL_WEEKDAYS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    let calView = 'month', calCursor = null;
+    const calEsc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    const calKeyFromDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const calKeyFromYMD = (y,m,d) => `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    function calTodayKey() { try { return new Date().toLocaleDateString('en-CA', { timeZone:'America/Sao_Paulo' }); } catch(e){ return new Date().toISOString().slice(0,10); } }
+    function calDiffDays(a,b){ const [ay,am,ad]=a.split('-').map(Number); const [by,bm,bd]=b.split('-').map(Number); return Math.round((Date.UTC(ay,am-1,ad)-Date.UTC(by,bm-1,bd))/86400000); }
+    function getCalendarEvents() {
+      const events = [], todayKey = calTodayKey();
+      (allProjects||[]).forEach(p => {
+        if (isArchivedProject(p)) return;
+        if (p.deadline) events.push({ date:p.deadline, type:'project', projectId:p.id, title:p.title||'Projeto', completed:p.status==='completed', overdue:p.status!=='completed'&&p.deadline<todayKey });
+        (p.tasks||[]).forEach(t => { if(!t.deadline) return; const done=t.stage==='tarefa_concluida'; events.push({ date:t.deadline, type:'task', projectId:p.id, taskId:t.id, title:t.title||'Tarefa', projectTitle:p.title||'', completed:done, overdue:!done&&t.deadline<todayKey }); });
+      });
+      return events;
+    }
+    function openCalendarModal(){ calCursor=new Date(); if(!calView)calView='month'; renderCalendar(); openModal('calendar-modal'); }
+    function closeCalendarModal(){ closeModal('calendar-modal'); }
+    function setCalView(v){ calView=v; renderCalendar(); }
+    function calToday(){ calCursor=new Date(); renderCalendar(); }
+    function calPrev(){ calShift(-1); } function calNext(){ calShift(1); }
+    function calShift(dir){ const c=new Date(calCursor); if(calView==='month')c.setMonth(c.getMonth()+dir); else if(calView==='week')c.setDate(c.getDate()+dir*7); else c.setFullYear(c.getFullYear()+dir); calCursor=c; renderCalendar(); }
+    function calZoomToDay(key){ const [y,m,d]=key.split('-').map(Number); calCursor=new Date(y,m-1,d); setCalView('week'); }
+    function calOpenMonth(y,m){ calCursor=new Date(y,m,1); setCalView('month'); }
+    function openEventProject(projectId){ closeCalendarModal(); viewProject(projectId); }
+    async function calToggleTaskComplete(taskId, projectId, checked, ev){
+      if(ev) ev.stopPropagation();
+      const proj=(allProjects||[]).find(p=>p.id===projectId); const task=proj&&(proj.tasks||[]).find(t=>t.id===taskId); if(!task) return;
+      const upd={ updated_at:new Date().toISOString() };
+      if(checked){ upd.stage='tarefa_concluida'; upd.original_stage=task.stage!=='tarefa_concluida'?task.stage:(task.original_stage||'nova_tarefa'); } else { upd.stage=task.original_stage||'nova_tarefa'; }
+      try { await WardApp.db.from('research_tasks').update(upd).eq('id',taskId); await loadProjects(); renderCalendar(); WardApp.showToast(checked?'Tarefa concluída!':'Tarefa reaberta'); }
+      catch(e){ WardApp.showToast('Erro ao atualizar tarefa','error'); }
+    }
+    function calPillHtml(ev){
+      const cls=ev.completed?'is-done':(ev.overdue?'is-overdue':(ev.type==='project'?'type-project':'type-task'));
+      const icon=ev.type==='project'?'📁':(ev.completed?'✓':'📌');
+      const tip=(ev.type==='task'&&ev.projectTitle)?`${ev.title}  •  Projeto: ${ev.projectTitle}`:(ev.type==='project'?`Prazo do projeto: ${ev.title}`:ev.title);
+      return `<button type="button" class="cal-pill ${cls}" onclick="openEventProject(${ev.projectId})" title="${calEsc(tip)}"><span class="cal-pill-dot">${icon}</span>${calEsc(ev.title)}</button>`;
+    }
+    function calRenderMonth(cursor, byDate, todayKey){
+      const y=cursor.getFullYear(), m=cursor.getMonth(); const startDow=new Date(y,m,1).getDay(); const dim=new Date(y,m+1,0).getDate(); const dip=new Date(y,m,0).getDate();
+      let html='<div class="cal-month"><div class="cal-weekdays">'+CAL_WEEKDAYS.map(d=>`<div class="cal-weekday">${d}</div>`).join('')+'</div><div class="cal-days">';
+      const total=Math.ceil((startDow+dim)/7)*7;
+      for(let i=0;i<total;i++){ let dn,cm,other=false; if(i<startDow){dn=dip-startDow+1+i;cm=m-1;other=true;} else if(i>=startDow+dim){dn=i-(startDow+dim)+1;cm=m+1;other=true;} else {dn=i-startDow+1;cm=m;}
+        const key=calKeyFromDate(new Date(y,cm,dn)); const isToday=key===todayKey; const evs=byDate[key]||[];
+        html+=`<div class="cal-day ${other?'other-month':''} ${isToday?'is-today':''}"><span class="cal-day-num">${dn}</span>`;
+        if(evs.length){ html+='<div class="cal-events">'; evs.slice(0,3).forEach(ev=>html+=calPillHtml(ev)); if(evs.length>3) html+=`<button type="button" class="cal-more" onclick="calZoomToDay('${key}')">+${evs.length-3} mais</button>`; html+='</div>'; }
+        html+='</div>';
+      }
+      return html+'</div></div>';
+    }
+    function calRenderWeek(cursor, byDate, todayKey){
+      const start=new Date(cursor); start.setDate(cursor.getDate()-cursor.getDay()); let html='<div class="cal-week">';
+      for(let i=0;i<7;i++){ const d=new Date(start); d.setDate(start.getDate()+i); const key=calKeyFromDate(d); const evs=byDate[key]||[];
+        html+=`<div class="cal-week-col"><div class="cal-week-head ${key===todayKey?'is-today':''}"><div class="cal-week-dow">${CAL_WEEKDAYS[d.getDay()]}</div><div class="cal-week-date">${d.getDate()}</div></div><div class="cal-week-events">`+(evs.length?evs.map(calPillHtml).join(''):'<div class="cal-week-empty">—</div>')+`</div></div>`; }
+      return html+'</div>';
+    }
+    function calRenderYear(cursor, byDate, todayKey){
+      const y=cursor.getFullYear(); let html='<div class="cal-year">';
+      for(let m=0;m<12;m++){ html+=`<div class="cal-mini" onclick="calOpenMonth(${y}, ${m})"><div class="cal-mini-title">${CAL_MONTHS[m]}</div><div class="cal-mini-grid">`;
+        const startDow=new Date(y,m,1).getDay(); const dim=new Date(y,m+1,0).getDate();
+        for(let i=0;i<startDow;i++) html+=`<div class="cal-mini-cell"></div>`;
+        for(let d=1;d<=dim;d++){ const key=calKeyFromYMD(y,m,d); const evs=byDate[key]||[]; let cls=''; if(evs.length){ const ov=evs.some(e=>e.overdue&&!e.completed); const pr=evs.some(e=>e.type==='project'); cls=ov?'has-event has-overdue':(pr?'has-event has-project':'has-event'); } if(key===todayKey)cls+=' is-today'; html+=`<div class="cal-mini-cell ${cls}">${d}</div>`; }
+        html+=`</div></div>`;
+      }
+      return html+'</div>';
+    }
+    function calPeriodLabel(){ const c=calCursor; if(calView==='month')return `${CAL_MONTHS[c.getMonth()]} de ${c.getFullYear()}`; if(calView==='year')return `${c.getFullYear()}`; const s=new Date(c); s.setDate(c.getDate()-c.getDay()); const e=new Date(s); e.setDate(s.getDate()+6); return s.getMonth()===e.getMonth()?`${s.getDate()}–${e.getDate()} ${CAL_MONTHS_SHORT[s.getMonth()]} ${e.getFullYear()}`:`${s.getDate()} ${CAL_MONTHS_SHORT[s.getMonth()]} – ${e.getDate()} ${CAL_MONTHS_SHORT[e.getMonth()]} ${e.getFullYear()}`; }
+    function calRenderDeadlines(events, todayKey){
+      const pending=events.filter(e=>!e.completed).sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:0)).slice(0,25);
+      if(!pending.length) return `<div class="cal-empty"><span class="cal-empty-icon">🎉</span>Nenhum prazo pendente. Tudo em dia!</div>`;
+      return pending.map(ev=>{ const [,mm,dd]=ev.date.split('-').map(Number); const diff=calDiffDays(ev.date,todayKey); let tagCls,tagText,itemCls='';
+        if(diff<0){tagCls='overdue';tagText=`${Math.abs(diff)}d atrasado`;itemCls='is-overdue';} else if(diff===0){tagCls='today';tagText='Hoje';itemCls='is-soon';} else if(diff===1){tagCls='soon';tagText='Amanhã';itemCls='is-soon';} else if(diff<=7){tagCls='soon';tagText=`em ${diff}d`;itemCls='is-soon';} else {tagCls='later';tagText=`em ${diff}d`;}
+        const icon=ev.type==='project'?'📁':'📌'; const sub=ev.type==='task'?`📁 ${calEsc(ev.projectTitle||'')}`:'Prazo do projeto';
+        const check=ev.type==='task'?`<input type="checkbox" class="cal-dl-check" title="Concluir" onclick="calToggleTaskComplete(${ev.taskId}, ${ev.projectId}, this.checked, event)">`:`<span class="cal-dl-check placeholder"></span>`;
+        return `<div class="cal-deadline-item ${itemCls}" onclick="openEventProject(${ev.projectId})">${check}<div class="cal-dl-date"><div class="d">${dd}</div><div class="m">${CAL_MONTHS_SHORT[mm-1]}</div></div><div class="cal-dl-main"><div class="cal-dl-title">${icon} ${calEsc(ev.title)}</div><div class="cal-dl-sub">${sub}</div></div><span class="cal-dl-tag ${tagCls}">${tagText}</span></div>`;
+      }).join('');
+    }
+    function renderCalendar(){
+      if(!calCursor)calCursor=new Date(); const events=getCalendarEvents(); const todayKey=calTodayKey(); const byDate={};
+      events.forEach(e=>{ (byDate[e.date]=byDate[e.date]||[]).push(e); });
+      Object.values(byDate).forEach(arr=>arr.sort((a,b)=>{ if(a.completed!==b.completed)return a.completed?1:-1; if(a.overdue!==b.overdue)return a.overdue?-1:1; if(a.type!==b.type)return a.type==='project'?-1:1; return 0; }));
+      const label=document.getElementById('cal-period-label'); if(label)label.textContent=calPeriodLabel();
+      document.querySelectorAll('.cal-view-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===calView));
+      const grid=document.getElementById('cal-grid'); if(grid){ grid.innerHTML=calView==='month'?calRenderMonth(calCursor,byDate,todayKey):(calView==='week'?calRenderWeek(calCursor,byDate,todayKey):calRenderYear(calCursor,byDate,todayKey)); }
+      const dl=document.getElementById('cal-deadlines-list'); if(dl)dl.innerHTML=calRenderDeadlines(events,todayKey);
+    }
+
+    /* ===================== AUTHOR PICKER ===================== */
+    function authorInitials(name){ const p=String(name||'?').trim().split(/\s+/).filter(Boolean); return (p.map(w=>w[0]).slice(0,2).join('').toUpperCase())||'?'; }
+    function authorPickerItemHtml(u){ const name=_dn(u.full_name)||'Usuário'; return `<button type="button" class="author-item" data-id="${u.id}" data-name="${calEsc(name.toLowerCase())}" onclick="toggleAuthorItem(this)"><span class="author-avatar">${calEsc(authorInitials(name))}</span><span class="author-name">${calEsc(name)}</span><span class="author-check">✓</span></button>`; }
+    function renderAuthorPicker(listId, members, selectedIds){
+      const el=document.getElementById(listId); if(!el) return; selectedIds=selectedIds||[];
+      el.innerHTML = (members&&members.length) ? '<div class="author-group-label">👥 Membros</div>'+members.map(authorPickerItemHtml).join('') : '<div class="author-empty">Nenhum membro disponível</div>';
+      selectedIds.forEach(id=>{ const it=el.querySelector(`.author-item[data-id="${id}"]`); if(it)it.classList.add('selected'); });
+      updateAuthorPickerCount(listId);
+    }
+    function toggleAuthorItem(el){ el.classList.toggle('selected'); const list=el.closest('.author-list'); if(list&&list.id)updateAuthorPickerCount(list.id); }
+    function getSelectedAuthorIds(listId){ return Array.from(document.querySelectorAll(`#${listId} .author-item.selected`)).map(el=>el.dataset.id); }
+    function updateAuthorPickerCount(listId){ const n=getSelectedAuthorIds(listId).length; const b=document.querySelector(`[data-count-for="${listId}"]`); if(b)b.textContent=n?`${n} selecionado${n>1?'s':''}`:''; }
+    function filterAuthorPicker(listId, query){
+      const el=document.getElementById(listId); if(!el) return; const q=(query||'').trim().toLowerCase();
+      el.querySelectorAll('.author-item').forEach(it=>{ it.style.display=(!q||(it.dataset.name||'').includes(q))?'':'none'; });
+      el.querySelectorAll('.author-group-label').forEach(lbl=>{ let sib=lbl.nextElementSibling,vis=false; while(sib&&!sib.classList.contains('author-group-label')){ if(sib.classList.contains('author-item')&&sib.style.display!=='none'){vis=true;break;} sib=sib.nextElementSibling; } lbl.style.display=vis?'':'none'; });
+    }
+    function openNewProjectModal(){
+      ['project-title','project-description','project-deadline','project-drive-link','project-participants-search','project-intervention','project-comparison','project-intervention-single','project-interventions-network','project-free-title','project-population'].forEach(id=>{ const e=document.getElementById(id); if(e)e.value=''; });
+      const typeEl=document.getElementById('project-type'); if(typeEl)typeEl.selectedIndex=0;
+      const chk=document.getElementById('create-drive-folder'); if(chk)chk.checked=false;
+      toggleDriveLinkField(); updateTitleFields();
+      renderAuthorPicker('project-participants-list', window._pickerMembers||[], []);
+      filterAuthorPicker('project-participants-list','');
+      openModal('new-project-modal');
+    }
+
+    /* ===================== FILTERS ===================== */
+    function getActiveStages(project){ const s=new Set(); (project.tasks||[]).forEach(t=>{ if(t.stage){ if(includeCompleted)s.add(t.stage); else if(t.stage!=='tarefa_concluida')s.add(t.stage); } }); return s; }
+    function projectMatchesFilter(project){ if(!selectedStage)return true; const active=getActiveStages(project); const idx=stageOrder.indexOf(selectedStage); if(idx===-1)return true;
+      if(selectedComparison==='=')return active.has(selectedStage);
+      if(selectedComparison==='<')return stageOrder.slice(0,idx+1).some(s=>active.has(s));
+      if(selectedComparison==='>')return stageOrder.slice(idx).some(s=>active.has(s)); return true; }
+    function populateStageFilter(){ const sel=document.getElementById('stage-filter'); if(!sel)return; const cur=sel.value; sel.innerHTML='<option value="">Todos os estágios</option>'+stageOrder.map(s=>`<option value="${s}">${stageLabels[s]}</option>`).join(''); if(includeCompleted)sel.innerHTML+=`<option value="tarefa_concluida">${stageLabels.tarefa_concluida}</option>`; if(cur&&sel.querySelector(`option[value="${cur}"]`))sel.value=cur; else if(cur==='tarefa_concluida'&&!includeCompleted){sel.value='';selectedStage='';} }
+    function applySearchFilter(){ searchQuery=document.getElementById('project-search').value.trim().toLowerCase(); renderProjects(); }
+    function applyStageFilter(){ const inc=document.getElementById('task-status-filter').value==='all'; if(inc!==includeCompleted){ includeCompleted=inc; populateStageFilter(); } selectedStage=document.getElementById('stage-filter').value; selectedComparison=document.getElementById('stage-comparison').value; includeCompleted=inc; updateFilterHint(); renderProjects(); }
+    function updateFilterHint(){ const hint=document.getElementById('filter-hint'), txt=document.getElementById('filter-hint-text'); if(!selectedStage){hint.style.display='none';return;} hint.style.display='block'; const sn=stageLabels[selectedStage]; const tt=includeCompleted?'tarefas (pendentes + concluídas)':'tarefas pendentes'; txt.textContent=selectedComparison==='='?`Mostrando projetos com ${tt} em "${sn}"`:(selectedComparison==='<'?`Mostrando projetos com ${tt} em "${sn}" ou estágios anteriores`:`Mostrando projetos com ${tt} em "${sn}" ou estágios posteriores`); }
+    function clearStageFilter(){ document.getElementById('stage-filter').value=''; document.getElementById('stage-comparison').value='='; document.getElementById('task-status-filter').value='pending'; selectedStage=''; selectedComparison='='; includeCompleted=false; document.getElementById('filter-hint').style.display='none'; renderProjects(); }
+
+    /* ===================== INIT ===================== */
+    document.addEventListener('DOMContentLoaded', async () => {
+      let ctx; try { ctx = await WA.initAppPage('research'); } catch(e){ return; }
+      WardApp.db = WA.client;
+      userData = { id: ctx.user.id, full_name: ctx.profile.full_name };
+
+      await loadAllUsers();
+      await loadProjects();
+
+      populateStageFilter();
+      document.getElementById('stage-filter').addEventListener('change', applyStageFilter);
+      document.getElementById('stage-comparison').addEventListener('change', applyStageFilter);
+      document.getElementById('task-status-filter').addEventListener('change', applyStageFilter);
+
+      const projectIdParam = new URLSearchParams(window.location.search).get('project');
+      if (projectIdParam) { const pid = Number(projectIdParam); if (pid && allProjects.find(p=>p.id===pid)) viewProject(pid); }
+    });
+
+    async function loadAllUsers(){
+      const { data } = await WardApp.db.from('profiles').select('id, full_name, specialty').order('full_name');
+      allUsers = data || [];
+      window._pickerMembers = sortUsersByName(allUsers.slice());
+      renderAuthorPicker('project-participants-list', window._pickerMembers, []);
+    }
+
+    async function loadProjects(){
+      const { data, error } = await WardApp.db.from('research_projects')
+        .select(`*, tasks:research_tasks(*), creator:created_by(id, full_name)`)
+        .order('created_at', { ascending:false });
+      if (error) { console.error(error); WardApp.showToast('Erro ao carregar projetos','error'); return; }
+      allProjects = data || [];
+      updateStats(); renderProjects();
+    }
+
+    function updateStats(){
+      const vis = allProjects.filter(p=>!isArchivedProject(p));
+      document.getElementById('total-projects').textContent = vis.length;
+      document.getElementById('active-projects').textContent = vis.filter(p=>p.status==='active').length;
+      document.getElementById('completed-projects').textContent = vis.filter(p=>p.status==='completed').length;
+    }
+
+    function renderProjects(){
+      const container=document.getElementById('projects-container'), noProjects=document.getElementById('no-projects');
+      let projects=allProjects.slice();
+      if(searchQuery){ const inDesc=document.getElementById('search-description').checked; projects=projects.filter(p=>(p.title||'').toLowerCase().includes(searchQuery)||(inDesc&&(p.description||'').toLowerCase().includes(searchQuery))); }
+      if(selectedStage) projects=projects.filter(projectMatchesFilter);
+      if(projects.length===0){ const hasFilter=selectedStage||searchQuery; container.innerHTML=hasFilter?`<div class="card"><div class="card-body text-center p-4"><div class="empty-state"><div class="empty-state-icon">🔍</div><h3 class="empty-state-title">Nenhum projeto encontrado</h3><p class="text-muted">${searchQuery?'Nenhum projeto corresponde à busca.':'Nenhum projeto com tarefas pendentes no estágio filtrado.'}</p></div></div></div>`:''; noProjects.style.display=hasFilter?'none':'block'; return; }
+      noProjects.style.display='none';
+      const archived=projects.filter(isArchivedProject), visible=projects.filter(p=>!isArchivedProject(p));
+      const active=visible.filter(p=>p.status!=='completed'), completed=visible.filter(p=>p.status==='completed');
+      let html='';
+      if(selectedStage) html+=`<p style="margin-bottom:1rem; color:var(--gray-500); font-size:.9rem;">Encontrados ${visible.length} projeto${visible.length!==1?'s':''}${archived.length?` (+${archived.length} arquivado${archived.length!==1?'s':''})`:''}</p>`;
+      if(active.length){ html+=`<h3 class="projects-section-title"><span>🔬 Em Andamento</span><span class="projects-section-count">${active.length}</span></h3>`; html+=active.map(p=>renderProjectCard(p)).join(''); }
+      if(completed.length){ html+=`<h3 class="projects-section-title" style="margin-top:2rem;"><span>✅ Concluídos</span><span class="projects-section-count">${completed.length}</span></h3>`; html+=completed.map(p=>renderProjectCard(p)).join(''); }
+      if(archived.length){ html+=`<button type="button" class="archived-toggle" onclick="toggleArchivedProjects()"><span>📦 Projetos arquivados <span class="archived-count">${archived.length}</span></span><span class="archived-chevron">${showArchived?'▲ ocultar':'▼ ver'}</span></button>`; if(showArchived){ html+=`<div class="archived-list">`+archived.map(p=>renderProjectCard(p)).join('')+`</div>`; } }
+      container.innerHTML=html;
+    }
+
+    const TAG_CONFIG={ congresso:{label:'🎤 CONGRESSO',css:'tag-congresso'}, publicado:{label:'📄 PUBLICADO',css:'tag-publicado'}, submetido:{label:'📨 SUBMETIDO',css:'tag-submetido'}, revisao:{label:'🔄 EM REVISAO',css:'tag-revisao'}, arquivado:{label:'📦 ARQUIVADO',css:'tag-arquivado'} };
+    function renderProjectTags(tags){ if(!Array.isArray(tags)||!tags.length)return ''; const b=tags.map(t=>{ const c=TAG_CONFIG[t]; return c?`<span class="project-tag ${c.css}">${c.label}</span>`:''; }).filter(Boolean).join(''); return b?`<div class="project-tags">${b}</div>`:''; }
+    function toggleTagCheckbox(cb){ const l=cb.closest('.tag-checkbox-label'); const t=l.dataset.tag; l.classList.toggle('checked-'+t, cb.checked); }
+    function getSelectedTags(){ return Array.from(document.querySelectorAll('#edit-project-tags input[type="checkbox"]')).filter(cb=>cb.checked).map(cb=>cb.value); }
+    function setTagCheckboxes(tags){ document.querySelectorAll('#edit-project-tags input[type="checkbox"]').forEach(cb=>{ const l=cb.closest('.tag-checkbox-label'); cb.checked=(tags||[]).includes(cb.value); l.classList.toggle('checked-'+cb.value, cb.checked); }); }
+
+    function renderProjectCard(project){
+      const tasks=project.tasks||[]; const done=tasks.filter(t=>t.stage==='tarefa_concluida').length; const progress=tasks.length?Math.round(done/tasks.length*100):0;
+      const active=Array.from(getActiveStages(project)).sort((a,b)=>stageOrder.indexOf(a)-stageOrder.indexOf(b));
+      let badges=''; if(active.length){ const show=active.slice(0,3); const rem=active.length-3; badges=`<div class="project-stages" style="display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.75rem;">${show.map(s=>`<span class="stage-badge">${stageLabels[s]||s}</span>`).join('')}${rem>0?`<span class="stage-badge-more">+${rem}</span>`:''}</div>`; }
+      let sc='status-active', st='🔄 Em andamento'; if(project.status==='completed'){ sc='status-completed'; st='✅ Concluído'; }
+      return `<div class="project-card" onclick="viewProject(${project.id})"><div class="project-header"><h3 class="project-title">${calEsc(project.title)}</h3><span class="project-status ${sc}">${st}</span></div>${project.description?`<div class="project-description">${formatDescription(project.description)}</div>`:''}<div class="progress-container"><div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div><span class="progress-text">${progress}%</span></div>${badges}<div class="project-footer"><div class="project-footer-left"><span>📋 ${tasks.length} tarefas</span><span>👥 ${project.participants?.length||0} participantes</span></div>${renderProjectTags(project.tags)}</div></div>`;
+    }
+
+    async function viewProject(projectId){
+      currentProject=allProjects.find(p=>p.id===projectId); if(!currentProject)return;
+      const url=new URL(window.location); url.searchParams.set('project',projectId); window.history.pushState({projectId},'',url);
+      document.getElementById('view-project-title').textContent=currentProject.title;
+      document.getElementById('view-project-description').innerHTML=formatDescription(currentProject.description||'');
+      document.getElementById('view-project-description').style.display='block'; document.getElementById('description-edit-area').style.display='none'; isEditingDescription=false;
+      let meta=''; if(currentProject.deadline)meta+=`<span class="project-meta-item">📅 Prazo: ${WardApp.formatDate(currentProject.deadline)}</span>`; if(currentProject.drive_link)meta+=`<a href="${calEsc(currentProject.drive_link)}" target="_blank" class="project-meta-item link">📁 Google Drive</a>`;
+      document.getElementById('project-meta').innerHTML=meta;
+      const vt=document.getElementById('view-project-tags'); const tags=currentProject.tags||[]; if(tags.length){ vt.innerHTML=renderProjectTags(tags); vt.style.display='block'; } else { vt.innerHTML=''; vt.style.display='none'; }
+      const tasks=currentProject.tasks||[]; const done=tasks.filter(t=>t.stage==='tarefa_concluida').length; const progress=tasks.length?Math.round(done/tasks.length*100):0;
+      document.getElementById('project-progress-text').textContent=`${progress}%`; document.getElementById('project-progress-fill').style.width=`${progress}%`;
+      await loadParticipants(); renderTasks(tasks); await loadProjectDriveFolders(currentProject.id);
+      const canEdit=canEditProject(currentProject);
+      document.getElementById('add-task-btn').style.display=canEdit?'inline-flex':'none';
+      document.getElementById('edit-project-btn').style.display=canEdit?'inline-flex':'none';
+      document.getElementById('manage-participants-btn').style.display=canEdit?'inline-flex':'none';
+      document.getElementById('delete-project-btn').style.display=(currentProject.created_by===userData.id)?'inline-flex':'none';
+      openModal('view-project-modal');
+    }
+    function closeViewProjectModal(){ const url=new URL(window.location); url.searchParams.delete('project'); window.history.pushState({},'',url); closeModal('view-project-modal'); }
+    function copyProjectLink(){ if(!currentProject)return; const url=new URL(window.location); url.searchParams.set('project',currentProject.id); WA.copyText(url.toString()); }
+    window.addEventListener('popstate',()=>{ const pid=new URL(window.location).searchParams.get('project'); if(pid)viewProject(Number(pid)); else closeModal('view-project-modal'); });
+
+    async function loadParticipants(){
+      const ids=currentProject.participants||[]; if(!ids.length){ document.getElementById('participants-list').innerHTML='<p class="text-muted">Nenhum participante</p>'; window.participantsCache=[]; return; }
+      const { data }=await WardApp.db.from('profiles').select('id, full_name, specialty').in('id',ids);
+      window.participantsCache=data||[]; const sorted=sortUsersByName((data||[]).slice());
+      document.getElementById('participants-list').innerHTML=sorted.map(p=>`<div class="participant-chip"><span class="participant-avatar">👤</span><span>${calEsc(_dn(p.full_name)||'Membro')}</span></div>`).join('');
+    }
+
+    function renderTasks(tasks){
+      const container=document.getElementById('tasks-list'), countLabel=document.getElementById('tasks-count-label');
+      if(!tasks||!tasks.length){ container.innerHTML=`<div style="text-align:center; padding:2rem; color:#94a3b8;"><div style="font-size:3rem; margin-bottom:.5rem;">📋</div><p style="margin:0;">Nenhuma tarefa ainda</p></div>`; if(countLabel)countLabel.textContent='Nenhuma tarefa'; return; }
+      const done=tasks.filter(t=>t.stage==='tarefa_concluida').length; const pend=tasks.length-done; if(countLabel)countLabel.textContent=`${done}/${tasks.length} concluídas • ${pend} pendente${pend!==1?'s':''}`;
+      const order=Object.keys(stageLabels);
+      tasks=tasks.slice().sort((a,b)=>{ if(a.stage==='tarefa_concluida'&&b.stage!=='tarefa_concluida')return 1; if(b.stage==='tarefa_concluida'&&a.stage!=='tarefa_concluida')return -1; return order.indexOf(a.stage)-order.indexOf(b.stage); });
+      const canEdit=canEditProject(currentProject);
+      const todayKey=calTodayKey();
+      container.innerHTML=tasks.map(task=>{
+        const isCompleted=task.stage==='tarefa_concluida';
+        let assigneeName='',assigneeInitials='';
+        if(task.assigned_to&&window.participantsCache){ const a=window.participantsCache.find(p=>p.id===task.assigned_to); if(a){ assigneeName=_dn(a.full_name)||''; assigneeInitials=assigneeName.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase(); } }
+        let isOverdue=false, dinfo='';
+        if(task.deadline&&!isCompleted){ const diff=calDiffDays(task.deadline,todayKey); isOverdue=diff<0; if(diff<0)dinfo=`${Math.abs(diff)} dia${Math.abs(diff)>1?'s':''} atrasado`; else if(diff===0)dinfo='Hoje!'; else if(diff===1)dinfo='Amanhã'; else if(diff<=7)dinfo=`${diff} dias`; }
+        const clickAttr = canEdit ? `onclick="editTask(${task.id})"` : '';
+        return `<div class="task-item ${isCompleted?'completed':''} ${isOverdue?'overdue':''}" ${clickAttr}><div class="task-checkbox"><input type="checkbox" ${isCompleted?'checked':''} ${canEdit?'':'disabled'} onclick="event.stopPropagation(); toggleTaskComplete(${task.id}, this.checked)"></div><div class="task-info"><div class="task-title">${calEsc(task.title)}</div><div class="task-meta"><span class="task-stage">${stageLabels[task.stage]||task.stage}</span>${assigneeName?`<span class="task-assignee"><span class="task-assignee-avatar">${calEsc(assigneeInitials)}</span>${calEsc(assigneeName)}</span>`:''}${task.deadline?`<span class="task-deadline ${isOverdue?'text-danger':''}">📅 ${WardApp.formatDate(task.deadline)}${dinfo?` <span style="opacity:.8;">(${dinfo})</span>`:''}</span>`:''}</div></div></div>`;
+      }).join('');
+    }
+
+    async function toggleTaskComplete(taskId, completed){
+      const task=currentProject.tasks.find(t=>t.id===taskId); if(!task)return;
+      const upd={ updated_at:new Date().toISOString() };
+      if(completed){ upd.stage='tarefa_concluida'; upd.original_stage=task.stage!=='tarefa_concluida'?task.stage:(task.original_stage||'nova_tarefa'); } else { upd.stage=task.original_stage||'nova_tarefa'; }
+      await WardApp.db.from('research_tasks').update(upd).eq('id',taskId);
+      await loadProjects(); currentProject=allProjects.find(p=>p.id===currentProject.id); if(currentProject)viewProject(currentProject.id);
+    }
+
+    function participantOptionsHtml(selectedId){
+      const ids=currentProject.participants||[]; const members=sortUsersByName(allUsers.filter(u=>ids.includes(u.id)));
+      let html='<option value="">Nenhum</option>'; html+=members.map(u=>`<option value="${u.id}" ${String(selectedId)===String(u.id)?'selected':''}>${calEsc(_dn(u.full_name)||'Membro')}</option>`).join(''); return html;
+    }
+    function openAddTaskModal(){
+      document.getElementById('task-project-id').value=currentProject.id;
+      document.getElementById('task-title').value=''; document.getElementById('task-stage').innerHTML=stageOptionsHtml; document.getElementById('task-stage').value='nova_tarefa'; document.getElementById('task-deadline').value='';
+      document.getElementById('task-assignee').innerHTML=participantOptionsHtml('');
+      openModal('add-task-modal');
+    }
+    async function createTask(){
+      const projectId=document.getElementById('task-project-id').value; const title=document.getElementById('task-title').value.trim();
+      if(!title){ WardApp.showToast('Preencha o título da tarefa','warning'); return; }
+      const { error }=await WardApp.db.from('research_tasks').insert({ project_id:Number(projectId), title, stage:document.getElementById('task-stage').value, assigned_to:document.getElementById('task-assignee').value||null, deadline:document.getElementById('task-deadline').value||null });
+      if(error){ WardApp.showToast('Erro ao criar tarefa','error'); return; }
+      closeModal('add-task-modal'); WardApp.showToast('Tarefa criada!'); await loadProjects(); currentProject=allProjects.find(p=>p.id==projectId); viewProject(currentProject.id);
+    }
+    function editTask(taskId){
+      if(!canEditProject(currentProject))return; const task=currentProject.tasks.find(t=>t.id===taskId); if(!task)return;
+      document.getElementById('edit-task-id').value=taskId; document.getElementById('edit-task-title').value=task.title;
+      document.getElementById('edit-task-stage').innerHTML=stageOptionsHtml; document.getElementById('edit-task-stage').value=task.stage;
+      document.getElementById('edit-task-deadline').value=task.deadline||''; document.getElementById('edit-task-assignee').innerHTML=participantOptionsHtml(task.assigned_to);
+      openModal('edit-task-modal');
+    }
+    async function updateTask(){
+      const id=document.getElementById('edit-task-id').value; const title=document.getElementById('edit-task-title').value.trim();
+      if(!title){ WardApp.showToast('Preencha o título','warning'); return; }
+      const { error }=await WardApp.db.from('research_tasks').update({ title, stage:document.getElementById('edit-task-stage').value, assigned_to:document.getElementById('edit-task-assignee').value||null, deadline:document.getElementById('edit-task-deadline').value||null, updated_at:new Date().toISOString() }).eq('id',id);
+      if(error){ WardApp.showToast('Erro ao atualizar tarefa','error'); return; }
+      closeModal('edit-task-modal'); WardApp.showToast('Tarefa atualizada!'); await loadProjects(); currentProject=allProjects.find(p=>p.id===currentProject.id); viewProject(currentProject.id);
+    }
+    async function deleteTask(){
+      if(!confirm('Excluir esta tarefa?'))return; const id=document.getElementById('edit-task-id').value;
+      const { error }=await WardApp.db.from('research_tasks').delete().eq('id',id); if(error){ WardApp.showToast('Erro ao excluir','error'); return; }
+      closeModal('edit-task-modal'); WardApp.showToast('Tarefa excluída'); await loadProjects(); currentProject=allProjects.find(p=>p.id===currentProject.id); viewProject(currentProject.id);
+    }
+
+    async function createProject(){
+      const type=document.getElementById('project-type').value; const title=document.getElementById('project-title').value.trim();
+      const description=document.getElementById('project-description').value.trim(); const deadline=document.getElementById('project-deadline').value||null;
+      let driveLink=document.getElementById('project-drive-link').value.trim()||null; const participants=getSelectedAuthorIds('project-participants-list'); const createDrive=document.getElementById('create-drive-folder').checked;
+      if(!title){ WardApp.showToast('Preencha os campos para gerar o título','warning'); return; }
+      WardApp.showLoading();
+      let folderStructure=null;
+      if(createDrive){ try { folderStructure=await createProjectDriveFolder(title); driveLink=folderStructure.mainFolderUrl; } catch(e){ WardApp.showToast('Erro ao criar pastas no Drive. Continuando sem integração.','warning'); } }
+      let finalParticipants=participants.slice(); if(!finalParticipants.includes(userData.id))finalParticipants.push(userData.id);
+      const { data:project, error }=await WardApp.db.from('research_projects').insert({ title, description, project_type:type, deadline, drive_link:driveLink, participants:finalParticipants, status:'active', created_by:userData.id }).select().single();
+      if(error){ WardApp.hideLoading(); console.error(error); WardApp.showToast('Erro ao criar projeto','error'); return; }
+      if(folderStructure){ try { await saveFolderStructure(project.id, folderStructure); } catch(e){ console.error(e); } }
+      WardApp.hideLoading(); closeModal('new-project-modal'); WardApp.showToast('Projeto criado!'); await loadProjects();
+    }
+
+    function updateTitleFields(){
+      const type=document.getElementById('project-type').value;
+      document.getElementById('double-arm-fields').style.display=type==='double-arm'?'block':'none';
+      document.getElementById('single-arm-fields').style.display=type==='single-arm'?'block':'none';
+      document.getElementById('network-fields').style.display=type==='network'?'block':'none';
+      document.getElementById('other-fields').style.display=type==='other'?'block':'none';
+      document.getElementById('population-group').style.display=type==='other'?'none':'block';
+      generateTitle();
+    }
+    function generateTitle(){
+      const type=document.getElementById('project-type').value; const pop=document.getElementById('project-population').value.trim(); let title='';
+      if(type==='double-arm'){ const i=document.getElementById('project-intervention').value.trim(), c=document.getElementById('project-comparison').value.trim(); if(i&&c&&pop)title=`${i} VERSUS ${c} FOR ${pop}`; }
+      else if(type==='single-arm'){ const i=document.getElementById('project-intervention-single').value.trim(); if(i&&pop)title=`${i} FOR ${pop}`; }
+      else if(type==='network'){ const i=document.getElementById('project-interventions-network').value.trim(); if(i&&pop)title=`${i} FOR ${pop}`; }
+      else { title=document.getElementById('project-free-title').value.trim(); }
+      document.getElementById('project-title').value=title.toUpperCase();
+    }
+    function updateEditTitleFields(){ const t=document.getElementById('edit-project-type').value; document.getElementById('edit-double-arm-fields').style.display=t==='double-arm'?'block':'none'; document.getElementById('edit-single-arm-fields').style.display=t==='single-arm'?'block':'none'; }
+
+    /* -------- inline description editing -------- */
+    let originalDescription='', isEditingDescription=false;
+    function enterDescriptionEditMode(){
+      if(isEditingDescription||!canEditProject(currentProject))return; isEditingDescription=true;
+      const viewEl=document.getElementById('view-project-description'), editArea=document.getElementById('description-edit-area'), editor=document.getElementById('inline-description-editor');
+      originalDescription=currentProject?.description||''; editor.innerHTML=originalDescription;
+      editor.onpaste=function(e){ e.preventDefault(); const cd=e.clipboardData||window.clipboardData; document.execCommand('insertHTML',false,cleanPastedHtml(cd.getData('text/html')||cd.getData('text/plain'))); };
+      viewEl.style.display='none'; editArea.style.display='block'; editor.focus();
+    }
+    function cancelDescriptionEdit(){ document.getElementById('description-edit-area').style.display='none'; document.getElementById('view-project-description').style.display='block'; isEditingDescription=false; }
+    async function saveInlineDescription(){
+      if(!currentProject)return; const editor=document.getElementById('inline-description-editor'); const newDesc=formatDescription(editor.innerHTML);
+      const btn=document.querySelector('.btn-save-desc'); const orig=btn.innerHTML; btn.innerHTML='⏳ Salvando...'; btn.disabled=true;
+      try { const { error }=await WardApp.db.from('research_projects').update({ description:newDesc, updated_at:new Date().toISOString() }).eq('id',currentProject.id); if(error)throw error;
+        currentProject.description=newDesc; document.getElementById('view-project-description').innerHTML=formatDescription(newDesc); cancelDescriptionEdit(); loadProjects(); WardApp.showToast('Descrição salva!','success');
+      } catch(err){ console.error(err); WardApp.showToast('Erro ao salvar descrição','error'); } finally { btn.innerHTML=orig; btn.disabled=false; }
+    }
+
+    async function openEditProjectModal(){
+      if(!currentProject)return;
+      document.getElementById('edit-project-id').value=currentProject.id;
+      document.getElementById('edit-project-type').value=(currentProject.project_type==='double-arm')?'double-arm':'single-arm';
+      document.getElementById('edit-project-description').innerHTML=currentProject.description||'';
+      document.getElementById('edit-project-status').value=currentProject.status||'active';
+      document.getElementById('edit-project-deadline').value=currentProject.deadline?String(currentProject.deadline).split('T')[0]:'';
+      document.getElementById('edit-project-link').value=currentProject.drive_link||''; setTagCheckboxes(currentProject.tags);
+      const title=currentProject.title||'';
+      if(document.getElementById('edit-project-type').value==='single-arm'){ document.getElementById('edit-project-single-title').value=title; }
+      else { const m=title.match(/^(.+?)\s+(?:VS|VERSUS)\s+(.+?)\s+FOR\s+(.+)$/i); if(m){ document.getElementById('edit-project-intervention').value=m[1]; document.getElementById('edit-project-comparison').value=m[2]; document.getElementById('edit-project-outcome').value=m[3]; } else { document.getElementById('edit-project-intervention').value=title; document.getElementById('edit-project-comparison').value=''; document.getElementById('edit-project-outcome').value=''; } }
+      updateEditTitleFields();
+      const driveGrp=document.getElementById('edit-create-drive-folder-group'), checkGrp=document.getElementById('edit-check-folders-group'), res=document.getElementById('check-folders-result');
+      res.style.display='none'; res.innerHTML='';
+      const { data:folders }=await WardApp.db.from('research_project_folders').select('id').eq('project_id',currentProject.id).limit(1);
+      if(!folders||!folders.length){ driveGrp.style.display=''; checkGrp.style.display='none'; } else { driveGrp.style.display='none'; checkGrp.style.display=''; }
+      openModal('edit-project-modal');
+    }
+
+    async function saveProjectEdit(){
+      const projectId=document.getElementById('edit-project-id').value;
+      const description=formatDescription(document.getElementById('edit-project-description').innerHTML);
+      const projectType=document.getElementById('edit-project-type').value; const status=document.getElementById('edit-project-status').value;
+      const deadline=document.getElementById('edit-project-deadline').value||null; const driveLink=document.getElementById('edit-project-link').value.trim()||null;
+      let title=''; if(projectType==='single-arm'){ title=document.getElementById('edit-project-single-title').value.trim(); }
+      else { const i=document.getElementById('edit-project-intervention').value.trim(), c=document.getElementById('edit-project-comparison').value.trim(), o=document.getElementById('edit-project-outcome').value.trim(); title=(i&&c&&o)?`${i} VS ${c} FOR ${o}`.toUpperCase():(i||''); }
+      if(!title){ WardApp.showToast('Preencha o título do projeto','warning'); return; }
+      const { error }=await WardApp.db.from('research_projects').update({ title, description, project_type:projectType, status, deadline, drive_link:driveLink, tags:getSelectedTags(), updated_at:new Date().toISOString() }).eq('id',projectId);
+      if(error){ console.error(error); WardApp.showToast('Erro ao atualizar projeto','error'); return; }
+      closeModal('edit-project-modal'); closeModal('view-project-modal'); WardApp.showToast('Projeto atualizado!'); await loadProjects();
+    }
+
+    async function deleteProject(){
+      if(!currentProject)return;
+      if(currentProject.created_by!==userData.id){ WardApp.showToast('Apenas quem criou o projeto pode excluí-lo','error'); return; }
+      const conf=prompt(`Para excluir "${currentProject.title}", digite "excluir":\n\n⚠️ Esta ação não pode ser desfeita!`);
+      if(conf===null)return; if(conf.toLowerCase().trim()!=='excluir'){ WardApp.showToast('Confirmação incorreta. Projeto NÃO excluído.','warning'); return; }
+      const { error }=await WardApp.db.from('research_projects').delete().eq('id',currentProject.id);
+      if(error){ console.error(error); WardApp.showToast('Erro ao excluir projeto: '+(error.message||''),'error'); return; }
+      closeModal('view-project-modal'); WardApp.showToast('Projeto excluído!'); currentProject=null;
+      const url=new URL(window.location); url.searchParams.delete('project'); window.history.pushState({},'',url); await loadProjects();
+    }
+
+    /* -------- participants management -------- */
+    function openManageParticipantsModal(){
+      if(!currentProject)return; const ids=currentProject.participants||[]; const available=sortUsersByName(allUsers.filter(u=>!ids.includes(u.id)));
+      renderAuthorPicker('add-participant-list', available, []); const s=document.getElementById('add-participant-search'); if(s){ s.value=''; filterAuthorPicker('add-participant-list',''); }
+      renderCurrentParticipants(); openModal('manage-participants-modal');
+    }
+    async function renderCurrentParticipants(){
+      const ids=currentProject.participants||[]; if(!ids.length){ document.getElementById('current-participants-list').innerHTML='<p class="text-muted">Nenhum participante</p>'; return; }
+      const { data }=await WardApp.db.from('profiles').select('id, full_name').in('id',ids); const sorted=sortUsersByName((data||[]).slice());
+      document.getElementById('current-participants-list').innerHTML=sorted.map(p=>`<div class="participant-manage-item d-flex justify-between align-center mb-2 p-2" style="background:var(--gray-50); border-radius:10px;"><div class="d-flex align-center gap-2"><span>👤</span><span>${calEsc(_dn(p.full_name)||'Membro')}</span></div><button class="btn btn-sm btn-danger" onclick="removeParticipant('${p.id}')">✕</button></div>`).join('');
+    }
+    async function addParticipant(){
+      const toAdd=getSelectedAuthorIds('add-participant-list'); if(!toAdd.length){ WardApp.showToast('Selecione ao menos um membro','warning'); return; }
+      const participants=[...new Set([...(currentProject.participants||[]), ...toAdd])];
+      const { error }=await WardApp.db.from('research_projects').update({ participants, updated_at:new Date().toISOString() }).eq('id',currentProject.id);
+      if(error){ WardApp.showToast('Erro ao adicionar participante','error'); return; }
+      currentProject.participants=participants; WardApp.showToast(toAdd.length>1?`${toAdd.length} participantes adicionados!`:'Participante adicionado!'); openManageParticipantsModal(); loadParticipants();
+    }
+    async function removeParticipant(userId){
+      if(!confirm('Remover este participante?'))return; const participants=(currentProject.participants||[]).filter(id=>id!==userId);
+      const { error }=await WardApp.db.from('research_projects').update({ participants, updated_at:new Date().toISOString() }).eq('id',currentProject.id);
+      if(error){ WardApp.showToast('Erro ao remover participante','error'); return; }
+      currentProject.participants=participants; WardApp.showToast('Participante removido!'); openManageParticipantsModal(); loadParticipants();
+    }
+
+    function openModal(id){ document.getElementById(id).classList.add('active'); }
+    function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+    function toggleDriveLinkField(){ const chk=document.getElementById('create-drive-folder'), inp=document.getElementById('project-drive-link'); if(chk.checked){ inp.disabled=true; inp.style.opacity='.5'; inp.value=''; } else { inp.disabled=false; inp.style.opacity='1'; } }
+
+    /* ===================== GOOGLE DRIVE ===================== */
+    async function createProjectDriveFolder(projectTitle){
+      const r=await fetch(GOOGLE_APPS_SCRIPT_URL,{ method:'POST', body:JSON.stringify({ action:'createProjectFolder', projectTitle }) });
+      if(!r.ok)throw new Error('HTTP '+r.status); const d=await r.json(); if(!d.success)throw new Error(d.error||'Erro ao criar pasta'); return d.folderStructure;
+    }
+    function flattenFolderStructure(projectId, fs){
+      const recs=[{ project_id:projectId, folder_name:fs.mainFolderName, folder_id:fs.mainFolderId, parent_folder_name:null, folder_url:fs.mainFolderUrl }];
+      if(fs.subfolders) for(const [name,data] of Object.entries(fs.subfolders)){ recs.push({ project_id:projectId, folder_name:name, folder_id:data.id, parent_folder_name:fs.mainFolderName, folder_url:data.url }); if(data.subfolders) for(const [n2,d2] of Object.entries(data.subfolders)) recs.push({ project_id:projectId, folder_name:n2, folder_id:d2.id, parent_folder_name:name, folder_url:d2.url }); }
+      return recs;
+    }
+    async function saveFolderStructure(projectId, fs){ const { error }=await WardApp.db.from('research_project_folders').insert(flattenFolderStructure(projectId,fs)); if(error)throw error; }
+
+    async function createDriveFolderFromEdit(){
+      if(!currentProject)return; const btn=document.getElementById('edit-create-drive-btn'); const orig=btn.textContent; btn.disabled=true; btn.textContent='Criando...';
+      try { const fs=await createProjectDriveFolder(currentProject.title); await saveFolderStructure(currentProject.id,fs);
+        await WardApp.db.from('research_projects').update({ drive_link:fs.mainFolderUrl, updated_at:new Date().toISOString() }).eq('id',currentProject.id);
+        document.getElementById('edit-project-link').value=fs.mainFolderUrl; document.getElementById('edit-create-drive-folder-group').style.display='none'; WardApp.showToast('Pasta criada no Google Drive!');
+      } catch(e){ console.error(e); WardApp.showToast('Erro ao criar pasta no Drive','error'); } finally { btn.disabled=false; btn.textContent=orig; }
+    }
+    async function checkProjectFolders(){
+      if(!currentProject)return; const btn=document.getElementById('edit-check-folders-btn'), res=document.getElementById('check-folders-result'); const orig=btn.textContent; btn.disabled=true; btn.textContent='Verificando...'; res.style.display='none';
+      try {
+        const { data:main }=await WardApp.db.from('research_project_folders').select('folder_id').eq('project_id',currentProject.id).is('parent_folder_name',null).limit(1);
+        if(!main||!main.length){ res.innerHTML='<div style="color:#dc2626;">Pasta principal não encontrada. Crie a pasta primeiro.</div>'; res.style.display=''; return; }
+        const r=await fetch(GOOGLE_APPS_SCRIPT_URL,{ method:'POST', body:JSON.stringify({ action:'checkAndCreateMissingFolders', mainFolderId:main[0].folder_id }) });
+        if(!r.ok)throw new Error('HTTP '+r.status); const d=await r.json(); if(!d.success)throw new Error(d.error||'Erro ao verificar pastas');
+        if(d.created&&d.created.length){ await WardApp.db.from('research_project_folders').insert(d.created.map(f=>({ project_id:currentProject.id, folder_name:f.name, folder_id:f.id, parent_folder_name:f.parent, folder_url:f.url }))); }
+        res.innerHTML=d.createdCount===0?'<div style="color:#166534;">Todas as pastas OK! Nenhuma faltante.</div>':`<div style="color:#166534; margin-bottom:.5rem;"><strong>${d.createdCount} pasta(s) criada(s):</strong></div><ul style="margin:0; padding-left:1.2rem;">${d.created.map(f=>`<li><strong>${calEsc(f.parent)} &gt; ${calEsc(f.name)}</strong></li>`).join('')}</ul>`;
+        res.style.display=''; WardApp.showToast(d.createdCount===0?'Todas as pastas OK!':`${d.createdCount} pasta(s) criada(s)!`);
+      } catch(e){ console.error(e); res.innerHTML=`<div style="color:#dc2626;">Erro: ${calEsc(e.message)}</div>`; res.style.display=''; WardApp.showToast('Erro ao verificar pastas','error'); } finally { btn.disabled=false; btn.textContent=orig; }
+    }
+
+    async function loadProjectDriveFolders(projectId){
+      const { data:folders }=await WardApp.db.from('research_project_folders').select('*').eq('project_id',projectId).order('parent_folder_name',{ ascending:true, nullsFirst:true }).order('folder_name');
+      if(!folders||!folders.length){ document.getElementById('drive-files-section').style.display='none'; return; }
+      const { data:files }=await WardApp.db.from('research_project_files').select('*').eq('project_id',projectId);
+      document.getElementById('drive-files-section').style.display='block'; renderDriveFolders(folders, files||[]);
+    }
+    function renderDriveFolders(folders, files){
+      const container=document.getElementById('drive-folders-container'); const main=folders.find(f=>f.parent_folder_name===null);
+      if(!main){ container.innerHTML='<p class="text-muted">Nenhuma pasta encontrada</p>'; return; }
+      container.innerHTML=`<div class="folder-item main-project-folder"><div class="folder-header" onclick="toggleFolder(this)"><span class="folder-toggle">▶</span><span class="folder-icon">📂</span><span class="folder-name">${calEsc(main.folder_name)}</span><span class="folder-count">(${folders.length-1} pastas, ${files.length} arquivos)</span><a href="${calEsc(main.folder_url)}" target="_blank" class="folder-link" onclick="event.stopPropagation()">Abrir no Drive ↗</a></div><div class="folder-content">${renderSubfolders(folders,files,main.folder_name)}</div></div>`;
+    }
+    function renderSubfolders(all, files, parent){ const subs=all.filter(f=>f.parent_folder_name===parent); return subs.length?subs.map(f=>renderFolderItem(f,all,files,0)).join(''):'<p class="text-muted empty-folder">Nenhuma subpasta</p>'; }
+    function renderFolderItem(folder, all, files, level){
+      const ff=files.filter(f=>f.folder_id===folder.id); const subs=all.filter(f=>f.parent_folder_name===folder.folder_name);
+      const canEdit=canEditProject(currentProject);
+      const dz=canEdit?`ondragover="handleFolderDragOver(event, ${folder.id})" ondragleave="handleFolderDragLeave(event, ${folder.id})" ondrop="handleFolderDrop(event, ${folder.id})" data-folder-id="${folder.id}"`:'';
+      let html=`<div class="folder-item level-${level}" ${dz}><div class="folder-header" onclick="toggleFolder(this)"><span class="folder-toggle">▶</span><span class="folder-icon">📁</span><span class="folder-name">${calEsc(folder.folder_name)}</span><span class="folder-count">(${ff.length} arquivo${ff.length!==1?'s':''})</span>${canEdit?'<span class="drop-hint" style="display:none; color:#b31942; font-size:.75rem; margin-left:.5rem;">📥 Solte aqui</span>':''}<a href="${calEsc(folder.folder_url)}" target="_blank" class="folder-link" onclick="event.stopPropagation()">Abrir no Drive ↗</a></div><div class="folder-content">`;
+      if(subs.length){ html+='<div class="subfolders-container">'+subs.map(s=>renderFolderItem(s,all,files,level+1)).join('')+'</div>'; }
+      if(ff.length){ html+=`<div class="files-list">${ff.map(file=>`<div class="file-item"><a href="${calEsc(file.file_url)}" target="_blank" class="file-link"><span class="file-icon">${getFileIcon(file.mime_type)}</span><span class="file-name">${calEsc(file.file_name)}</span><span class="file-size">${formatFileSize(file.file_size)}</span></a>${canEdit?`<button class="btn btn-sm btn-danger" onclick="deleteProjectFile(${file.id}); event.stopPropagation();">🗑️</button>`:''}</div>`).join('')}</div>`; }
+      if(canEdit){ html+=`<div class="folder-actions"><input type="file" id="upload-${folder.id}" style="display:none;" onchange="handleFileSelect(event, ${folder.id})"><button class="btn btn-sm btn-primary" onclick="document.getElementById('upload-${folder.id}').click()">📤 Fazer Upload</button></div>`; }
+      return html+'</div></div>';
+    }
+    function toggleFolder(header){ const item=header.parentElement; const t=header.querySelector('.folder-toggle'); item.classList.toggle('open'); if(t)t.textContent=item.classList.contains('open')?'▼':'▶'; }
+    function getFileIcon(m){ if(!m)return '📄'; if(m.includes('pdf'))return '📕'; if(m.includes('image'))return '🖼️'; if(m.includes('word')||m.includes('document'))return '📘'; if(m.includes('sheet')||m.includes('excel'))return '📊'; if(m.includes('presentation')||m.includes('powerpoint'))return '📙'; if(m.includes('video'))return '🎥'; if(m.includes('zip')||m.includes('rar'))return '📦'; return '📄'; }
+    function formatFileSize(b){ if(!b)return ''; if(b<1024)return b+' B'; if(b<1048576)return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
+
+    async function handleFileSelect(event, folderId){ const file=event.target.files[0]; if(!file)return; if(file.size>MAX_FILE_SIZE){ WardApp.showToast('Arquivo muito grande (máx 100MB)','error'); return; } WardApp.showLoading(); try { await handleProjectFileUpload(file,folderId); WardApp.showToast('Arquivo enviado!'); await loadProjectDriveFolders(currentProject.id); } catch(e){ console.error(e); WardApp.showToast('Erro ao fazer upload','error'); } finally { WardApp.hideLoading(); event.target.value=''; } }
+    function handleFolderDragOver(event){ event.preventDefault(); event.stopPropagation(); const it=event.currentTarget; it.classList.add('drag-over'); const h=it.querySelector('.drop-hint'); if(h)h.style.display='inline'; event.dataTransfer.dropEffect='copy'; }
+    function handleFolderDragLeave(event){ event.preventDefault(); event.stopPropagation(); const it=event.currentTarget; if(event.relatedTarget&&it.contains(event.relatedTarget))return; it.classList.remove('drag-over'); const h=it.querySelector('.drop-hint'); if(h)h.style.display='none'; }
+    async function handleFolderDrop(event, folderId){ event.preventDefault(); event.stopPropagation(); const it=event.currentTarget; it.classList.remove('drag-over'); const h=it.querySelector('.drop-hint'); if(h)h.style.display='none'; const files=event.dataTransfer.files; if(!files||!files.length)return; WardApp.showLoading(); let ok=0,err=0; try { for(const file of files){ if(file.size>MAX_FILE_SIZE){ WardApp.showToast(`"${file.name}" muito grande (máx 100MB)`,'error'); err++; continue; } try { await handleProjectFileUpload(file,folderId); ok++; } catch(e){ console.error(e); err++; } } if(ok)WardApp.showToast(`${ok} arquivo(s) enviado(s)!`); if(ok)await loadProjectDriveFolders(currentProject.id); if(err)WardApp.showToast(`${err} arquivo(s) falharam`,'error'); } finally { WardApp.hideLoading(); } }
+    async function handleProjectFileUpload(file, folderId){
+      const { data:folder }=await WardApp.db.from('research_project_folders').select('folder_id').eq('id',folderId).single(); if(!folder)throw new Error('Folder not found');
+      const base64=await fileToBase64(file);
+      const r=await fetch(GOOGLE_APPS_SCRIPT_URL,{ method:'POST', body:JSON.stringify({ action:'uploadToFolder', folderId:folder.folder_id, fileName:file.name, fileContent:base64, mimeType:file.type }) });
+      const d=await r.json(); if(!d.success)throw new Error(d.error||'Failed to upload');
+      await WardApp.db.from('research_project_files').insert({ project_id:currentProject.id, folder_id:folderId, file_name:d.fileName, file_id:d.fileId, file_url:d.viewLink, mime_type:d.mimeType, file_size:d.size, uploaded_by:userData.id });
+    }
+    async function deleteProjectFile(fileId){
+      if(!confirm('Excluir este arquivo?'))return; WardApp.showLoading();
+      try { const { data:file }=await WardApp.db.from('research_project_files').select('file_id').eq('id',fileId).single(); if(!file)throw new Error('File not found');
+        await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=deleteFile&fileId=${file.file_id}`); await WardApp.db.from('research_project_files').delete().eq('id',fileId);
+        WardApp.showToast('Arquivo excluído!'); await loadProjectDriveFolders(currentProject.id);
+      } catch(e){ console.error(e); WardApp.showToast('Erro ao excluir arquivo','error'); } finally { WardApp.hideLoading(); }
+    }
+    function fileToBase64(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(file); }); }
+  </script>
+
+  <!-- Research-specific styles (project cards, tasks, calendar, author picker, drive) -->
+  <style>
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1rem; }
+    .stat-card { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius-lg); padding:1.1rem 1.25rem; display:flex; align-items:center; gap:1rem; box-shadow:var(--shadow-sm); }
+    .stat-icon { font-size:1.5rem; width:46px; height:46px; display:flex; align-items:center; justify-content:center; background:var(--gray-50); border:1px solid var(--gray-100); border-radius:12px; }
+    .stat-value { font-size:1.6rem; font-weight:800; color:var(--navy); display:block; line-height:1.1; }
+    .stat-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--gray-500); }
+    .project-card { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius-lg); padding:1.25rem; margin-bottom:1rem; cursor:pointer; box-shadow:var(--shadow-sm); transition:box-shadow .2s,border-color .2s,transform .2s; }
+    .project-card:hover { box-shadow:var(--shadow-md); border-color:var(--accent); transform:translateY(-2px); }
+    .project-header { display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem; margin-bottom:.75rem; }
+    .project-title { font-size:1.05rem; font-weight:700; color:var(--navy); }
+    .project-status { font-size:.72rem; font-weight:600; padding:.25rem .65rem; border-radius:999px; white-space:nowrap; flex-shrink:0; }
+    .status-active { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+    .status-completed { background:#d1fae5; color:#065f46; border:1px solid #a7f3d0; }
+    .project-description { color:#1c2536; font-size:.9rem; line-height:1.5; margin-bottom:1rem; white-space:pre-wrap; word-wrap:break-word; padding:.6rem; border-radius:8px; max-height:80px; overflow:hidden; position:relative; }
+    .project-description::after { content:''; position:absolute; bottom:0; left:0; right:0; height:22px; background:linear-gradient(transparent,#fff); }
+    .project-description * { color:#1c2536 !important; background:transparent !important; }
+    .project-description-formatted { color:#1c2536; font-size:.95rem; white-space:pre-wrap; word-wrap:break-word; padding:1rem; border-radius:var(--radius-md); border:2px solid var(--gray-200); cursor:pointer; transition:all .2s; min-height:56px; }
+    .project-description-formatted:hover { border-color:var(--accent); background:#fffafb; }
+    .project-description-formatted:empty::before { content:'Clique para adicionar descrição...'; color:#9ca3af; font-style:italic; }
+    .project-description-formatted a { color:#b31942 !important; text-decoration:underline; }
+    .description-edit-area { border:2px solid var(--accent); border-radius:var(--radius-md); overflow:hidden; }
+    .rich-text-editor { min-height:120px; max-height:340px; padding:1rem; border:1px solid var(--gray-200); border-radius:10px; background:#fff; overflow-y:auto; }
+    .rich-text-editor:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(179,25,66,.14); }
+    .rich-text-editor[contenteditable="true"]:empty:before { content:attr(placeholder); color:#9ca3af; }
+    .description-edit-area .rich-text-editor { border:none; border-radius:0; box-shadow:none; }
+    .description-edit-buttons { display:flex; justify-content:flex-end; gap:.5rem; padding:.75rem 1rem; background:var(--gray-50); border-top:1px solid var(--gray-200); }
+    .btn-save-desc { background:linear-gradient(135deg,#22c55e,#16a34a) !important; color:#fff !important; }
+    .btn-cancel-desc { background:var(--gray-100) !important; color:var(--gray-600) !important; }
+    .project-stages .stage-badge { display:inline-block; padding:.2rem .5rem; font-size:.7rem; background:var(--gray-100); color:var(--navy); border-radius:4px; font-weight:600; white-space:nowrap; }
+    .project-stages .stage-badge-more { display:inline-block; padding:.2rem .5rem; font-size:.7rem; background:var(--gray-100); color:var(--gray-500); border-radius:4px; font-weight:600; }
+    .project-footer { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-top:1rem; font-size:.875rem; color:var(--gray-500); flex-wrap:wrap; }
+    .project-footer-left { display:flex; gap:1.25rem; }
+    .project-tags { display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.6rem; }
+    .project-footer .project-tags { margin-top:0; justify-content:flex-end; }
+    .project-tag { display:inline-block; padding:.2rem .6rem; font-size:.66rem; font-weight:700; border-radius:999px; letter-spacing:.04em; text-transform:uppercase; white-space:nowrap; }
+    .tag-congresso { background:#dbeafe; color:#1e40af; border:1px solid #93c5fd; }
+    .tag-publicado { background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; }
+    .tag-arquivado { background:#f3f4f6; color:#6b7280; border:1px solid #d1d5db; }
+    .tag-revisao { background:#fef3c7; color:#92400e; border:1px solid #fcd34d; }
+    .tag-submetido { background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd; }
+    .projects-section-title { display:flex; align-items:center; gap:.6rem; margin-bottom:1rem; color:var(--navy); font-size:1.1rem; font-weight:700; }
+    .projects-section-count { display:inline-flex; align-items:center; justify-content:center; min-width:1.5rem; height:1.5rem; padding:0 .5rem; background:var(--gray-100); border:1px solid var(--gray-200); border-radius:999px; font-size:.8rem; font-weight:700; color:var(--gray-500); }
+    .archived-toggle { display:flex; align-items:center; justify-content:space-between; gap:1rem; width:100%; margin-top:2rem; padding:.85rem 1.1rem; background:var(--gray-50); border:1px dashed var(--gray-200); border-radius:var(--radius-lg); color:var(--gray-600); font-weight:600; cursor:pointer; }
+    .archived-count { display:inline-flex; align-items:center; justify-content:center; min-width:1.4rem; height:1.4rem; padding:0 .45rem; margin-left:.35rem; background:var(--gray-200); border-radius:999px; font-size:.78rem; font-weight:700; color:var(--gray-500); }
+    .archived-list { margin-top:1rem; }
+    .tags-checkbox-group { display:flex; flex-wrap:wrap; gap:.5rem; }
+    .tag-checkbox-label { display:flex; align-items:center; gap:.4rem; padding:.4rem .75rem; border-radius:8px; cursor:pointer; font-size:.82rem; font-weight:600; border:2px solid var(--gray-200); user-select:none; }
+    .tag-checkbox-label input { accent-color:var(--accent); width:16px; height:16px; }
+    .tag-checkbox-label.checked-congresso { border-color:#3b82f6; background:#eff6ff; }
+    .tag-checkbox-label.checked-publicado { border-color:#10b981; background:#ecfdf5; }
+    .tag-checkbox-label.checked-arquivado { border-color:#9ca3af; background:#f9fafb; }
+    .tag-checkbox-label.checked-revisao { border-color:#f59e0b; background:#fffbeb; }
+    .tag-checkbox-label.checked-submetido { border-color:#8b5cf6; background:#f5f3ff; }
+    .participants-grid { display:flex; flex-wrap:wrap; gap:.5rem; }
+    .participant-chip { display:inline-flex; align-items:center; gap:.5rem; background:var(--gray-100); border:1px solid var(--gray-200); padding:.5rem .75rem; border-radius:999px; font-size:.875rem; font-weight:500; color:var(--gray-700); }
+    .project-meta { display:flex; gap:1rem; flex-wrap:wrap; }
+    .project-meta-item { display:inline-flex; align-items:center; gap:.25rem; font-size:.875rem; color:var(--gray-600); background:var(--gray-100); padding:.35rem .75rem; border-radius:var(--radius-md); text-decoration:none; }
+    .project-meta-item.link { color:var(--accent); }
+    .tasks-list { display:flex; flex-direction:column; gap:.75rem; }
+    .task-item { display:flex; align-items:flex-start; gap:1rem; padding:1rem 1.15rem; background:#fff; border-radius:14px; cursor:pointer; transition:all .2s; border:2px solid var(--gray-200); position:relative; overflow:hidden; }
+    .task-item::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(180deg,var(--navy),var(--accent)); }
+    .task-item:hover { transform:translateX(3px); border-color:#c7d2fe; box-shadow:var(--shadow-md); }
+    .task-item.completed { background:#f0fdf4; border-color:#86efac; opacity:.9; }
+    .task-item.completed::before { background:linear-gradient(180deg,#22c55e,#16a34a); }
+    .task-item.completed .task-title { text-decoration:line-through; color:#6b7280; }
+    .task-item.overdue { background:#fef2f2; border-color:#fca5a5; }
+    .task-item.overdue::before { background:linear-gradient(180deg,#ef4444,#dc2626); }
+    .task-checkbox input { width:22px; height:22px; cursor:pointer; accent-color:var(--accent); margin-top:2px; }
+    .task-info { flex:1; min-width:0; }
+    .task-title { font-weight:600; font-size:1rem; color:var(--navy); line-height:1.4; }
+    .task-meta { display:flex; gap:.6rem; font-size:.8rem; color:var(--gray-500); flex-wrap:wrap; align-items:center; margin-top:.4rem; }
+    .task-stage { display:inline-flex; align-items:center; gap:.35rem; background:linear-gradient(135deg,var(--navy),#1d4e96); color:#fff; padding:.25rem .7rem; border-radius:999px; font-size:.72rem; font-weight:600; white-space:nowrap; }
+    .task-item.completed .task-stage { background:linear-gradient(135deg,#22c55e,#16a34a); }
+    .task-item.overdue .task-stage { background:linear-gradient(135deg,#f97316,#ea580c); }
+    .task-deadline { display:inline-flex; align-items:center; gap:.35rem; background:var(--gray-100); padding:.25rem .6rem; border-radius:8px; font-size:.72rem; color:var(--gray-600); font-weight:500; }
+    .task-deadline.text-danger { background:#fef2f2; color:#dc2626; }
+    .task-assignee { display:inline-flex; align-items:center; gap:.35rem; background:#fef3c7; padding:.25rem .6rem; border-radius:8px; font-size:.72rem; color:#92400e; font-weight:500; }
+    .task-assignee-avatar { width:18px; height:18px; background:#b45309; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.62rem; font-weight:700; }
+
+    /* author picker */
+    .author-picker { border:1px solid var(--gray-200); border-radius:10px; overflow:hidden; background:#fff; }
+    .author-picker:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px rgba(179,25,66,.14); }
+    .author-search { width:100%; border:0; border-bottom:1px solid var(--gray-100); padding:.6rem .85rem; font-size:.9rem; outline:none; background:var(--gray-50); }
+    .author-list { max-height:230px; overflow-y:auto; padding:.4rem; display:flex; flex-direction:column; gap:2px; }
+    .author-list.author-list-sm { max-height:190px; }
+    .author-group-label { font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#9ca3af; padding:.5rem .6rem .25rem; }
+    .author-item { display:flex; align-items:center; gap:.65rem; width:100%; padding:.5rem .6rem; border:1px solid transparent; border-radius:9px; background:transparent; cursor:pointer; text-align:left; font:inherit; color:var(--gray-700); }
+    .author-item:hover { background:var(--gray-50); }
+    .author-item.selected { background:var(--accent-soft); border-color:#efc3ce; }
+    .author-avatar { flex-shrink:0; width:30px; height:30px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:.72rem; font-weight:700; color:#fff; background:var(--navy); }
+    .author-name { flex:1; min-width:0; font-size:.9rem; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .author-check { flex-shrink:0; width:22px; height:22px; border-radius:50%; border:2px solid var(--gray-200); display:inline-flex; align-items:center; justify-content:center; font-size:.7rem; color:transparent; }
+    .author-item.selected .author-check { background:#16a34a; border-color:#16a34a; color:#fff; }
+    .author-empty { color:#9ca3af; font-size:.85rem; text-align:center; padding:1rem; }
+    .author-count-badge:not(:empty) { display:inline-block; margin-left:.35rem; padding:.05rem .5rem; background:var(--accent-soft); color:var(--accent-dark); border-radius:999px; font-size:.72rem; font-weight:700; }
+    .author-count-badge.on-dark:not(:empty) { background:rgba(255,255,255,.25); color:#fff; }
+
+    /* drive folders */
+    .folders-accordion { border:1px solid var(--gray-200); border-radius:var(--radius-md); overflow:hidden; }
+    .main-project-folder>.folder-header { background:linear-gradient(135deg,var(--navy),#1d4e96); color:#fff; padding:1.1rem; font-size:1.05rem; }
+    .main-project-folder>.folder-header .folder-name, .main-project-folder>.folder-header .folder-toggle { color:#fff; font-weight:700; }
+    .main-project-folder>.folder-header .folder-count { background:rgba(255,255,255,.2); color:#fff; border:1px solid rgba(255,255,255,.3); }
+    .main-project-folder>.folder-header .folder-link { color:#fff; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); }
+    .folder-item.level-0 { border-bottom:1px solid var(--gray-200); }
+    .folder-item.level-0>.folder-header { background:var(--gray-50); padding:.9rem; padding-left:1.75rem; }
+    .folder-item.level-1 { border-left:3px solid var(--navy); margin-left:1.25rem; border-bottom:1px solid var(--gray-100); }
+    .folder-item.level-1>.folder-header { background:#fafafa; padding:.8rem; padding-left:1.25rem; }
+    .folder-item.level-1>.folder-header .folder-name { font-weight:500; font-size:.95rem; color:var(--navy); }
+    .folder-header { display:flex; align-items:center; gap:.75rem; cursor:pointer; }
+    .folder-header:hover { background:var(--gray-100); }
+    .folder-toggle { font-size:.75rem; color:var(--gray-500); width:20px; text-align:center; }
+    .folder-icon { font-size:1.2rem; }
+    .folder-name { flex:1; font-weight:600; color:var(--text-dark); }
+    .folder-count { font-size:.78rem; color:var(--gray-500); background:#fff; border:1px solid var(--gray-200); padding:.2rem .55rem; border-radius:999px; white-space:nowrap; }
+    .folder-link { font-size:.85rem; color:var(--accent); text-decoration:none; padding:.25rem .5rem; border-radius:8px; white-space:nowrap; }
+    .folder-content { display:none; background:#fff; }
+    .folder-item.open>.folder-content { display:block; }
+    .folder-item.drag-over { background:var(--accent-soft) !important; border:2px dashed var(--accent) !important; border-radius:var(--radius-md); }
+    .files-list { display:flex; flex-direction:column; gap:.5rem; padding:1rem; }
+    .file-item { display:flex; align-items:center; justify-content:space-between; padding:.6rem .75rem; background:var(--gray-50); border-radius:8px; border-left:3px solid transparent; }
+    .file-item:hover { background:var(--gray-100); border-left-color:var(--accent); }
+    .file-link { display:flex; align-items:center; gap:.5rem; text-decoration:none; color:var(--text-dark); flex:1; min-width:0; }
+    .file-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .file-size { font-size:.75rem; color:var(--gray-500); margin-left:.5rem; }
+    .folder-actions { margin-top:1rem; padding:1rem; padding-top:.75rem; border-top:1px solid var(--gray-200); }
+    .empty-folder { padding:1rem; font-size:.9rem; font-style:italic; color:var(--gray-500); }
+
+    /* calendar */
+    .cal-modal { max-width:1000px; max-height:92vh; display:flex; flex-direction:column; overflow:hidden; }
+    .cal-modal-header { background:linear-gradient(135deg,var(--accent),var(--accent-dark)); }
+    .cal-toolbar { display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap; padding:.85rem 1.25rem; border-bottom:1px solid var(--gray-200); background:var(--gray-50); }
+    .cal-nav { display:flex; align-items:center; gap:.4rem; flex-wrap:wrap; }
+    .cal-nav-btn, .cal-today-btn { display:inline-flex; align-items:center; justify-content:center; height:34px; min-width:34px; padding:0 .6rem; background:#fff; border:1px solid var(--gray-200); border-radius:8px; color:var(--gray-700); font-size:1rem; font-weight:600; cursor:pointer; }
+    .cal-today-btn { font-size:.85rem; } .cal-nav-btn:hover, .cal-today-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .cal-period { font-weight:700; font-size:1rem; color:var(--navy); margin-left:.4rem; white-space:nowrap; }
+    .cal-views { display:inline-flex; background:var(--gray-100); border-radius:9px; padding:3px; gap:2px; }
+    .cal-view-btn { border:0; background:transparent; padding:.4rem .85rem; border-radius:7px; font-size:.85rem; font-weight:600; color:var(--gray-500); cursor:pointer; }
+    .cal-view-btn.active { background:#fff; color:var(--accent); box-shadow:var(--shadow-sm); }
+    .cal-body { overflow-y:auto; padding:1.1rem 1.25rem 1.5rem; }
+    .cal-weekdays, .cal-days { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+    .cal-weekdays { margin-bottom:6px; }
+    .cal-weekday { text-align:center; font-size:.72rem; font-weight:700; text-transform:uppercase; color:#9ca3af; padding:.25rem 0; }
+    .cal-day { min-height:92px; border:1px solid var(--gray-100); border-radius:10px; padding:5px 6px; background:#fff; display:flex; flex-direction:column; gap:3px; overflow:hidden; }
+    .cal-day.other-month { background:var(--gray-50); opacity:.55; }
+    .cal-day.is-today { border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent); }
+    .cal-day-num { font-size:.8rem; font-weight:600; color:var(--gray-500); align-self:flex-start; }
+    .cal-day.is-today .cal-day-num { background:var(--accent); color:#fff; border-radius:999px; width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; }
+    .cal-events { display:flex; flex-direction:column; gap:3px; }
+    .cal-pill { display:flex; align-items:center; gap:.3rem; width:100%; padding:2px 6px; border-radius:6px; border:0; cursor:pointer; font-size:.72rem; font-weight:600; line-height:1.3; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; background:#eff6ff; color:#1d4ed8; }
+    .cal-pill.type-project { background:var(--accent-soft); color:var(--accent-dark); }
+    .cal-pill.is-overdue { background:#fee2e2; color:#b91c1c; }
+    .cal-pill.is-done { background:#dcfce7; color:#15803d; text-decoration:line-through; opacity:.85; }
+    .cal-more { border:0; background:transparent; color:var(--gray-500); font-size:.7rem; font-weight:700; cursor:pointer; padding:1px 4px; text-align:left; }
+    .cal-week { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
+    .cal-week-col { border:1px solid var(--gray-100); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; min-height:240px; background:#fff; }
+    .cal-week-head { text-align:center; padding:.5rem .25rem; border-bottom:1px solid var(--gray-100); background:var(--gray-50); }
+    .cal-week-head.is-today { background:var(--accent-soft); }
+    .cal-week-dow { font-size:.68rem; font-weight:700; text-transform:uppercase; color:#9ca3af; }
+    .cal-week-date { font-size:1.05rem; font-weight:700; color:var(--gray-700); }
+    .cal-week-head.is-today .cal-week-date { color:var(--accent); }
+    .cal-week-events { display:flex; flex-direction:column; gap:4px; padding:6px; }
+    .cal-week-events .cal-pill { white-space:normal; }
+    .cal-week-empty { color:#cbd5e1; font-size:.72rem; text-align:center; padding:.5rem 0; }
+    .cal-year { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+    .cal-mini { border:1px solid var(--gray-100); border-radius:12px; padding:.6rem; background:#fff; cursor:pointer; }
+    .cal-mini:hover { border-color:var(--accent); box-shadow:var(--shadow-md); }
+    .cal-mini-title { font-size:.82rem; font-weight:700; color:var(--gray-700); text-transform:capitalize; margin-bottom:.35rem; text-align:center; }
+    .cal-mini-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+    .cal-mini-cell { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:.6rem; color:#9ca3af; border-radius:4px; }
+    .cal-mini-cell.has-event { font-weight:700; color:#fff; background:#2563eb; }
+    .cal-mini-cell.has-overdue { background:#dc2626; }
+    .cal-mini-cell.has-project { background:var(--accent); }
+    .cal-mini-cell.is-today { outline:2px solid var(--accent); outline-offset:-2px; color:var(--accent); font-weight:700; }
+    .cal-deadlines { margin-top:1.5rem; border-top:1px solid var(--gray-200); padding-top:1.1rem; }
+    .cal-deadlines-title { margin:0 0 .85rem; font-size:1rem; font-weight:700; color:var(--gray-700); }
+    .cal-deadline-item { display:flex; align-items:center; gap:.75rem; padding:.6rem .75rem; border-radius:10px; border:1px solid var(--gray-100); background:#fff; margin-bottom:.5rem; cursor:pointer; }
+    .cal-deadline-item.is-overdue { border-left:4px solid #dc2626; }
+    .cal-deadline-item.is-soon { border-left:4px solid #d97706; }
+    .cal-dl-check { flex-shrink:0; width:18px; height:18px; accent-color:#16a34a; cursor:pointer; }
+    .cal-dl-check.placeholder { visibility:hidden; }
+    .cal-dl-date { flex-shrink:0; width:46px; text-align:center; border-radius:8px; padding:.25rem 0; background:var(--gray-100); }
+    .cal-dl-date .d { font-size:1.05rem; font-weight:800; color:var(--navy); line-height:1; }
+    .cal-dl-date .m { font-size:.6rem; font-weight:700; text-transform:uppercase; color:var(--gray-500); }
+    .cal-deadline-item.is-overdue .cal-dl-date { background:#fee2e2; } .cal-deadline-item.is-overdue .cal-dl-date .d { color:#b91c1c; }
+    .cal-dl-main { flex:1; min-width:0; }
+    .cal-dl-title { font-size:.9rem; font-weight:600; color:var(--navy); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .cal-dl-sub { font-size:.78rem; color:var(--gray-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .cal-dl-tag { flex-shrink:0; font-size:.72rem; font-weight:700; padding:.2rem .55rem; border-radius:999px; white-space:nowrap; }
+    .cal-dl-tag.overdue { background:#fee2e2; color:#b91c1c; } .cal-dl-tag.today { background:var(--accent-soft); color:var(--accent-dark); }
+    .cal-dl-tag.soon { background:#fef3c7; color:#92400e; } .cal-dl-tag.later { background:var(--gray-100); color:var(--gray-500); }
+    .cal-empty { text-align:center; color:#9ca3af; padding:1.5rem; font-size:.9rem; } .cal-empty-icon { font-size:2rem; display:block; margin-bottom:.5rem; }
+
+    @media (max-width:768px) {
+      .modal-xl, .modal-xxl { max-width:100% !important; }
+      .modal { max-height:96vh; }
+      .cal-toolbar { flex-direction:column; align-items:stretch; }
+      .cal-period { margin-left:0; order:-1; width:100%; text-align:center; }
+      .cal-day { min-height:60px; padding:3px; } .cal-pill { font-size:.6rem; padding:1px 4px; }
+      .cal-year { grid-template-columns:repeat(2,1fr); }
+      .cal-week { grid-template-columns:1fr; } .cal-week-col { min-height:auto; flex-direction:row; }
+      .cal-week-head { min-width:64px; border-bottom:none; border-right:1px solid var(--gray-100); display:flex; flex-direction:column; justify-content:center; } .cal-week-events { flex:1; }
+      .stats-grid { grid-template-columns:1fr 1fr; }
+      .project-header { flex-direction:column; gap:.5rem; } .project-footer { flex-direction:column; align-items:flex-start; gap:.5rem; }
+    }
+    @media (max-width:400px) { .stats-grid { grid-template-columns:1fr; } }
+  </style>
+</body>
+</html>

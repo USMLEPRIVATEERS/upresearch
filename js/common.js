@@ -704,6 +704,7 @@
       ["calendar.html", "Calendar", "calendar"],
       ["history.html", "History", "history"],
       ["certificates.html", "Certificates", "certificates"],
+      ["research.html", "Research", "research"],
       ["members.html", "Members", "members"],
     ];
     const name = profile ? profile.full_name || "My Profile" : "";

@@ -241,3 +241,97 @@ create policy "update own meeting"
 drop policy if exists "delete own meeting" on public.meetings;
 create policy "delete own meeting"
   on public.meetings for delete to authenticated using (host_id = auth.uid());
+
+-- ============================================================
+-- 8. Research projects (collaborative research management)
+--    Any signed-in member can create projects and collaborate.
+--    Numeric (bigint) IDs keep the client code simple.
+-- ============================================================
+create table if not exists public.research_projects (
+  id           bigint generated always as identity primary key,
+  title        text not null,
+  description  text not null default '',
+  project_type text not null default 'double-arm',
+  status       text not null default 'active',   -- active | completed
+  tags         text[] not null default '{}',
+  deadline     date,
+  drive_link   text,
+  participants uuid[] not null default '{}',
+  created_by   uuid references public.profiles (id) on delete set null,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+create table if not exists public.research_tasks (
+  id             bigint generated always as identity primary key,
+  project_id     bigint not null references public.research_projects (id) on delete cascade,
+  title          text not null,
+  stage          text not null default 'nova_tarefa',
+  original_stage text,
+  assigned_to    uuid references public.profiles (id) on delete set null,
+  deadline       date,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+create index if not exists research_tasks_project_idx on public.research_tasks (project_id);
+
+create table if not exists public.research_project_folders (
+  id                 bigint generated always as identity primary key,
+  project_id         bigint not null references public.research_projects (id) on delete cascade,
+  folder_name        text not null,
+  folder_id          text not null,
+  parent_folder_name text,
+  folder_url         text,
+  created_at         timestamptz not null default now()
+);
+create index if not exists research_folders_project_idx on public.research_project_folders (project_id);
+
+create table if not exists public.research_project_files (
+  id          bigint generated always as identity primary key,
+  project_id  bigint not null references public.research_projects (id) on delete cascade,
+  folder_id   bigint references public.research_project_folders (id) on delete cascade,
+  file_name   text not null,
+  file_id     text,
+  file_url    text,
+  mime_type   text,
+  file_size   bigint,
+  uploaded_by uuid references public.profiles (id) on delete set null,
+  created_at  timestamptz not null default now()
+);
+create index if not exists research_files_project_idx on public.research_project_files (project_id);
+
+alter table public.research_projects       enable row level security;
+alter table public.research_tasks          enable row level security;
+alter table public.research_project_folders enable row level security;
+alter table public.research_project_files   enable row level security;
+
+-- Projects: everyone reads; you insert your own; participants/creator edit
+-- (enforced in the UI); only the creator can delete.
+drop policy if exists "research projects readable" on public.research_projects;
+create policy "research projects readable"
+  on public.research_projects for select to authenticated using (true);
+drop policy if exists "insert own research project" on public.research_projects;
+create policy "insert own research project"
+  on public.research_projects for insert to authenticated with check (created_by = auth.uid());
+drop policy if exists "update research project" on public.research_projects;
+create policy "update research project"
+  on public.research_projects for update to authenticated using (true) with check (true);
+drop policy if exists "delete own research project" on public.research_projects;
+create policy "delete own research project"
+  on public.research_projects for delete to authenticated using (created_by = auth.uid());
+
+-- Tasks / folders / files: collaborative — members read and write all.
+do $$
+declare t text;
+begin
+  foreach t in array array['research_tasks','research_project_folders','research_project_files'] loop
+    execute format('drop policy if exists "read %1$s" on public.%1$s;', t);
+    execute format('create policy "read %1$s" on public.%1$s for select to authenticated using (true);', t);
+    execute format('drop policy if exists "insert %1$s" on public.%1$s;', t);
+    execute format('create policy "insert %1$s" on public.%1$s for insert to authenticated with check (true);', t);
+    execute format('drop policy if exists "update %1$s" on public.%1$s;', t);
+    execute format('create policy "update %1$s" on public.%1$s for update to authenticated using (true) with check (true);', t);
+    execute format('drop policy if exists "delete %1$s" on public.%1$s;', t);
+    execute format('create policy "delete %1$s" on public.%1$s for delete to authenticated using (true);', t);
+  end loop;
+end $$;

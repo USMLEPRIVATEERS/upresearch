@@ -784,7 +784,7 @@
 
     const STYLE = [
       "<style id='wapo-styles'>",
-      ".wapo-section{margin:0;}",
+      ".wapo-section{margin:20px 0;}",
       ".wapo-card{background:#fff;border:1px solid #e2e8f2;border-radius:14px;box-shadow:0 1px 2px rgba(10,49,97,.06);padding:18px 20px;}",
       ".wapo-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}",
       ".wapo-title{margin:0;font-size:1.15rem;color:#0a3161;font-weight:800;}",

@@ -1340,11 +1340,15 @@
     .folder-item.level-1>.folder-header .folder-name { font-weight:500; font-size:.95rem; color:var(--navy); }
     .folder-header { display:flex; align-items:center; gap:.75rem; cursor:pointer; }
     .folder-header:hover { background:var(--gray-100); }
+    /* keep the dark main-folder header dark on hover (its text/links are white) */
+    .main-project-folder>.folder-header:hover { background:linear-gradient(135deg,#0d3a75,#20599f); }
+    .main-project-folder>.folder-header .folder-link:hover { background:rgba(255,255,255,.3); }
     .folder-toggle { font-size:.75rem; color:var(--gray-500); width:20px; text-align:center; }
     .folder-icon { font-size:1.2rem; }
     .folder-name { flex:1; font-weight:600; color:var(--text-dark); }
     .folder-count { font-size:.78rem; color:var(--gray-500); background:#fff; border:1px solid var(--gray-200); padding:.2rem .55rem; border-radius:999px; white-space:nowrap; }
     .folder-link { font-size:.85rem; color:var(--accent); text-decoration:none; padding:.25rem .5rem; border-radius:8px; white-space:nowrap; }
+    .folder-link:hover { text-decoration:none; background:var(--accent-soft); color:var(--accent-dark); }
     .folder-content { display:none; background:#fff; }
     .folder-item.open>.folder-content { display:block; }
     .folder-item.drag-over { background:var(--accent-soft) !important; border:2px dashed var(--accent) !important; border-radius:var(--radius-md); }

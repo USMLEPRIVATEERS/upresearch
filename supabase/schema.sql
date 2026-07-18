@@ -305,33 +305,129 @@ alter table public.research_tasks          enable row level security;
 alter table public.research_project_folders enable row level security;
 alter table public.research_project_files   enable row level security;
 
--- Projects: everyone reads; you insert your own; participants/creator edit
--- (enforced in the UI); only the creator can delete.
+-- Projects are PRIVATE to their team: only the creator and accepted co-authors
+-- (listed in participants) can read or edit a project. Others discover work only
+-- through the open-positions board (see section 9). Only the creator can delete.
 drop policy if exists "research projects readable" on public.research_projects;
-create policy "research projects readable"
-  on public.research_projects for select to authenticated using (true);
+drop policy if exists "read own research projects" on public.research_projects;
+create policy "read own research projects"
+  on public.research_projects for select to authenticated
+  using (created_by = auth.uid() or auth.uid() = any (participants));
 drop policy if exists "insert own research project" on public.research_projects;
 create policy "insert own research project"
   on public.research_projects for insert to authenticated with check (created_by = auth.uid());
 drop policy if exists "update research project" on public.research_projects;
 create policy "update research project"
-  on public.research_projects for update to authenticated using (true) with check (true);
+  on public.research_projects for update to authenticated
+  using (created_by = auth.uid() or auth.uid() = any (participants))
+  with check (created_by = auth.uid() or auth.uid() = any (participants));
 drop policy if exists "delete own research project" on public.research_projects;
 create policy "delete own research project"
   on public.research_projects for delete to authenticated using (created_by = auth.uid());
 
--- Tasks / folders / files: collaborative — members read and write all.
+-- Tasks / folders / files: readable and writable only by members of the parent
+-- project (creator or a participant). Mirrors the project's privacy.
 do $$
 declare t text;
+  member_check text := 'exists (select 1 from public.research_projects p '
+                    || 'where p.id = %1$s.project_id '
+                    || 'and (p.created_by = auth.uid() or auth.uid() = any (p.participants)))';
 begin
   foreach t in array array['research_tasks','research_project_folders','research_project_files'] loop
     execute format('drop policy if exists "read %1$s" on public.%1$s;', t);
-    execute format('create policy "read %1$s" on public.%1$s for select to authenticated using (true);', t);
+    execute format('create policy "read %1$s" on public.%1$s for select to authenticated using (' || member_check || ');', t);
     execute format('drop policy if exists "insert %1$s" on public.%1$s;', t);
-    execute format('create policy "insert %1$s" on public.%1$s for insert to authenticated with check (true);', t);
+    execute format('create policy "insert %1$s" on public.%1$s for insert to authenticated with check (' || member_check || ');', t);
     execute format('drop policy if exists "update %1$s" on public.%1$s;', t);
-    execute format('create policy "update %1$s" on public.%1$s for update to authenticated using (true) with check (true);', t);
+    execute format('create policy "update %1$s" on public.%1$s for update to authenticated using (' || member_check || ') with check (' || member_check || ');', t);
     execute format('drop policy if exists "delete %1$s" on public.%1$s;', t);
-    execute format('create policy "delete %1$s" on public.%1$s for delete to authenticated using (true);', t);
+    execute format('create policy "delete %1$s" on public.%1$s for delete to authenticated using (' || member_check || ');', t);
   end loop;
 end $$;
+
+
+-- ============================================================================
+-- 9. Co-author recruitment ("open positions" board)
+--    A project owner can post an anonymous call for co-authors that shows only
+--    their name + specialty + what help is needed — never the project title or
+--    links. Members apply with a WhatsApp number and a short pitch; the owner
+--    reviews applications and, on acceptance, adds the applicant to the project
+--    (which is the only way the applicant then gains access to it).
+-- ============================================================================
+
+create table if not exists public.research_recruitments (
+  id           bigint generated always as identity primary key,
+  project_id   bigint not null references public.research_projects (id) on delete cascade,
+  created_by   uuid not null references public.profiles (id) on delete cascade,
+  specialty    text not null,
+  help_area    text,
+  status       text not null default 'open',
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+create index if not exists research_recruitments_status_idx on public.research_recruitments (status);
+create index if not exists research_recruitments_project_idx on public.research_recruitments (project_id);
+
+create table if not exists public.research_applications (
+  id             bigint generated always as identity primary key,
+  recruitment_id bigint not null references public.research_recruitments (id) on delete cascade,
+  project_id     bigint not null references public.research_projects (id) on delete cascade,
+  applicant_id   uuid not null references public.profiles (id) on delete cascade,
+  whatsapp       text,
+  pitch          text,
+  status         text not null default 'pending',
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now(),
+  unique (recruitment_id, applicant_id)
+);
+create index if not exists research_applications_recruitment_idx on public.research_applications (recruitment_id);
+create index if not exists research_applications_applicant_idx on public.research_applications (applicant_id);
+
+alter table public.research_recruitments enable row level security;
+alter table public.research_applications enable row level security;
+
+-- Recruitments: any signed-in member can read the board; only a project's
+-- creator can post/edit/close/remove a call for that project.
+drop policy if exists "read recruitments" on public.research_recruitments;
+create policy "read recruitments"
+  on public.research_recruitments for select to authenticated using (true);
+drop policy if exists "insert own recruitment" on public.research_recruitments;
+create policy "insert own recruitment"
+  on public.research_recruitments for insert to authenticated
+  with check (created_by = auth.uid()
+              and exists (select 1 from public.research_projects p
+                          where p.id = project_id and p.created_by = auth.uid()));
+drop policy if exists "update own recruitment" on public.research_recruitments;
+create policy "update own recruitment"
+  on public.research_recruitments for update to authenticated
+  using (created_by = auth.uid()) with check (created_by = auth.uid());
+drop policy if exists "delete own recruitment" on public.research_recruitments;
+create policy "delete own recruitment"
+  on public.research_recruitments for delete to authenticated using (created_by = auth.uid());
+
+-- Applications: the applicant sees their own; the recruitment owner sees the
+-- applications to their calls. Applicants create their own; only the owner
+-- changes status (accept/reject). Either side may delete (withdraw / dismiss).
+drop policy if exists "read relevant applications" on public.research_applications;
+create policy "read relevant applications"
+  on public.research_applications for select to authenticated
+  using (applicant_id = auth.uid()
+         or exists (select 1 from public.research_recruitments r
+                    where r.id = recruitment_id and r.created_by = auth.uid()));
+drop policy if exists "insert own application" on public.research_applications;
+create policy "insert own application"
+  on public.research_applications for insert to authenticated
+  with check (applicant_id = auth.uid());
+drop policy if exists "owner updates application" on public.research_applications;
+create policy "owner updates application"
+  on public.research_applications for update to authenticated
+  using (exists (select 1 from public.research_recruitments r
+                 where r.id = recruitment_id and r.created_by = auth.uid()))
+  with check (exists (select 1 from public.research_recruitments r
+                      where r.id = recruitment_id and r.created_by = auth.uid()));
+drop policy if exists "applicant or owner deletes application" on public.research_applications;
+create policy "applicant or owner deletes application"
+  on public.research_applications for delete to authenticated
+  using (applicant_id = auth.uid()
+         or exists (select 1 from public.research_recruitments r
+                    where r.id = recruitment_id and r.created_by = auth.uid()));

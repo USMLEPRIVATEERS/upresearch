@@ -799,6 +799,10 @@
       ".wapo-spec{font-size:.82rem;color:#8e1434;font-weight:600;}",
       ".wapo-help{font-size:.85rem;color:#334155;line-height:1.4;}",
       ".wapo-help strong{color:#0a3161;}",
+      ".wapo-cap{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8;}",
+      ".wapo-frow{display:flex;gap:.4rem;align-items:baseline;font-size:.85rem;line-height:1.4;flex-wrap:wrap;}",
+      ".wapo-flabel{flex-shrink:0;font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8;}",
+      ".wapo-fval{color:#334155;}",
       ".wapo-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:auto;}",
       ".wapo-btn{display:inline-flex;align-items:center;justify-content:center;gap:.3rem;padding:.45rem .8rem;border-radius:8px;border:0;cursor:pointer;font:inherit;font-weight:600;font-size:.85rem;text-decoration:none;line-height:1.2;}",
       ".wapo-btn.primary{background:#b31942;color:#fff;}.wapo-btn.primary:hover{background:#8e1434;}",
@@ -951,8 +955,9 @@
                     : "<button type='button' class='wapo-btn ghost' data-act='hide' data-id='" + r.id + "'>Hide</button>");
       }
       return "<div class='wapo-item" + (mine ? " mine" : "") + "'>" +
-        "<div class='wapo-cardhead'><span class='wapo-avatar'>" + esc(initials(name)) + "</span><div><div class='wapo-name'>" + esc(name) + (mine ? " <span class='wapo-you'>you</span>" : "") + "</div><div class='wapo-spec'>" + esc(r.specialty || "") + "</div></div></div>" +
-        (r.help_area ? "<div class='wapo-help'><strong>Needs help with:</strong> " + esc(r.help_area) + "</div>" : "") +
+        "<div class='wapo-cardhead'><span class='wapo-avatar'>" + esc(initials(name)) + "</span><div><div class='wapo-cap'>Posted by</div><div class='wapo-name'>" + esc(name) + (mine ? " <span class='wapo-you'>you</span>" : "") + "</div></div></div>" +
+        "<div class='wapo-frow'><span class='wapo-flabel'>Specialty</span><span class='wapo-fval wapo-spec'>" + esc(r.specialty || "—") + "</span></div>" +
+        (r.help_area ? "<div class='wapo-frow'><span class='wapo-flabel'>Needs help with</span><span class='wapo-fval'>" + esc(r.help_area) + "</span></div>" : "") +
         "<div class='wapo-actions'>" + actions + "</div></div>";
     }
 
@@ -960,7 +965,9 @@
       const r = recruitments.find((x) => x.id === recId); if (!r) return;
       const owner = r.owner || {}; const name = owner.full_name || "Member";
       $("wapo-apply-rid").value = recId;
-      $("wapo-apply-summary").innerHTML = "<div class='wapo-cardhead'><span class='wapo-avatar'>" + esc(initials(name)) + "</span><div><div class='wapo-name'>" + esc(name) + "</div><div class='wapo-spec'>" + esc(r.specialty || "") + (r.help_area ? " · " + esc(r.help_area) : "") + "</div></div></div>";
+      $("wapo-apply-summary").innerHTML = "<div class='wapo-cardhead'><span class='wapo-avatar'>" + esc(initials(name)) + "</span><div><div class='wapo-cap'>Posted by</div><div class='wapo-name'>" + esc(name) + "</div></div></div>" +
+        "<div class='wapo-frow'><span class='wapo-flabel'>Specialty</span><span class='wapo-fval wapo-spec'>" + esc(r.specialty || "—") + "</span></div>" +
+        (r.help_area ? "<div class='wapo-frow'><span class='wapo-flabel'>Needs help with</span><span class='wapo-fval'>" + esc(r.help_area) + "</span></div>" : "");
       $("wapo-apply-wa").value = ""; $("wapo-apply-pitch").value = ""; $("wapo-apply-count").textContent = "0"; $("wapo-apply-count").style.color = "";
       openM("wapo-apply");
     }
@@ -993,9 +1000,9 @@
       if (a.status === "pending") btns = "<button type='button' class='wapo-btn primary' data-act='accept' data-id='" + a.id + "'>✓ Accept as co-author</button><button type='button' class='wapo-btn danger' data-act='reject' data-id='" + a.id + "'>Reject</button>";
       else if (a.status === "rejected") btns = "<button type='button' class='wapo-btn primary' data-act='accept' data-id='" + a.id + "'>✓ Accept anyway</button>";
       return "<div class='wapo-appitem'>" +
-        "<div class='wapo-row'><div class='wapo-cardhead'><span class='wapo-avatar'>" + esc(initials(name)) + "</span><div><div class='wapo-name'>" + esc(name) + "</div>" + (ap.specialty ? "<div class='wapo-spec'>" + esc(ap.specialty) + "</div>" : "") + "</div></div>" + badge + "</div>" +
-        (a.pitch ? "<div class='wapo-pitch'>" + esc(a.pitch) + "</div>" : "") +
-        "<div class='wapo-meta'>" + (wa ? "📱 " + esc(wa) + (digits ? " &nbsp;<a href='https://wa.me/" + digits + "' target='_blank' rel='noopener noreferrer' class='wapo-wa'>Open WhatsApp ↗</a>" : "") : "<span class='wapo-empty'>No WhatsApp provided</span>") + "</div>" +
+        "<div class='wapo-row'><div class='wapo-cardhead'><span class='wapo-avatar'>" + esc(initials(name)) + "</span><div><div class='wapo-cap'>Applicant</div><div class='wapo-name'>" + esc(name) + "</div>" + (ap.specialty ? "<div class='wapo-spec'>" + esc(ap.specialty) + "</div>" : "") + "</div></div>" + badge + "</div>" +
+        (a.pitch ? "<div class='wapo-frow' style='flex-direction:column;align-items:flex-start;gap:.2rem;'><span class='wapo-flabel'>How they can help</span><div class='wapo-pitch'>" + esc(a.pitch) + "</div></div>" : "") +
+        "<div class='wapo-meta'>" + (wa ? "<span class='wapo-flabel'>WhatsApp</span> " + esc(wa) + (digits ? " &nbsp;<a href='https://wa.me/" + digits + "' target='_blank' rel='noopener noreferrer' class='wapo-wa'>Open WhatsApp ↗</a>" : "") : "<span class='wapo-empty'>No WhatsApp provided</span>") + "</div>" +
         "<div class='wapo-actions'>" + btns + "</div></div>";
     }
     async function acceptApp(appId) {

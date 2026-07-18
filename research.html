@@ -124,17 +124,8 @@
       <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-info"><span class="stat-value" id="completed-projects">0</span><span class="stat-label">Completed</span></div></div>
     </div>
 
-    <!-- Open positions (co-author recruitment board) -->
-    <div id="positions-section" class="card mb-4" style="display:none;">
-      <div class="card-body">
-        <div class="d-flex justify-between align-center flex-wrap gap-2">
-          <h2 style="margin:0; font-size:1.15rem; color:var(--navy);">🤝 Open positions — co-authors wanted</h2>
-          <button type="button" class="btn btn-secondary btn-sm" id="toggle-hidden-positions" style="display:none;" onclick="toggleHiddenPositions()"></button>
-        </div>
-        <p class="text-muted" style="font-size:.85rem; margin:.35rem 0 1rem;">Members looking for co-authors. Project titles and links stay private — you'll see the full project only if the owner accepts you.</p>
-        <div id="positions-container" class="positions-grid"></div>
-      </div>
-    </div>
+    <!-- Open positions (shared co-author recruitment board — see WA.positions) -->
+    <div id="positions-mount" class="mb-4"></div>
 
     <!-- Stage Filter -->
     <div class="card mb-4">
@@ -371,46 +362,6 @@
         <div class="cal-views"><button type="button" class="cal-view-btn" data-view="month" onclick="setCalView('month')">Month</button><button type="button" class="cal-view-btn" data-view="week" onclick="setCalView('week')">Week</button><button type="button" class="cal-view-btn" data-view="year" onclick="setCalView('year')">Year</button></div>
       </div>
       <div class="modal-body cal-body"><div id="cal-grid" class="cal-grid-wrap"></div><div class="cal-deadlines"><h4 class="cal-deadlines-title">⏰ Upcoming & overdue deadlines</h4><div id="cal-deadlines-list"></div></div></div>
-    </div>
-  </div>
-
-  <!-- Recruit Co-authors Modal -->
-  <div id="recruit-modal" class="modal-overlay">
-    <div class="modal">
-      <div class="modal-header"><h3 class="modal-title">🤝 Recruit Co-authors</h3><button class="modal-close" onclick="closeModal('recruit-modal')">&times;</button></div>
-      <div class="modal-body">
-        <div id="recruit-existing" style="display:none;"></div>
-        <div id="recruit-form">
-          <p class="text-muted" style="font-size:.85rem; margin-top:0;">Post an anonymous call. Members see only your name, specialty and what you need — not the project title or links. When you accept someone, they become a co-author and can see the project.</p>
-          <div class="form-group"><label class="form-label">Your specialty *</label><input type="text" id="recruit-specialty" class="form-input" placeholder="e.g. Cardiology"></div>
-          <div class="form-group"><label class="form-label">What help do you need? <span class="form-optional">(optional)</span></label><input type="text" id="recruit-help" class="form-input" placeholder="e.g. statistical analysis, study screening, writing Methods"></div>
-        </div>
-      </div>
-      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('recruit-modal')">Cancel</button><button class="btn btn-primary" id="recruit-submit-btn" onclick="submitRecruitment()">Post position</button></div>
-    </div>
-  </div>
-
-  <!-- Apply to Join Modal -->
-  <div id="apply-modal" class="modal-overlay">
-    <div class="modal">
-      <div class="modal-header"><h3 class="modal-title">✋ Apply to join</h3><button class="modal-close" onclick="closeModal('apply-modal')">&times;</button></div>
-      <div class="modal-body">
-        <div id="apply-summary" class="apply-summary"></div>
-        <input type="hidden" id="apply-recruitment-id">
-        <p class="text-muted" style="font-size:.82rem;">The owner will see your name, specialty, WhatsApp and note, and decide whether to add you as a co-author.</p>
-        <div class="form-group"><label class="form-label">WhatsApp number *</label><input type="text" id="apply-whatsapp" class="form-input" placeholder="+55 11 90000-0000"></div>
-        <div class="form-group"><label class="form-label">How can you help? <span class="form-optional">(up to 100 words)</span></label><textarea id="apply-pitch" class="form-textarea" rows="4" placeholder="Your relevant experience and how you can contribute to this project..." oninput="updatePitchCount()"></textarea><span class="form-hint"><span id="pitch-count">0</span>/100 words</span></div>
-      </div>
-      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('apply-modal')">Cancel</button><button class="btn btn-primary" onclick="submitApplication()">Send application</button></div>
-    </div>
-  </div>
-
-  <!-- Manage Applications Modal -->
-  <div id="applications-modal" class="modal-overlay">
-    <div class="modal modal-lg">
-      <div class="modal-header"><h3 class="modal-title">📨 Applications</h3><button class="modal-close" onclick="closeModal('applications-modal')">&times;</button></div>
-      <div class="modal-body"><div id="applications-list"></div></div>
-      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('applications-modal')">Close</button></div>
     </div>
   </div>
 
@@ -669,7 +620,7 @@
 
       await loadAllUsers();
       await loadProjects();
-      await loadRecruitments();
+      if (WA.positions) WA.positions.mount(document.getElementById('positions-mount'), { user: ctx.user, profile: ctx.profile }, { onChange: loadProjects });
 
       populateStageFilter();
       document.getElementById('stage-filter').addEventListener('change', applyStageFilter);
@@ -863,13 +814,14 @@
       const { data:project, error }=await WardApp.db.from('research_projects').insert({ title, description, project_type:type, deadline, drive_link:driveLink, participants:finalParticipants, status:'active', created_by:userData.id }).select().single();
       if(error){ WardApp.hideLoading(); console.error(error); WardApp.showToast('Failed to create project','error'); return; }
       if(folderStructure){ try { await saveFolderStructure(project.id, folderStructure); } catch(e){ console.error(e); } }
-      if(document.getElementById('create-recruit').checked){
+      if(document.getElementById('create-recruit').checked && WA.positions){
         const spec=document.getElementById('create-recruit-specialty').value.trim()||userData.specialty||'';
         const help=document.getElementById('create-recruit-help').value.trim()||null;
-        if(spec){ try { await WardApp.db.from('research_recruitments').insert({ project_id:project.id, created_by:userData.id, specialty:spec, help_area:help, status:'open' }); } catch(e){ console.error(e); WardApp.showToast('Project created, but the co-author call could not be posted.','warning'); } }
-        else { WardApp.showToast('Project created. Add your specialty to post a co-author call.','info'); }
+        const res=await WA.positions.postForProject(project.id, spec, help);
+        if(res && res.error==='no-specialty'){ WardApp.showToast('Project created. Add your specialty to post a co-author call.','info'); }
+        else if(res && res.error){ console.error(res.error); WardApp.showToast('Project created, but the co-author call could not be posted.','warning'); }
       }
-      WardApp.hideLoading(); closeModal('new-project-modal'); WardApp.showToast('Project created!'); await loadProjects(); await loadRecruitments();
+      WardApp.hideLoading(); closeModal('new-project-modal'); WardApp.showToast('Project created!'); await loadProjects(); if(WA.positions) WA.positions.reload();
     }
 
     function updateTitleFields(){
@@ -980,168 +932,14 @@
     function openModal(id){ document.getElementById(id).classList.add('active'); }
     function closeModal(id){ document.getElementById(id).classList.remove('active'); }
 
-    /* ===================== CO-AUTHOR RECRUITMENT ===================== */
-    let allRecruitments=[], allApplications=[], myApplications={}, showHiddenPositions=false;
-    const HIDDEN_KEY='wa_research_hidden_positions';
-    function getHiddenPositions(){ try { return JSON.parse(localStorage.getItem(HIDDEN_KEY)||'[]')||[]; } catch(e){ return []; } }
-    function setHiddenPositions(a){ try { localStorage.setItem(HIDDEN_KEY, JSON.stringify(a)); } catch(e){} }
-    function hidePosition(id){ const h=getHiddenPositions(); if(!h.includes(id)){ h.push(id); setHiddenPositions(h); } renderPositions(); }
-    function unhidePosition(id){ setHiddenPositions(getHiddenPositions().filter(x=>x!==id)); renderPositions(); }
-    function toggleHiddenPositions(){ showHiddenPositions=!showHiddenPositions; renderPositions(); }
-    function wordCount(s){ return ((s||'').trim().match(/\S+/g)||[]).length; }
+    /* create-modal helper: reveal the "post a call" fields (board itself lives in WA.positions) */
     function toggleRecruitFields(){
       const chk=document.getElementById('create-recruit'); const f=document.getElementById('create-recruit-fields'); if(f)f.style.display=chk.checked?'block':'none';
       if(chk.checked){ const sp=document.getElementById('create-recruit-specialty'); if(sp && !sp.value) sp.value=userData.specialty||''; }
     }
+    /* project-view "Recruit co-authors" button -> shared board module */
+    function openRecruitModal(){ if(currentProject && WA.positions) WA.positions.openRecruitForProject(currentProject); }
 
-    async function loadRecruitments(){
-      try {
-        const { data:recs, error:re }=await WardApp.db.from('research_recruitments')
-          .select('*, owner:created_by(id, full_name, specialty)').eq('status','open').order('created_at',{ ascending:false });
-        if(re) throw re;
-        allRecruitments=recs||[];
-        const { data:apps }=await WardApp.db.from('research_applications').select('*, applicant:applicant_id(id, full_name, specialty)');
-        allApplications=apps||[];
-        myApplications={}; allApplications.forEach(a=>{ if(a.applicant_id===userData.id) myApplications[a.recruitment_id]=a; });
-        renderPositions();
-      } catch(e){
-        console.warn('Recruitment tables unavailable (run schema.sql section 9):', e.message||e);
-        const sec=document.getElementById('positions-section'); if(sec)sec.style.display='none';
-      }
-    }
-
-    function renderPositions(){
-      const section=document.getElementById('positions-section'), container=document.getElementById('positions-container'), toggleBtn=document.getElementById('toggle-hidden-positions');
-      const recs=allRecruitments.slice();
-      if(!recs.length){ section.style.display='none'; return; }
-      section.style.display='block';
-      const hidden=getHiddenPositions();
-      const hiddenCount=recs.filter(r=> r.created_by!==userData.id && hidden.includes(r.id)).length;
-      const toShow=showHiddenPositions ? recs : recs.filter(r=> r.created_by===userData.id || !hidden.includes(r.id));
-      if(hiddenCount>0){ toggleBtn.style.display='inline-flex'; toggleBtn.textContent=showHiddenPositions?`Hide hidden (${hiddenCount})`:`Show hidden (${hiddenCount})`; }
-      else { toggleBtn.style.display='none'; }
-      container.innerHTML = toShow.length ? toShow.map(r=>renderPositionCard(r, hidden.includes(r.id))).join('') : '<p class="text-muted" style="font-size:.85rem;">No open positions right now.</p>';
-    }
-    function renderPositionCard(r, isHidden){
-      const owner=r.owner||{}; const name=_dn(owner.full_name)||'Member';
-      const mine=r.created_by===userData.id; const app=myApplications[r.id]; let actions='';
-      if(mine){ const n=allApplications.filter(a=>a.recruitment_id===r.id).length;
-        actions=`<button class="btn btn-primary btn-sm" onclick="openApplicationsModal(${r.id})">📨 Applications (${n})</button><button class="btn btn-secondary btn-sm" onclick="closeRecruitment(${r.id})">Close position</button>`;
-      } else if(app){
-        actions = app.status==='accepted' ? '<span class="pos-status accepted">✓ Accepted — you\'re a co-author</span>'
-          : (app.status==='rejected' ? '<span class="pos-status rejected">Not selected</span>' : '<span class="pos-status pending">⏳ Application sent</span>');
-      } else {
-        actions=`<button class="btn btn-primary btn-sm" onclick="openApplyModal(${r.id})">✋ Apply to join</button>`
-          + (isHidden ? `<button class="btn btn-secondary btn-sm" onclick="unhidePosition(${r.id})">Unhide</button>` : `<button class="btn btn-secondary btn-sm" onclick="hidePosition(${r.id})">Hide</button>`);
-      }
-      return `<div class="position-card${mine?' mine':''}">
-        <div class="position-head"><span class="position-avatar">${calEsc(authorInitials(name))}</span><div class="position-who"><div class="position-name">${calEsc(name)}${mine?' <span class="pos-you">you</span>':''}</div><div class="position-spec">${calEsc(r.specialty||'')}</div></div></div>
-        ${r.help_area?`<div class="position-help"><strong>Needs help with:</strong> ${calEsc(r.help_area)}</div>`:''}
-        <div class="position-actions">${actions}</div>
-      </div>`;
-    }
-
-    /* ---- owner: create / close a position for the current project ---- */
-    function openRecruitModal(){
-      if(!currentProject)return;
-      const existing=allRecruitments.find(r=>r.project_id===currentProject.id && r.created_by===userData.id);
-      const form=document.getElementById('recruit-form'), ex=document.getElementById('recruit-existing'), submitBtn=document.getElementById('recruit-submit-btn');
-      if(existing){
-        const n=allApplications.filter(a=>a.recruitment_id===existing.id).length;
-        ex.style.display='block'; form.style.display='none'; submitBtn.style.display='none';
-        ex.innerHTML=`<div class="form-note-warn" style="background:#eef2ff; border-color:#c7d2fe; color:#3730a3;">This project already has an open position — <strong>${calEsc(existing.specialty)}</strong>${existing.help_area?' · '+calEsc(existing.help_area):''}. <strong>${n}</strong> application${n===1?'':'s'}.<div style="margin-top:.7rem; display:flex; gap:.5rem; flex-wrap:wrap;"><button class="btn btn-primary btn-sm" onclick="closeModal('recruit-modal'); openApplicationsModal(${existing.id})">📨 View applications</button><button class="btn btn-secondary btn-sm" onclick="closeRecruitment(${existing.id})">Close position</button></div></div>`;
-      } else {
-        ex.style.display='none'; form.style.display='block'; submitBtn.style.display='inline-flex';
-        document.getElementById('recruit-specialty').value=userData.specialty||''; document.getElementById('recruit-help').value='';
-      }
-      openModal('recruit-modal');
-    }
-    async function submitRecruitment(){
-      if(!currentProject)return;
-      const specialty=document.getElementById('recruit-specialty').value.trim(); const help=document.getElementById('recruit-help').value.trim();
-      if(!specialty){ WardApp.showToast('Enter your specialty','warning'); return; }
-      WardApp.showLoading();
-      const { error }=await WardApp.db.from('research_recruitments').insert({ project_id:currentProject.id, created_by:userData.id, specialty, help_area:help||null, status:'open' });
-      WardApp.hideLoading();
-      if(error){ console.error(error); WardApp.showToast('Failed to post position','error'); return; }
-      closeModal('recruit-modal'); WardApp.showToast('Position posted!','success'); await loadRecruitments();
-    }
-    async function closeRecruitment(recId){
-      if(!confirm('Close this position? It will be removed from the board.'))return;
-      WardApp.showLoading();
-      const { error }=await WardApp.db.from('research_recruitments').update({ status:'closed', updated_at:new Date().toISOString() }).eq('id',recId);
-      WardApp.hideLoading();
-      if(error){ WardApp.showToast('Failed to close position','error'); return; }
-      closeModal('recruit-modal'); closeModal('applications-modal'); WardApp.showToast('Position closed'); await loadRecruitments();
-    }
-
-    /* ---- applicant: apply to a position ---- */
-    function openApplyModal(recId){
-      const r=allRecruitments.find(x=>x.id===recId); if(!r)return;
-      document.getElementById('apply-recruitment-id').value=recId;
-      const owner=r.owner||{}; const name=_dn(owner.full_name)||'Member';
-      document.getElementById('apply-summary').innerHTML=`<div class="position-head"><span class="position-avatar">${calEsc(authorInitials(name))}</span><div class="position-who"><div class="position-name">${calEsc(name)}</div><div class="position-spec">${calEsc(r.specialty||'')}${r.help_area?' · '+calEsc(r.help_area):''}</div></div></div>`;
-      document.getElementById('apply-whatsapp').value=''; document.getElementById('apply-pitch').value=''; updatePitchCount();
-      openModal('apply-modal');
-    }
-    function updatePitchCount(){ const n=wordCount(document.getElementById('apply-pitch').value); const el=document.getElementById('pitch-count'); if(el){ el.textContent=n; el.style.color=n>100?'#dc2626':''; } }
-    async function submitApplication(){
-      const recId=Number(document.getElementById('apply-recruitment-id').value);
-      const whatsapp=document.getElementById('apply-whatsapp').value.trim(); const pitch=document.getElementById('apply-pitch').value.trim();
-      if(!whatsapp){ WardApp.showToast('Enter your WhatsApp number','warning'); return; }
-      if(wordCount(pitch)>100){ WardApp.showToast('Please keep your note under 100 words','warning'); return; }
-      const r=allRecruitments.find(x=>x.id===recId); if(!r)return;
-      WardApp.showLoading();
-      const { error }=await WardApp.db.from('research_applications').insert({ recruitment_id:recId, project_id:r.project_id, applicant_id:userData.id, whatsapp, pitch:pitch||null, status:'pending' });
-      WardApp.hideLoading();
-      if(error){ if(error.code==='23505'||/duplicate/i.test(error.message||'')){ WardApp.showToast('You already applied to this position','info'); closeModal('apply-modal'); } else { console.error(error); WardApp.showToast('Failed to send application','error'); } return; }
-      closeModal('apply-modal'); WardApp.showToast('Application sent!','success'); await loadRecruitments();
-    }
-
-    /* ---- owner: review applications, accept -> add as co-author ---- */
-    function openApplicationsModal(recId){
-      const apps=allApplications.filter(a=>a.recruitment_id===recId);
-      document.getElementById('applications-list').innerHTML = apps.length ? apps.map(renderApplicationItem).join('') : '<p class="text-muted">No applications yet.</p>';
-      openModal('applications-modal');
-    }
-    function renderApplicationItem(a){
-      const ap=a.applicant||{}; const name=_dn(ap.full_name)||'Member';
-      const wa=a.whatsapp?String(a.whatsapp):''; const waDigits=wa.replace(/[^0-9]/g,'');
-      const statusBadge = a.status==='accepted'?'<span class="pos-status accepted">✓ Accepted</span>':(a.status==='rejected'?'<span class="pos-status rejected">Rejected</span>':'<span class="pos-status pending">Pending</span>');
-      let btns='';
-      if(a.status==='pending'){ btns=`<button class="btn btn-primary btn-sm" onclick="acceptApplication(${a.id})">✓ Accept as co-author</button><button class="btn btn-danger btn-sm" onclick="rejectApplication(${a.id})">Reject</button>`; }
-      else if(a.status==='rejected'){ btns=`<button class="btn btn-primary btn-sm" onclick="acceptApplication(${a.id})">✓ Accept anyway</button>`; }
-      return `<div class="application-item">
-        <div class="d-flex justify-between align-center flex-wrap gap-2"><div class="d-flex align-center gap-2"><span class="position-avatar">${calEsc(authorInitials(name))}</span><div><div class="position-name">${calEsc(name)}</div>${ap.specialty?`<div class="position-spec">${calEsc(ap.specialty)}</div>`:''}</div></div>${statusBadge}</div>
-        ${a.pitch?`<div class="application-pitch">${calEsc(a.pitch)}</div>`:''}
-        <div class="application-meta">${wa?`📱 ${calEsc(wa)}${waDigits?` &nbsp;<a href="https://wa.me/${waDigits}" target="_blank" rel="noopener noreferrer" class="wa-link">Open WhatsApp ↗</a>`:''}`:'<span class="text-muted">No WhatsApp provided</span>'}</div>
-        <div class="application-actions">${btns}</div>
-      </div>`;
-    }
-    async function acceptApplication(appId){
-      const a=allApplications.find(x=>x.id===appId); if(!a)return;
-      if(!confirm('Accept this member as a co-author? They will get full access to the project.'))return;
-      WardApp.showLoading();
-      try {
-        const proj=allProjects.find(p=>p.id===a.project_id);
-        let participants;
-        if(proj){ participants=[...new Set([...(proj.participants||[]), a.applicant_id])]; }
-        else { const { data:pr }=await WardApp.db.from('research_projects').select('participants').eq('id',a.project_id).single(); participants=[...new Set([...((pr&&pr.participants)||[]), a.applicant_id])]; }
-        const { error:pe }=await WardApp.db.from('research_projects').update({ participants, updated_at:new Date().toISOString() }).eq('id',a.project_id); if(pe)throw pe;
-        const { error:ae }=await WardApp.db.from('research_applications').update({ status:'accepted', updated_at:new Date().toISOString() }).eq('id',appId); if(ae)throw ae;
-        WardApp.showToast('Accepted! Added as co-author.','success');
-        await loadProjects(); await loadRecruitments(); openApplicationsModal(a.recruitment_id);
-      } catch(e){ console.error(e); WardApp.showToast('Failed to accept application','error'); } finally { WardApp.hideLoading(); }
-    }
-    async function rejectApplication(appId){
-      const a=allApplications.find(x=>x.id===appId); if(!a)return;
-      if(!confirm('Reject this application?'))return;
-      WardApp.showLoading();
-      const { error }=await WardApp.db.from('research_applications').update({ status:'rejected', updated_at:new Date().toISOString() }).eq('id',appId);
-      WardApp.hideLoading();
-      if(error){ WardApp.showToast('Failed to reject','error'); return; }
-      WardApp.showToast('Application rejected'); await loadRecruitments(); openApplicationsModal(a.recruitment_id);
-    }
     function toggleDriveLinkField(){
       const chk=document.getElementById('create-drive-folder');
       const grp=document.getElementById('drive-link-group');

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -39,6 +39,32 @@
     .form-input:focus, .form-textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(179,25,66,.14); }
     .form-textarea { resize:vertical; min-height:80px; }
     .form-hint { display:block; font-size:.78rem; color:var(--gray-500); margin-top:.3rem; }
+    .form-optional { font-weight:400; color:var(--gray-500); font-size:.82rem; }
+    .form-note-warn { background:#fffbeb; border:1px solid #fde68a; color:#92400e; border-radius:10px; padding:.7rem .85rem; font-size:.82rem; line-height:1.45; margin-bottom:1rem; }
+    /* Open-positions board */
+    .positions-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1rem; }
+    .position-card { border:1px solid var(--gray-200); border-radius:var(--radius-lg); padding:1rem; background:#fff; display:flex; flex-direction:column; gap:.6rem; }
+    .position-card.mine { border-color:var(--navy); background:linear-gradient(180deg,#f8faff,#fff); }
+    .position-head { display:flex; align-items:center; gap:.6rem; }
+    .position-who { min-width:0; }
+    .position-avatar { flex-shrink:0; width:34px; height:34px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:.78rem; font-weight:700; color:#fff; background:var(--navy); }
+    .position-name { font-weight:700; color:var(--navy); font-size:.95rem; }
+    .pos-you { font-size:.66rem; font-weight:700; text-transform:uppercase; color:#fff; background:var(--accent); padding:1px 6px; border-radius:999px; margin-left:.25rem; vertical-align:middle; }
+    .position-spec { font-size:.82rem; color:var(--accent-dark); font-weight:600; }
+    .position-help { font-size:.85rem; color:var(--gray-700); line-height:1.4; }
+    .position-help strong { color:var(--navy); }
+    .position-actions { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:auto; }
+    .pos-status { font-size:.8rem; font-weight:700; padding:.3rem .6rem; border-radius:999px; }
+    .pos-status.pending { background:#fef3c7; color:#92400e; }
+    .pos-status.accepted { background:#dcfce7; color:#15803d; }
+    .pos-status.rejected { background:var(--gray-100); color:var(--gray-500); }
+    .apply-summary { background:var(--gray-50); border:1px solid var(--gray-200); border-radius:12px; padding:.75rem .9rem; margin-bottom:1rem; }
+    .application-item { border:1px solid var(--gray-200); border-radius:12px; padding:.9rem 1rem; margin-bottom:.85rem; display:flex; flex-direction:column; gap:.6rem; }
+    .application-pitch { background:var(--gray-50); border-radius:8px; padding:.6rem .75rem; font-size:.88rem; color:var(--gray-700); line-height:1.5; white-space:pre-wrap; }
+    .application-meta { font-size:.85rem; color:var(--gray-600); }
+    .wa-link { color:#16a34a; font-weight:600; text-decoration:none; }
+    .wa-link:hover { text-decoration:underline; }
+    .application-actions { display:flex; gap:.5rem; flex-wrap:wrap; }
     .form-check { display:flex; align-items:flex-start; gap:.5rem; cursor:pointer; font-size:.9rem; }
     .form-check input { margin-top:.2rem; width:16px; height:16px; accent-color:var(--accent); }
     .input-group { display:flex; gap:.5rem; align-items:center; }
@@ -53,11 +79,14 @@
     .empty-state { padding:2rem 1rem; } .empty-state-icon { font-size:2.6rem; } .empty-state-title { color:var(--navy); margin:.5rem 0; }
     .modal-overlay { position:fixed; inset:0; background:rgba(10,22,40,.6); z-index:100; display:none; align-items:flex-start; justify-content:center; padding:24px 14px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
     .modal-overlay.active { display:flex; }
-    .modal { background:#fff; border-radius:var(--radius-lg); width:100%; max-width:560px; box-shadow:0 16px 50px rgba(0,0,0,.32); }
+    /* padding:0 and static close-button position override the global css/styles.css
+       .modal / .modal-close rules (meant for the other pages) that otherwise leak in. */
+    .modal { background:#fff; border-radius:var(--radius-lg); width:100%; max-width:560px; box-shadow:0 16px 50px rgba(0,0,0,.32); padding:0; }
     .modal-lg { max-width:720px; } .modal-xl { max-width:900px; } .modal-xxl { max-width:1140px; }
     .modal-header { display:flex; align-items:center; justify-content:space-between; padding:1.1rem 1.25rem; border-bottom:1px solid var(--gray-200); background:var(--navy); color:#fff; border-radius:var(--radius-lg) var(--radius-lg) 0 0; }
     .modal-title { font-size:1.1rem; font-weight:700; color:#fff; }
-    .modal-close { background:rgba(255,255,255,.15); border:0; color:#fff; width:34px; height:34px; border-radius:8px; font-size:1.4rem; line-height:1; cursor:pointer; }
+    .modal-close { position:static; display:inline-flex; align-items:center; justify-content:center; background:rgba(255,255,255,.15); border:0; color:#fff; width:34px; height:34px; border-radius:8px; font-size:1.4rem; line-height:1; cursor:pointer; flex-shrink:0; }
+    .modal-close:hover { background:rgba(255,255,255,.28); }
     .modal-body { padding:1.25rem; }
     .modal-footer { display:flex; align-items:center; justify-content:flex-end; gap:.6rem; padding:1rem 1.25rem; border-top:1px solid var(--gray-200); background:var(--gray-50); border-radius:0 0 var(--radius-lg) var(--radius-lg); flex-wrap:wrap; }
     .progress-container { } .progress-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.4rem; }
@@ -76,42 +105,54 @@
 
   <main class="rp-main">
     <div class="d-flex justify-between align-center flex-wrap gap-2 mb-4">
-      <h1>🔬 Projetos de Pesquisa</h1>
+      <h1>🔬 Research Projects</h1>
       <div class="d-flex align-center gap-2 flex-wrap">
-        <button class="btn btn-outline" onclick="openCalendarModal()">📅 Ver Calendário</button>
-        <button class="btn btn-primary" onclick="openNewProjectModal()">+ Novo Projeto</button>
+        <button class="btn btn-outline" onclick="openCalendarModal()">📅 Calendar</button>
+        <button class="btn btn-primary" onclick="openNewProjectModal()">+ New Project</button>
       </div>
     </div>
 
     <p class="text-muted mb-4" style="margin-top:-.75rem; font-size:.9rem">
-      Espaço colaborativo de pesquisa da Ward Academy. Crie projetos, adicione coautores, organize tarefas por
-      estágio e centralize os arquivos no Google Drive. Todos os membros podem criar e colaborar.
+      Ward Academy's collaborative research space. Create projects, recruit co-authors, and organize tasks by
+      stage. Each project is private to its team — members find new projects through the open-positions board below.
     </p>
 
     <!-- Stats -->
     <div class="stats-grid mb-4">
-      <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-info"><span class="stat-value" id="total-projects">0</span><span class="stat-label">Projetos Totais</span></div></div>
-      <div class="stat-card"><div class="stat-icon">🔄</div><div class="stat-info"><span class="stat-value" id="active-projects">0</span><span class="stat-label">Em Andamento</span></div></div>
-      <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-info"><span class="stat-value" id="completed-projects">0</span><span class="stat-label">Concluídos</span></div></div>
+      <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-info"><span class="stat-value" id="total-projects">0</span><span class="stat-label">Total Projects</span></div></div>
+      <div class="stat-card"><div class="stat-icon">🔄</div><div class="stat-info"><span class="stat-value" id="active-projects">0</span><span class="stat-label">In Progress</span></div></div>
+      <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-info"><span class="stat-value" id="completed-projects">0</span><span class="stat-label">Completed</span></div></div>
+    </div>
+
+    <!-- Open positions (co-author recruitment board) -->
+    <div id="positions-section" class="card mb-4" style="display:none;">
+      <div class="card-body">
+        <div class="d-flex justify-between align-center flex-wrap gap-2">
+          <h2 style="margin:0; font-size:1.15rem; color:var(--navy);">🤝 Open positions — co-authors wanted</h2>
+          <button type="button" class="btn btn-secondary btn-sm" id="toggle-hidden-positions" style="display:none;" onclick="toggleHiddenPositions()"></button>
+        </div>
+        <p class="text-muted" style="font-size:.85rem; margin:.35rem 0 1rem;">Members looking for co-authors. Project titles and links stay private — you'll see the full project only if the owner accepts you.</p>
+        <div id="positions-container" class="positions-grid"></div>
+      </div>
     </div>
 
     <!-- Stage Filter -->
     <div class="card mb-4">
       <div class="card-body" style="padding:1rem 1.25rem;">
         <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
-          <span style="font-weight:600; color:var(--navy); white-space:nowrap;">🔍 Filtrar por Estágio:</span>
+          <span style="font-weight:600; color:var(--navy); white-space:nowrap;">🔍 Filter by stage:</span>
           <div style="display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; flex:1;">
             <select id="task-status-filter" class="form-input" style="width:auto; min-width:160px; padding:.5rem .75rem;">
-              <option value="pending">Apenas pendentes</option>
-              <option value="all">Pendentes + Concluídas</option>
+              <option value="pending">Pending only</option>
+              <option value="all">Pending + Completed</option>
             </select>
             <select id="stage-comparison" class="form-input" style="width:auto; min-width:60px; padding:.5rem .75rem;">
               <option value="=">=</option><option value="<">&lt;</option><option value=">">&gt;</option>
             </select>
             <select id="stage-filter" class="form-input" style="flex:1; min-width:200px; max-width:400px; padding:.5rem .75rem;">
-              <option value="">Todos os estágios</option>
+              <option value="">All stages</option>
             </select>
-            <button class="btn btn-secondary btn-sm" onclick="clearStageFilter()">✕ Limpar</button>
+            <button class="btn btn-secondary btn-sm" onclick="clearStageFilter()">✕ Clear</button>
           </div>
         </div>
         <div id="filter-hint" style="margin-top:.5rem; font-size:.8rem; color:var(--gray-500); display:none;"><span id="filter-hint-text"></span></div>
@@ -123,11 +164,11 @@
       <div class="card-body" style="padding:1rem 1.25rem;">
         <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
           <div style="flex:1; min-width:200px; position:relative;">
-            <input type="text" id="project-search" class="form-input" placeholder="Buscar projetos por título..." oninput="applySearchFilter()" style="width:100%; padding:.5rem .75rem .5rem 2.25rem;">
+            <input type="text" id="project-search" class="form-input" placeholder="Search projects by title..." oninput="applySearchFilter()" style="width:100%; padding:.5rem .75rem .5rem 2.25rem;">
             <span style="position:absolute; left:.75rem; top:50%; transform:translateY(-50%); color:#9ca3af; pointer-events:none;">🔎</span>
           </div>
           <label style="display:flex; align-items:center; gap:.4rem; font-size:.85rem; color:var(--gray-700); cursor:pointer; white-space:nowrap;">
-            <input type="checkbox" id="search-description" onchange="applySearchFilter()"> Buscar na descrição
+            <input type="checkbox" id="search-description" onchange="applySearchFilter()"> Search descriptions
           </label>
         </div>
       </div>
@@ -138,8 +179,8 @@
       <div class="card-body text-center p-4">
         <div class="empty-state">
           <div class="empty-state-icon">🔬</div>
-          <h3 class="empty-state-title">Nenhum projeto de pesquisa ainda</h3>
-          <p class="text-muted">Clique em “+ Novo Projeto” para começar.</p>
+          <h3 class="empty-state-title">No research projects yet</h3>
+          <p class="text-muted">Click "+ New Project" to get started.</p>
         </div>
       </div>
     </div>
@@ -148,14 +189,14 @@
   <!-- New Project Modal -->
   <div id="new-project-modal" class="modal-overlay">
     <div class="modal modal-xl">
-      <div class="modal-header"><h3 class="modal-title">➕ Novo Projeto de Pesquisa</h3><button class="modal-close" onclick="closeModal('new-project-modal')">&times;</button></div>
+      <div class="modal-header"><h3 class="modal-title">➕ New Research Project</h3><button class="modal-close" onclick="closeModal('new-project-modal')">&times;</button></div>
       <div class="modal-body">
-        <div class="form-group"><label class="form-label">Tipo de Meta-Análise *</label>
+        <div class="form-group"><label class="form-label">Meta-analysis type *</label>
           <select id="project-type" class="form-input" onchange="updateTitleFields()">
             <option value="double-arm">Double Arm (Intervention vs Comparison)</option>
             <option value="single-arm">Single Arm</option>
             <option value="network">Network Meta-Analysis</option>
-            <option value="other">Outro / título livre</option>
+            <option value="other">Other / free title</option>
           </select>
         </div>
         <div id="double-arm-fields">
@@ -165,22 +206,29 @@
           </div>
         </div>
         <div id="single-arm-fields" style="display:none;"><div class="form-group"><label class="form-label">Intervention *</label><input type="text" id="project-intervention-single" class="form-input" placeholder="Ex: Aspirin" oninput="generateTitle()"></div></div>
-        <div id="network-fields" style="display:none;"><div class="form-group"><label class="form-label">Interventions (separadas por vírgula) *</label><input type="text" id="project-interventions-network" class="form-input" placeholder="Ex: Drug A, Drug B, Drug C" oninput="generateTitle()"></div></div>
-        <div id="other-fields" style="display:none;"><div class="form-group"><label class="form-label">Título do projeto *</label><input type="text" id="project-free-title" class="form-input" placeholder="Escreva o título" oninput="generateTitle()"></div></div>
+        <div id="network-fields" style="display:none;"><div class="form-group"><label class="form-label">Interventions (comma-separated) *</label><input type="text" id="project-interventions-network" class="form-input" placeholder="Ex: Drug A, Drug B, Drug C" oninput="generateTitle()"></div></div>
+        <div id="other-fields" style="display:none;"><div class="form-group"><label class="form-label">Project title *</label><input type="text" id="project-free-title" class="form-input" placeholder="Write the title" oninput="generateTitle()"></div></div>
         <div class="form-group" id="population-group"><label class="form-label">Population *</label><input type="text" id="project-population" class="form-input" placeholder="Ex: Patients with Diabetes" oninput="generateTitle()"></div>
-        <div class="form-group"><label class="form-label">Título Gerado</label><input type="text" id="project-title" class="form-input" readonly style="background:var(--gray-100); font-weight:600; text-transform:uppercase;"><span class="form-hint">Formato: INTERVENTION [VS COMPARISON] FOR POPULATION</span></div>
-        <div class="form-group"><label class="form-check"><input type="checkbox" id="create-drive-folder" onchange="toggleDriveLinkField()"><span>📁 Criar estrutura de pastas no Google Drive automaticamente</span></label><span class="form-hint">Cria a pasta do projeto com subpastas organizadas (requer o Apps Script configurado).</span></div>
-        <div class="input-group" style="align-items:flex-start">
-          <div class="form-group" style="flex:1"><label class="form-label">Deadline</label><input type="date" id="project-deadline" class="form-input"></div>
-          <div class="form-group" style="flex:1" id="drive-link-group"><label class="form-label">Link Google Drive (opcional)</label><input type="url" id="project-drive-link" class="form-input" placeholder="https://drive.google.com/..."><span class="form-hint">Deixe a criação automática desligada para usar um link próprio.</span></div>
+        <div class="form-group"><label class="form-label">Generated title</label><input type="text" id="project-title" class="form-input" readonly style="background:var(--gray-100); font-weight:600; text-transform:uppercase;"><span class="form-hint">Format: INTERVENTION [VS COMPARISON] FOR POPULATION</span></div>
+        <div class="form-group"><label class="form-check"><input type="checkbox" id="create-drive-folder" checked onchange="toggleDriveLinkField()"><span>📁 Automatically create a Google Drive folder structure <strong>(recommended)</strong></span></label><span class="form-hint">Creates the project folder with the subfolder layout we recommend for research projects (requires the Apps Script configured).</span></div>
+        <div id="drive-off-note" class="form-note-warn" style="display:none;">💡 We recommend keeping automatic creation on — it sets up the standard folder structure for you. If you turn it off you can paste your own Google Drive link below, but you'll organize the folders yourself.</div>
+        <div class="form-group"><label class="form-label">Deadline <span class="form-optional">(optional)</span></label><input type="date" id="project-deadline" class="form-input"></div>
+        <div class="form-group" id="drive-link-group" style="display:none;"><label class="form-label">Google Drive link <span class="form-optional">(optional)</span></label><input type="url" id="project-drive-link" class="form-input" placeholder="https://drive.google.com/..."></div>
+        <div class="form-group"><label class="form-label" for="project-description">Description / Notes</label><textarea id="project-description" class="form-textarea" rows="3" placeholder="Project description..."></textarea></div>
+        <div class="form-group"><label class="form-label">Participants (Co-authors)</label>
+          <div class="author-picker"><input type="text" class="author-search" id="project-participants-search" placeholder="🔍 Search by name..." oninput="filterAuthorPicker('project-participants-list', this.value)"><div id="project-participants-list" class="author-list"></div></div>
+          <span class="form-hint">Click names to add/remove. <span data-count-for="project-participants-list" class="author-count-badge"></span></span>
         </div>
-        <div class="form-group"><label class="form-label" for="project-description">Descrição / Comentários</label><textarea id="project-description" class="form-textarea" rows="3" placeholder="Descrição do projeto..."></textarea></div>
-        <div class="form-group"><label class="form-label">Participantes (Coautores)</label>
-          <div class="author-picker"><input type="text" class="author-search" id="project-participants-search" placeholder="🔍 Buscar por nome..." oninput="filterAuthorPicker('project-participants-list', this.value)"><div id="project-participants-list" class="author-list"></div></div>
-          <span class="form-hint">Clique nos nomes para adicionar/remover. <span data-count-for="project-participants-list" class="author-count-badge"></span></span>
+        <div class="form-group" style="border-top:1px solid var(--gray-200); padding-top:1rem;">
+          <label class="form-check"><input type="checkbox" id="create-recruit" onchange="toggleRecruitFields()"><span>🤝 Also post an open call for co-authors</span></label>
+          <span class="form-hint">Members see only your name, specialty and what you need — never the project title or links.</span>
+        </div>
+        <div id="create-recruit-fields" style="display:none;">
+          <div class="form-group"><label class="form-label">Your specialty *</label><input type="text" id="create-recruit-specialty" class="form-input" placeholder="e.g. Cardiology"></div>
+          <div class="form-group"><label class="form-label">What help do you need? <span class="form-optional">(optional)</span></label><input type="text" id="create-recruit-help" class="form-input" placeholder="e.g. statistical analysis, study screening, writing Methods"></div>
         </div>
       </div>
-      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('new-project-modal')">Cancelar</button><button class="btn btn-primary" onclick="createProject()">Criar Projeto</button></div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('new-project-modal')">Cancel</button><button class="btn btn-primary" onclick="createProject()">Create Project</button></div>
     </div>
   </div>
 
@@ -190,41 +238,42 @@
       <div class="modal-header">
         <h3 class="modal-title" id="view-project-title"></h3>
         <div class="modal-header-actions" style="display:flex; gap:.5rem; align-items:center">
-          <button class="modal-close" onclick="copyProjectLink()" title="Copiar link">🔗</button>
+          <button class="modal-close" onclick="copyProjectLink()" title="Copy link">🔗</button>
           <button class="modal-close" onclick="closeViewProjectModal()">&times;</button>
         </div>
       </div>
       <div class="modal-body">
         <div class="description-container mb-3">
-          <div class="project-description-formatted" id="view-project-description" onclick="enterDescriptionEditMode()" title="Clique para editar"></div>
+          <div class="project-description-formatted" id="view-project-description" onclick="enterDescriptionEditMode()" title="Click to edit"></div>
           <div class="description-edit-area" id="description-edit-area" style="display:none;">
-            <div class="rich-text-editor" id="inline-description-editor" contenteditable="true" placeholder="Digite a descrição do projeto..."></div>
-            <div class="description-edit-buttons"><button class="btn btn-sm btn-save-desc" onclick="saveInlineDescription()">💾 Salvar</button><button class="btn btn-sm btn-cancel-desc" onclick="cancelDescriptionEdit()">❌ Cancelar</button></div>
+            <div class="rich-text-editor" id="inline-description-editor" contenteditable="true" placeholder="Type the project description..."></div>
+            <div class="description-edit-buttons"><button class="btn btn-sm btn-save-desc" onclick="saveInlineDescription()">💾 Save</button><button class="btn btn-sm btn-cancel-desc" onclick="cancelDescriptionEdit()">❌ Cancel</button></div>
           </div>
         </div>
         <div class="project-meta mb-3" id="project-meta"></div>
         <div id="view-project-tags" class="mb-3"></div>
         <div class="progress-container mb-4">
-          <div class="progress-header"><span class="progress-title">Progresso do Projeto</span><span class="progress-text" id="project-progress-text">0%</span></div>
+          <div class="progress-header"><span class="progress-title">Project Progress</span><span class="progress-text" id="project-progress-text">0%</span></div>
           <div class="progress-bar"><div class="progress-fill" id="project-progress-fill" style="width:0%"></div></div>
         </div>
-        <div class="mb-4"><h4 class="mb-2">👥 Participantes</h4><div id="participants-list" class="participants-grid"></div></div>
-        <div class="mb-4" id="drive-files-section" style="display:none;"><div class="d-flex justify-between align-center mb-2"><h4>📁 Arquivos do Projeto</h4></div><div id="drive-folders-container" class="folders-accordion"></div></div>
+        <div class="mb-4"><h4 class="mb-2">👥 Participants</h4><div id="participants-list" class="participants-grid"></div></div>
+        <div class="mb-4" id="drive-files-section" style="display:none;"><div class="d-flex justify-between align-center mb-2"><h4>📁 Project Files</h4></div><div id="drive-folders-container" class="folders-accordion"></div></div>
         <div class="mb-4">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding:1rem 1.25rem; background:var(--gray-50); border-radius:12px; border:1px solid var(--gray-200);">
-            <div style="display:flex; align-items:center; gap:.75rem;"><span style="font-size:1.5rem;">📋</span><div><h4 style="margin:0; font-size:1.1rem; font-weight:700; color:var(--navy);">Tarefas do Projeto</h4><span style="font-size:.8rem; color:var(--gray-500);" id="tasks-count-label">Carregando...</span></div></div>
-            <button class="btn btn-sm btn-primary" onclick="openAddTaskModal()" id="add-task-btn" style="display:none;">+ Nova Tarefa</button>
+            <div style="display:flex; align-items:center; gap:.75rem;"><span style="font-size:1.5rem;">📋</span><div><h4 style="margin:0; font-size:1.1rem; font-weight:700; color:var(--navy);">Project Tasks</h4><span style="font-size:.8rem; color:var(--gray-500);" id="tasks-count-label">Loading...</span></div></div>
+            <button class="btn btn-sm btn-primary" onclick="openAddTaskModal()" id="add-task-btn" style="display:none;">+ New Task</button>
           </div>
           <div id="tasks-list" class="tasks-list"></div>
         </div>
       </div>
       <div class="modal-footer" style="justify-content:space-between">
         <div class="d-flex gap-2 flex-wrap">
-          <button class="btn btn-danger" id="delete-project-btn" style="display:none;" onclick="deleteProject()">🗑️ Excluir</button>
-          <button class="btn btn-outline" id="manage-participants-btn" style="display:none;" onclick="openManageParticipantsModal()">👥 Participantes</button>
-          <button class="btn btn-primary" id="edit-project-btn" style="display:none;" onclick="openEditProjectModal()">✏️ Editar</button>
+          <button class="btn btn-danger" id="delete-project-btn" style="display:none;" onclick="deleteProject()">🗑️ Delete</button>
+          <button class="btn btn-outline" id="recruit-project-btn" style="display:none;" onclick="openRecruitModal()">🤝 Recruit co-authors</button>
+          <button class="btn btn-outline" id="manage-participants-btn" style="display:none;" onclick="openManageParticipantsModal()">👥 Participants</button>
+          <button class="btn btn-primary" id="edit-project-btn" style="display:none;" onclick="openEditProjectModal()">✏️ Edit</button>
         </div>
-        <button class="btn btn-secondary" onclick="closeViewProjectModal()">Fechar</button>
+        <button class="btn btn-secondary" onclick="closeViewProjectModal()">Close</button>
       </div>
     </div>
   </div>
@@ -232,96 +281,136 @@
   <!-- Edit Project Modal -->
   <div id="edit-project-modal" class="modal-overlay">
     <div class="modal modal-lg">
-      <div class="modal-header"><h3 class="modal-title">✏️ Editar Projeto</h3><button class="modal-close" onclick="closeModal('edit-project-modal')">&times;</button></div>
+      <div class="modal-header"><h3 class="modal-title">✏️ Edit Project</h3><button class="modal-close" onclick="closeModal('edit-project-modal')">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" id="edit-project-id">
-        <div class="form-group"><label class="form-label">Tipo *</label><select id="edit-project-type" class="form-input" onchange="updateEditTitleFields()"><option value="double-arm">Double Arm</option><option value="single-arm">Single Arm / livre</option></select></div>
-        <div id="edit-double-arm-fields"><div class="form-group"><label class="form-label">Título (Intervention vs Comparison for Outcome) *</label><div class="input-group"><input type="text" id="edit-project-intervention" class="form-input" placeholder="Intervention"><span class="input-addon">vs</span><input type="text" id="edit-project-comparison" class="form-input" placeholder="Comparison"><span class="input-addon">for</span><input type="text" id="edit-project-outcome" class="form-input" placeholder="Outcome"></div></div></div>
-        <div id="edit-single-arm-fields" style="display:none;"><div class="form-group"><label class="form-label">Título do Projeto *</label><input type="text" id="edit-project-single-title" class="form-input"></div></div>
-        <div class="form-group"><label class="form-label">Descrição</label><div class="rich-text-editor" id="edit-project-description" contenteditable="true" placeholder="Cole texto formatado ou escreva..."></div></div>
-        <div class="form-group"><label class="form-label">Status</label><select id="edit-project-status" class="form-input"><option value="active">Em andamento</option><option value="completed">Concluído</option></select></div>
+        <div class="form-group"><label class="form-label">Type *</label><select id="edit-project-type" class="form-input" onchange="updateEditTitleFields()"><option value="double-arm">Double Arm</option><option value="single-arm">Single Arm / free</option></select></div>
+        <div id="edit-double-arm-fields"><div class="form-group"><label class="form-label">Title (Intervention vs Comparison for Outcome) *</label><div class="input-group"><input type="text" id="edit-project-intervention" class="form-input" placeholder="Intervention"><span class="input-addon">vs</span><input type="text" id="edit-project-comparison" class="form-input" placeholder="Comparison"><span class="input-addon">for</span><input type="text" id="edit-project-outcome" class="form-input" placeholder="Outcome"></div></div></div>
+        <div id="edit-single-arm-fields" style="display:none;"><div class="form-group"><label class="form-label">Project Title *</label><input type="text" id="edit-project-single-title" class="form-input"></div></div>
+        <div class="form-group"><label class="form-label">Description</label><div class="rich-text-editor" id="edit-project-description" contenteditable="true" placeholder="Paste formatted text or type..."></div></div>
+        <div class="form-group"><label class="form-label">Status</label><select id="edit-project-status" class="form-input"><option value="active">In progress</option><option value="completed">Completed</option></select></div>
         <div class="form-group" id="edit-tags-group"><label class="form-label">Tags</label>
           <div class="tags-checkbox-group" id="edit-project-tags">
-            <label class="tag-checkbox-label" data-tag="congresso"><input type="checkbox" value="congresso" onchange="toggleTagCheckbox(this)"> 🎤 Congresso</label>
-            <label class="tag-checkbox-label" data-tag="publicado"><input type="checkbox" value="publicado" onchange="toggleTagCheckbox(this)"> 📄 Publicado</label>
-            <label class="tag-checkbox-label" data-tag="submetido"><input type="checkbox" value="submetido" onchange="toggleTagCheckbox(this)"> 📨 Submetido</label>
-            <label class="tag-checkbox-label" data-tag="revisao"><input type="checkbox" value="revisao" onchange="toggleTagCheckbox(this)"> 🔄 Em Revisão</label>
-            <label class="tag-checkbox-label" data-tag="arquivado"><input type="checkbox" value="arquivado" onchange="toggleTagCheckbox(this)"> 📦 Arquivado</label>
+            <label class="tag-checkbox-label" data-tag="congresso"><input type="checkbox" value="congresso" onchange="toggleTagCheckbox(this)"> 🎤 Conference</label>
+            <label class="tag-checkbox-label" data-tag="publicado"><input type="checkbox" value="publicado" onchange="toggleTagCheckbox(this)"> 📄 Published</label>
+            <label class="tag-checkbox-label" data-tag="submetido"><input type="checkbox" value="submetido" onchange="toggleTagCheckbox(this)"> 📨 Submitted</label>
+            <label class="tag-checkbox-label" data-tag="revisao"><input type="checkbox" value="revisao" onchange="toggleTagCheckbox(this)"> 🔄 In Review</label>
+            <label class="tag-checkbox-label" data-tag="arquivado"><input type="checkbox" value="arquivado" onchange="toggleTagCheckbox(this)"> 📦 Archived</label>
           </div>
         </div>
-        <div class="form-group"><label class="form-label">Data Limite</label><input type="date" id="edit-project-deadline" class="form-input"></div>
-        <div class="form-group"><label class="form-label">Link Externo (Drive, etc)</label><input type="url" id="edit-project-link" class="form-input" placeholder="https://..."></div>
+        <div class="form-group"><label class="form-label">Deadline</label><input type="date" id="edit-project-deadline" class="form-input"></div>
+        <div class="form-group"><label class="form-label">External link (Drive, etc.)</label><input type="url" id="edit-project-link" class="form-input" placeholder="https://..."></div>
         <div id="edit-create-drive-folder-group" class="form-group" style="display:none;">
           <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:.75rem; display:flex; align-items:center; gap:.75rem;">
-            <span style="font-size:1.5rem;">📁</span><div style="flex:1;"><div style="font-weight:600; font-size:.85rem; color:#1e40af;">Sem pasta no Google Drive</div><div style="font-size:.75rem; color:#3b82f6;">Crie a estrutura organizada de pastas.</div></div>
-            <button type="button" class="btn btn-primary btn-sm" id="edit-create-drive-btn" onclick="createDriveFolderFromEdit()">📁 Criar Pasta</button>
+            <span style="font-size:1.5rem;">📁</span><div style="flex:1;"><div style="font-weight:600; font-size:.85rem; color:#1e40af;">No Google Drive folder</div><div style="font-size:.75rem; color:#3b82f6;">Create the organized folder structure.</div></div>
+            <button type="button" class="btn btn-primary btn-sm" id="edit-create-drive-btn" onclick="createDriveFolderFromEdit()">📁 Create Folder</button>
           </div>
         </div>
         <div id="edit-check-folders-group" class="form-group" style="display:none;">
           <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:.75rem;">
-            <div style="display:flex; align-items:center; gap:.75rem;"><span style="font-size:1.5rem;">🔍</span><div style="flex:1;"><div style="font-weight:600; font-size:.85rem; color:#166534;">Verificar pastas do Drive</div><div style="font-size:.75rem; color:#16a34a;">Cria subpastas faltantes automaticamente.</div></div><button type="button" class="btn btn-primary btn-sm" id="edit-check-folders-btn" onclick="checkProjectFolders()" style="background:#16a34a;">🔍 Verificar</button></div>
+            <div style="display:flex; align-items:center; gap:.75rem;"><span style="font-size:1.5rem;">🔍</span><div style="flex:1;"><div style="font-weight:600; font-size:.85rem; color:#166534;">Check Drive folders</div><div style="font-size:.75rem; color:#16a34a;">Creates missing subfolders automatically.</div></div><button type="button" class="btn btn-primary btn-sm" id="edit-check-folders-btn" onclick="checkProjectFolders()" style="background:#16a34a;">🔍 Check</button></div>
             <div id="check-folders-result" style="display:none; margin-top:.75rem; padding-top:.75rem; border-top:1px solid #bbf7d0; font-size:.8rem;"></div>
           </div>
         </div>
       </div>
-      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('edit-project-modal')">Cancelar</button><button class="btn btn-primary" onclick="saveProjectEdit()">💾 Salvar</button></div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('edit-project-modal')">Cancel</button><button class="btn btn-primary" onclick="saveProjectEdit()">💾 Save</button></div>
     </div>
   </div>
 
   <!-- Manage Participants Modal -->
   <div id="manage-participants-modal" class="modal-overlay">
     <div class="modal">
-      <div class="modal-header"><h3 class="modal-title">👥 Gerenciar Participantes</h3><button class="modal-close" onclick="closeModal('manage-participants-modal')">&times;</button></div>
+      <div class="modal-header"><h3 class="modal-title">👥 Manage Participants</h3><button class="modal-close" onclick="closeModal('manage-participants-modal')">&times;</button></div>
       <div class="modal-body">
-        <div class="form-group"><label class="form-label">Adicionar Participantes</label>
-          <div class="author-picker"><input type="text" class="author-search" id="add-participant-search" placeholder="🔍 Buscar por nome..." oninput="filterAuthorPicker('add-participant-list', this.value)"><div id="add-participant-list" class="author-list author-list-sm"></div></div>
-          <button class="btn btn-primary btn-sm mt-2" onclick="addParticipant()">+ Adicionar Selecionados <span data-count-for="add-participant-list" class="author-count-badge on-dark"></span></button>
+        <div class="form-group"><label class="form-label">Add Participants</label>
+          <div class="author-picker"><input type="text" class="author-search" id="add-participant-search" placeholder="🔍 Search by name..." oninput="filterAuthorPicker('add-participant-list', this.value)"><div id="add-participant-list" class="author-list author-list-sm"></div></div>
+          <button class="btn btn-primary btn-sm mt-2" onclick="addParticipant()">+ Add Selected <span data-count-for="add-participant-list" class="author-count-badge on-dark"></span></button>
         </div>
-        <div class="mt-3"><h4 class="mb-2">Participantes Atuais</h4><div id="current-participants-list"></div></div>
+        <div class="mt-3"><h4 class="mb-2">Current Participants</h4><div id="current-participants-list"></div></div>
       </div>
-      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('manage-participants-modal')">Fechar</button></div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('manage-participants-modal')">Close</button></div>
     </div>
   </div>
 
   <!-- Add Task Modal -->
   <div id="add-task-modal" class="modal-overlay">
     <div class="modal">
-      <div class="modal-header"><h3 class="modal-title">➕ Nova Tarefa</h3><button class="modal-close" onclick="closeModal('add-task-modal')">&times;</button></div>
+      <div class="modal-header"><h3 class="modal-title">➕ New Task</h3><button class="modal-close" onclick="closeModal('add-task-modal')">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" id="task-project-id">
-        <div class="form-group"><label class="form-label" for="task-title">Título da Tarefa *</label><input type="text" id="task-title" class="form-input" placeholder="Nome da tarefa"></div>
-        <div class="form-group"><label class="form-label" for="task-stage">Estágio</label><select id="task-stage" class="form-input"></select></div>
-        <div class="form-group"><label class="form-label" for="task-assignee">Responsável</label><select id="task-assignee" class="form-input"></select></div>
-        <div class="form-group"><label class="form-label" for="task-deadline">Prazo</label><input type="date" id="task-deadline" class="form-input"></div>
+        <div class="form-group"><label class="form-label" for="task-title">Task title *</label><input type="text" id="task-title" class="form-input" placeholder="Task name"></div>
+        <div class="form-group"><label class="form-label" for="task-stage">Stage</label><select id="task-stage" class="form-input"></select></div>
+        <div class="form-group"><label class="form-label" for="task-assignee">Assignee</label><select id="task-assignee" class="form-input"></select></div>
+        <div class="form-group"><label class="form-label" for="task-deadline">Due date</label><input type="date" id="task-deadline" class="form-input"></div>
       </div>
-      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('add-task-modal')">Cancelar</button><button class="btn btn-primary" onclick="createTask()">Criar Tarefa</button></div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('add-task-modal')">Cancel</button><button class="btn btn-primary" onclick="createTask()">Create Task</button></div>
     </div>
   </div>
 
   <!-- Edit Task Modal -->
   <div id="edit-task-modal" class="modal-overlay">
     <div class="modal">
-      <div class="modal-header"><h3 class="modal-title">✏️ Editar Tarefa</h3><button class="modal-close" onclick="closeModal('edit-task-modal')">&times;</button></div>
+      <div class="modal-header"><h3 class="modal-title">✏️ Edit Task</h3><button class="modal-close" onclick="closeModal('edit-task-modal')">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" id="edit-task-id">
-        <div class="form-group"><label class="form-label" for="edit-task-title">Título da Tarefa *</label><input type="text" id="edit-task-title" class="form-input"></div>
-        <div class="form-group"><label class="form-label" for="edit-task-stage">Estágio</label><select id="edit-task-stage" class="form-input"></select></div>
-        <div class="form-group"><label class="form-label" for="edit-task-assignee">Responsável</label><select id="edit-task-assignee" class="form-input"></select></div>
-        <div class="form-group"><label class="form-label" for="edit-task-deadline">Prazo</label><input type="date" id="edit-task-deadline" class="form-input"></div>
+        <div class="form-group"><label class="form-label" for="edit-task-title">Task title *</label><input type="text" id="edit-task-title" class="form-input"></div>
+        <div class="form-group"><label class="form-label" for="edit-task-stage">Stage</label><select id="edit-task-stage" class="form-input"></select></div>
+        <div class="form-group"><label class="form-label" for="edit-task-assignee">Assignee</label><select id="edit-task-assignee" class="form-input"></select></div>
+        <div class="form-group"><label class="form-label" for="edit-task-deadline">Due date</label><input type="date" id="edit-task-deadline" class="form-input"></div>
       </div>
-      <div class="modal-footer"><button class="btn btn-danger" onclick="deleteTask()">Excluir</button><button class="btn btn-secondary" onclick="closeModal('edit-task-modal')">Cancelar</button><button class="btn btn-primary" onclick="updateTask()">Salvar</button></div>
+      <div class="modal-footer"><button class="btn btn-danger" onclick="deleteTask()">Delete</button><button class="btn btn-secondary" onclick="closeModal('edit-task-modal')">Cancel</button><button class="btn btn-primary" onclick="updateTask()">Save</button></div>
     </div>
   </div>
 
   <!-- Calendar Modal -->
   <div id="calendar-modal" class="modal-overlay">
     <div class="modal cal-modal">
-      <div class="modal-header cal-modal-header"><h3 class="modal-title">📅 Calendário de Pesquisa</h3><button class="modal-close" onclick="closeCalendarModal()">&times;</button></div>
+      <div class="modal-header cal-modal-header"><h3 class="modal-title">📅 Research Calendar</h3><button class="modal-close" onclick="closeCalendarModal()">&times;</button></div>
       <div class="cal-toolbar">
-        <div class="cal-nav"><button type="button" class="cal-nav-btn" onclick="calPrev()">‹</button><button type="button" class="cal-today-btn" onclick="calToday()">Hoje</button><button type="button" class="cal-nav-btn" onclick="calNext()">›</button><span id="cal-period-label" class="cal-period"></span></div>
-        <div class="cal-views"><button type="button" class="cal-view-btn" data-view="month" onclick="setCalView('month')">Mês</button><button type="button" class="cal-view-btn" data-view="week" onclick="setCalView('week')">Semana</button><button type="button" class="cal-view-btn" data-view="year" onclick="setCalView('year')">Ano</button></div>
+        <div class="cal-nav"><button type="button" class="cal-nav-btn" onclick="calPrev()">‹</button><button type="button" class="cal-today-btn" onclick="calToday()">Today</button><button type="button" class="cal-nav-btn" onclick="calNext()">›</button><span id="cal-period-label" class="cal-period"></span></div>
+        <div class="cal-views"><button type="button" class="cal-view-btn" data-view="month" onclick="setCalView('month')">Month</button><button type="button" class="cal-view-btn" data-view="week" onclick="setCalView('week')">Week</button><button type="button" class="cal-view-btn" data-view="year" onclick="setCalView('year')">Year</button></div>
       </div>
-      <div class="modal-body cal-body"><div id="cal-grid" class="cal-grid-wrap"></div><div class="cal-deadlines"><h4 class="cal-deadlines-title">⏰ Próximos prazos e atrasados</h4><div id="cal-deadlines-list"></div></div></div>
+      <div class="modal-body cal-body"><div id="cal-grid" class="cal-grid-wrap"></div><div class="cal-deadlines"><h4 class="cal-deadlines-title">⏰ Upcoming & overdue deadlines</h4><div id="cal-deadlines-list"></div></div></div>
+    </div>
+  </div>
+
+  <!-- Recruit Co-authors Modal -->
+  <div id="recruit-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header"><h3 class="modal-title">🤝 Recruit Co-authors</h3><button class="modal-close" onclick="closeModal('recruit-modal')">&times;</button></div>
+      <div class="modal-body">
+        <div id="recruit-existing" style="display:none;"></div>
+        <div id="recruit-form">
+          <p class="text-muted" style="font-size:.85rem; margin-top:0;">Post an anonymous call. Members see only your name, specialty and what you need — not the project title or links. When you accept someone, they become a co-author and can see the project.</p>
+          <div class="form-group"><label class="form-label">Your specialty *</label><input type="text" id="recruit-specialty" class="form-input" placeholder="e.g. Cardiology"></div>
+          <div class="form-group"><label class="form-label">What help do you need? <span class="form-optional">(optional)</span></label><input type="text" id="recruit-help" class="form-input" placeholder="e.g. statistical analysis, study screening, writing Methods"></div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('recruit-modal')">Cancel</button><button class="btn btn-primary" id="recruit-submit-btn" onclick="submitRecruitment()">Post position</button></div>
+    </div>
+  </div>
+
+  <!-- Apply to Join Modal -->
+  <div id="apply-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header"><h3 class="modal-title">✋ Apply to join</h3><button class="modal-close" onclick="closeModal('apply-modal')">&times;</button></div>
+      <div class="modal-body">
+        <div id="apply-summary" class="apply-summary"></div>
+        <input type="hidden" id="apply-recruitment-id">
+        <p class="text-muted" style="font-size:.82rem;">The owner will see your name, specialty, WhatsApp and note, and decide whether to add you as a co-author.</p>
+        <div class="form-group"><label class="form-label">WhatsApp number *</label><input type="text" id="apply-whatsapp" class="form-input" placeholder="+55 11 90000-0000"></div>
+        <div class="form-group"><label class="form-label">How can you help? <span class="form-optional">(up to 100 words)</span></label><textarea id="apply-pitch" class="form-textarea" rows="4" placeholder="Your relevant experience and how you can contribute to this project..." oninput="updatePitchCount()"></textarea><span class="form-hint"><span id="pitch-count">0</span>/100 words</span></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('apply-modal')">Cancel</button><button class="btn btn-primary" onclick="submitApplication()">Send application</button></div>
+    </div>
+  </div>
+
+  <!-- Manage Applications Modal -->
+  <div id="applications-modal" class="modal-overlay">
+    <div class="modal modal-lg">
+      <div class="modal-header"><h3 class="modal-title">📨 Applications</h3><button class="modal-close" onclick="closeModal('applications-modal')">&times;</button></div>
+      <div class="modal-body"><div id="applications-list"></div></div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('applications-modal')">Close</button></div>
     </div>
   </div>
 
@@ -352,7 +441,7 @@
         const s = String(d);
         const dt = new Date(s.length <= 10 ? s + 'T00:00:00' : s);
         if (isNaN(dt)) return s;
-        return dt.toLocaleDateString('pt-BR');
+        return dt.toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
       },
     };
     const _dn = (v) => v; // names aren't encrypted here
@@ -364,7 +453,7 @@
     let isMentor = true; // collaborative: every member can create/edit/manage
 
     function sortUsersByName(users) {
-      return users.sort((a, b) => (_dn(a.full_name) || '').toLowerCase().localeCompare((_dn(b.full_name) || '').toLowerCase(), 'pt-BR'));
+      return users.sort((a, b) => (_dn(a.full_name) || '').toLowerCase().localeCompare((_dn(b.full_name) || '').toLowerCase(), 'en'));
     }
     function canEditProject(p) {
       if (!p) return false;
@@ -418,19 +507,19 @@
     }
 
     const stageLabels = {
-      nova_tarefa:'Nova tarefa', testando_ideia:'Testando ideia', encontrando_estudos:'Encontrando estudos',
-      estrategia_busca:'Estrategia de busca', validando_ideia:'Validando ideia', escrever_protocolo:'Escrever protocolo',
-      exportar_databases:'Exportar de databases', desduplicar:'Desduplicar', revisores_1_2:'Revisores 1 e 2', revisor_3:'Revisor 3',
-      baixando_pdfs:'Baixando PDFs', leitura_completa:'Leitura completa', prisma_flow:'PRISMA Flow Diagram', tabela_pico:'Tabela PICO',
-      extracao_dados:'Extracao de dados', analise_estatistica:'Analise estatistica padrao', analises_adicionais:'Analises estatisticas adicionais',
-      risco_vies_1_2:'Risco de vies revisores 1 e 2', risco_vies_3:'Risco de vies revisor 3', graficos_desfechos:'Graficos de desfechos',
-      graficos_vieses:'Graficos de vieses', grade:'GRADE', submeter_prospero:'Submeter ao PROSPERO', escrever_abstract:'Escrever Abstract',
-      submeter_congresso:'Submeter para congresso', escrever_introduction:'Escrever Introduction', escrever_methods:'Escrever Methods',
-      escrever_results:'Escrever Results', escrever_discussion:'Escrever Discussion', escrever_conclusion:'Escrever Conclusion',
-      escrever_limitations:'Escrever Limitations', escrever_references:'Escrever References', revisar_manuscrito:'Revisar Manuscrito',
-      encontrar_revistas:'Encontrar revistas', escrever_cover_letter:'Escrever Cover Letter', submeter_revista:'Submeter para revista',
-      responder_revisores:'Responder revisores', escrever_rebuttal:'Escrever Rebuttal Letter', ultimos_ajustes:'Ultimos ajustes',
-      tarefa_concluida:'Tarefa concluida'
+      nova_tarefa:'New task', testando_ideia:'Testing the idea', encontrando_estudos:'Finding studies',
+      estrategia_busca:'Search strategy', validando_ideia:'Validating the idea', escrever_protocolo:'Write protocol',
+      exportar_databases:'Export from databases', desduplicar:'Deduplicate', revisores_1_2:'Reviewers 1 & 2', revisor_3:'Reviewer 3',
+      baixando_pdfs:'Downloading PDFs', leitura_completa:'Full-text reading', prisma_flow:'PRISMA Flow Diagram', tabela_pico:'PICO Table',
+      extracao_dados:'Data extraction', analise_estatistica:'Standard statistical analysis', analises_adicionais:'Additional statistical analyses',
+      risco_vies_1_2:'Risk of bias \u2014 reviewers 1 & 2', risco_vies_3:'Risk of bias \u2014 reviewer 3', graficos_desfechos:'Outcome plots',
+      graficos_vieses:'Bias plots', grade:'GRADE', submeter_prospero:'Submit to PROSPERO', escrever_abstract:'Write Abstract',
+      submeter_congresso:'Submit to conference', escrever_introduction:'Write Introduction', escrever_methods:'Write Methods',
+      escrever_results:'Write Results', escrever_discussion:'Write Discussion', escrever_conclusion:'Write Conclusion',
+      escrever_limitations:'Write Limitations', escrever_references:'Write References', revisar_manuscrito:'Revise Manuscript',
+      encontrar_revistas:'Find journals', escrever_cover_letter:'Write Cover Letter', submeter_revista:'Submit to journal',
+      responder_revisores:'Respond to reviewers', escrever_rebuttal:'Write Rebuttal Letter', ultimos_ajustes:'Final adjustments',
+      tarefa_concluida:'Task completed'
     };
     const stageOrder = Object.keys(stageLabels).filter(s => s !== 'tarefa_concluida');
     const stageOptionsHtml = Object.keys(stageLabels).map(s => `<option value="${s}">${stageLabels[s]}</option>`).join('');
@@ -440,9 +529,9 @@
     function toggleArchivedProjects() { showArchived = !showArchived; renderProjects(); }
 
     /* ===================== CALENDÁRIO ===================== */
-    const CAL_MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const CAL_MONTHS_SHORT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-    const CAL_WEEKDAYS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    const CAL_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const CAL_MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const CAL_WEEKDAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     let calView = 'month', calCursor = null;
     const calEsc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
     const calKeyFromDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -453,8 +542,8 @@
       const events = [], todayKey = calTodayKey();
       (allProjects||[]).forEach(p => {
         if (isArchivedProject(p)) return;
-        if (p.deadline) events.push({ date:p.deadline, type:'project', projectId:p.id, title:p.title||'Projeto', completed:p.status==='completed', overdue:p.status!=='completed'&&p.deadline<todayKey });
-        (p.tasks||[]).forEach(t => { if(!t.deadline) return; const done=t.stage==='tarefa_concluida'; events.push({ date:t.deadline, type:'task', projectId:p.id, taskId:t.id, title:t.title||'Tarefa', projectTitle:p.title||'', completed:done, overdue:!done&&t.deadline<todayKey }); });
+        if (p.deadline) events.push({ date:p.deadline, type:'project', projectId:p.id, title:p.title||'Project', completed:p.status==='completed', overdue:p.status!=='completed'&&p.deadline<todayKey });
+        (p.tasks||[]).forEach(t => { if(!t.deadline) return; const done=t.stage==='tarefa_concluida'; events.push({ date:t.deadline, type:'task', projectId:p.id, taskId:t.id, title:t.title||'Task', projectTitle:p.title||'', completed:done, overdue:!done&&t.deadline<todayKey }); });
       });
       return events;
     }
@@ -472,13 +561,13 @@
       const proj=(allProjects||[]).find(p=>p.id===projectId); const task=proj&&(proj.tasks||[]).find(t=>t.id===taskId); if(!task) return;
       const upd={ updated_at:new Date().toISOString() };
       if(checked){ upd.stage='tarefa_concluida'; upd.original_stage=task.stage!=='tarefa_concluida'?task.stage:(task.original_stage||'nova_tarefa'); } else { upd.stage=task.original_stage||'nova_tarefa'; }
-      try { await WardApp.db.from('research_tasks').update(upd).eq('id',taskId); await loadProjects(); renderCalendar(); WardApp.showToast(checked?'Tarefa concluída!':'Tarefa reaberta'); }
-      catch(e){ WardApp.showToast('Erro ao atualizar tarefa','error'); }
+      try { await WardApp.db.from('research_tasks').update(upd).eq('id',taskId); await loadProjects(); renderCalendar(); WardApp.showToast(checked?'Task completed!':'Task reopened'); }
+      catch(e){ WardApp.showToast('Failed to update task','error'); }
     }
     function calPillHtml(ev){
       const cls=ev.completed?'is-done':(ev.overdue?'is-overdue':(ev.type==='project'?'type-project':'type-task'));
       const icon=ev.type==='project'?'📁':(ev.completed?'✓':'📌');
-      const tip=(ev.type==='task'&&ev.projectTitle)?`${ev.title}  •  Projeto: ${ev.projectTitle}`:(ev.type==='project'?`Prazo do projeto: ${ev.title}`:ev.title);
+      const tip=(ev.type==='task'&&ev.projectTitle)?`${ev.title}  \u2022  Project: ${ev.projectTitle}`:(ev.type==='project'?`Project deadline: ${ev.title}`:ev.title);
       return `<button type="button" class="cal-pill ${cls}" onclick="openEventProject(${ev.projectId})" title="${calEsc(tip)}"><span class="cal-pill-dot">${icon}</span>${calEsc(ev.title)}</button>`;
     }
     function calRenderMonth(cursor, byDate, todayKey){
@@ -509,13 +598,13 @@
       }
       return html+'</div>';
     }
-    function calPeriodLabel(){ const c=calCursor; if(calView==='month')return `${CAL_MONTHS[c.getMonth()]} de ${c.getFullYear()}`; if(calView==='year')return `${c.getFullYear()}`; const s=new Date(c); s.setDate(c.getDate()-c.getDay()); const e=new Date(s); e.setDate(s.getDate()+6); return s.getMonth()===e.getMonth()?`${s.getDate()}–${e.getDate()} ${CAL_MONTHS_SHORT[s.getMonth()]} ${e.getFullYear()}`:`${s.getDate()} ${CAL_MONTHS_SHORT[s.getMonth()]} – ${e.getDate()} ${CAL_MONTHS_SHORT[e.getMonth()]} ${e.getFullYear()}`; }
+    function calPeriodLabel(){ const c=calCursor; if(calView==='month')return `${CAL_MONTHS[c.getMonth()]} ${c.getFullYear()}`; if(calView==='year')return `${c.getFullYear()}`; const s=new Date(c); s.setDate(c.getDate()-c.getDay()); const e=new Date(s); e.setDate(s.getDate()+6); return s.getMonth()===e.getMonth()?`${s.getDate()}–${e.getDate()} ${CAL_MONTHS_SHORT[s.getMonth()]} ${e.getFullYear()}`:`${s.getDate()} ${CAL_MONTHS_SHORT[s.getMonth()]} – ${e.getDate()} ${CAL_MONTHS_SHORT[e.getMonth()]} ${e.getFullYear()}`; }
     function calRenderDeadlines(events, todayKey){
       const pending=events.filter(e=>!e.completed).sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:0)).slice(0,25);
-      if(!pending.length) return `<div class="cal-empty"><span class="cal-empty-icon">🎉</span>Nenhum prazo pendente. Tudo em dia!</div>`;
+      if(!pending.length) return `<div class="cal-empty"><span class="cal-empty-icon">🎉</span>No pending deadlines. All caught up!</div>`;
       return pending.map(ev=>{ const [,mm,dd]=ev.date.split('-').map(Number); const diff=calDiffDays(ev.date,todayKey); let tagCls,tagText,itemCls='';
-        if(diff<0){tagCls='overdue';tagText=`${Math.abs(diff)}d atrasado`;itemCls='is-overdue';} else if(diff===0){tagCls='today';tagText='Hoje';itemCls='is-soon';} else if(diff===1){tagCls='soon';tagText='Amanhã';itemCls='is-soon';} else if(diff<=7){tagCls='soon';tagText=`em ${diff}d`;itemCls='is-soon';} else {tagCls='later';tagText=`em ${diff}d`;}
-        const icon=ev.type==='project'?'📁':'📌'; const sub=ev.type==='task'?`📁 ${calEsc(ev.projectTitle||'')}`:'Prazo do projeto';
+        if(diff<0){tagCls='overdue';tagText=`${Math.abs(diff)}d overdue`;itemCls='is-overdue';} else if(diff===0){tagCls='today';tagText='Today';itemCls='is-soon';} else if(diff===1){tagCls='soon';tagText='Tomorrow';itemCls='is-soon';} else if(diff<=7){tagCls='soon';tagText=`in ${diff}d`;itemCls='is-soon';} else {tagCls='later';tagText=`in ${diff}d`;}
+        const icon=ev.type==='project'?'📁':'📌'; const sub=ev.type==='task'?`📁 ${calEsc(ev.projectTitle||'')}`:'Project deadline';
         const check=ev.type==='task'?`<input type="checkbox" class="cal-dl-check" title="Concluir" onclick="calToggleTaskComplete(${ev.taskId}, ${ev.projectId}, this.checked, event)">`:`<span class="cal-dl-check placeholder"></span>`;
         return `<div class="cal-deadline-item ${itemCls}" onclick="openEventProject(${ev.projectId})">${check}<div class="cal-dl-date"><div class="d">${dd}</div><div class="m">${CAL_MONTHS_SHORT[mm-1]}</div></div><div class="cal-dl-main"><div class="cal-dl-title">${icon} ${calEsc(ev.title)}</div><div class="cal-dl-sub">${sub}</div></div><span class="cal-dl-tag ${tagCls}">${tagText}</span></div>`;
       }).join('');
@@ -532,16 +621,16 @@
 
     /* ===================== AUTHOR PICKER ===================== */
     function authorInitials(name){ const p=String(name||'?').trim().split(/\s+/).filter(Boolean); return (p.map(w=>w[0]).slice(0,2).join('').toUpperCase())||'?'; }
-    function authorPickerItemHtml(u){ const name=_dn(u.full_name)||'Usuário'; return `<button type="button" class="author-item" data-id="${u.id}" data-name="${calEsc(name.toLowerCase())}" onclick="toggleAuthorItem(this)"><span class="author-avatar">${calEsc(authorInitials(name))}</span><span class="author-name">${calEsc(name)}</span><span class="author-check">✓</span></button>`; }
+    function authorPickerItemHtml(u){ const name=_dn(u.full_name)||'User'; return `<button type="button" class="author-item" data-id="${u.id}" data-name="${calEsc(name.toLowerCase())}" onclick="toggleAuthorItem(this)"><span class="author-avatar">${calEsc(authorInitials(name))}</span><span class="author-name">${calEsc(name)}</span><span class="author-check">✓</span></button>`; }
     function renderAuthorPicker(listId, members, selectedIds){
       const el=document.getElementById(listId); if(!el) return; selectedIds=selectedIds||[];
-      el.innerHTML = (members&&members.length) ? '<div class="author-group-label">👥 Membros</div>'+members.map(authorPickerItemHtml).join('') : '<div class="author-empty">Nenhum membro disponível</div>';
+      el.innerHTML = (members&&members.length) ? '<div class="author-group-label">👥 Members</div>'+members.map(authorPickerItemHtml).join('') : '<div class="author-empty">No members available</div>';
       selectedIds.forEach(id=>{ const it=el.querySelector(`.author-item[data-id="${id}"]`); if(it)it.classList.add('selected'); });
       updateAuthorPickerCount(listId);
     }
     function toggleAuthorItem(el){ el.classList.toggle('selected'); const list=el.closest('.author-list'); if(list&&list.id)updateAuthorPickerCount(list.id); }
     function getSelectedAuthorIds(listId){ return Array.from(document.querySelectorAll(`#${listId} .author-item.selected`)).map(el=>el.dataset.id); }
-    function updateAuthorPickerCount(listId){ const n=getSelectedAuthorIds(listId).length; const b=document.querySelector(`[data-count-for="${listId}"]`); if(b)b.textContent=n?`${n} selecionado${n>1?'s':''}`:''; }
+    function updateAuthorPickerCount(listId){ const n=getSelectedAuthorIds(listId).length; const b=document.querySelector(`[data-count-for="${listId}"]`); if(b)b.textContent=n?`${n} selected`:''; }
     function filterAuthorPicker(listId, query){
       const el=document.getElementById(listId); if(!el) return; const q=(query||'').trim().toLowerCase();
       el.querySelectorAll('.author-item').forEach(it=>{ it.style.display=(!q||(it.dataset.name||'').includes(q))?'':'none'; });
@@ -550,7 +639,10 @@
     function openNewProjectModal(){
       ['project-title','project-description','project-deadline','project-drive-link','project-participants-search','project-intervention','project-comparison','project-intervention-single','project-interventions-network','project-free-title','project-population'].forEach(id=>{ const e=document.getElementById(id); if(e)e.value=''; });
       const typeEl=document.getElementById('project-type'); if(typeEl)typeEl.selectedIndex=0;
-      const chk=document.getElementById('create-drive-folder'); if(chk)chk.checked=false;
+      const chk=document.getElementById('create-drive-folder'); if(chk)chk.checked=true;
+      const rc=document.getElementById('create-recruit'); if(rc)rc.checked=false;
+      ['create-recruit-specialty','create-recruit-help'].forEach(id=>{ const e=document.getElementById(id); if(e)e.value=''; });
+      toggleRecruitFields();
       toggleDriveLinkField(); updateTitleFields();
       renderAuthorPicker('project-participants-list', window._pickerMembers||[], []);
       filterAuthorPicker('project-participants-list','');
@@ -563,20 +655,21 @@
       if(selectedComparison==='=')return active.has(selectedStage);
       if(selectedComparison==='<')return stageOrder.slice(0,idx+1).some(s=>active.has(s));
       if(selectedComparison==='>')return stageOrder.slice(idx).some(s=>active.has(s)); return true; }
-    function populateStageFilter(){ const sel=document.getElementById('stage-filter'); if(!sel)return; const cur=sel.value; sel.innerHTML='<option value="">Todos os estágios</option>'+stageOrder.map(s=>`<option value="${s}">${stageLabels[s]}</option>`).join(''); if(includeCompleted)sel.innerHTML+=`<option value="tarefa_concluida">${stageLabels.tarefa_concluida}</option>`; if(cur&&sel.querySelector(`option[value="${cur}"]`))sel.value=cur; else if(cur==='tarefa_concluida'&&!includeCompleted){sel.value='';selectedStage='';} }
+    function populateStageFilter(){ const sel=document.getElementById('stage-filter'); if(!sel)return; const cur=sel.value; sel.innerHTML='<option value="">All stages</option>'+stageOrder.map(s=>`<option value="${s}">${stageLabels[s]}</option>`).join(''); if(includeCompleted)sel.innerHTML+=`<option value="tarefa_concluida">${stageLabels.tarefa_concluida}</option>`; if(cur&&sel.querySelector(`option[value="${cur}"]`))sel.value=cur; else if(cur==='tarefa_concluida'&&!includeCompleted){sel.value='';selectedStage='';} }
     function applySearchFilter(){ searchQuery=document.getElementById('project-search').value.trim().toLowerCase(); renderProjects(); }
     function applyStageFilter(){ const inc=document.getElementById('task-status-filter').value==='all'; if(inc!==includeCompleted){ includeCompleted=inc; populateStageFilter(); } selectedStage=document.getElementById('stage-filter').value; selectedComparison=document.getElementById('stage-comparison').value; includeCompleted=inc; updateFilterHint(); renderProjects(); }
-    function updateFilterHint(){ const hint=document.getElementById('filter-hint'), txt=document.getElementById('filter-hint-text'); if(!selectedStage){hint.style.display='none';return;} hint.style.display='block'; const sn=stageLabels[selectedStage]; const tt=includeCompleted?'tarefas (pendentes + concluídas)':'tarefas pendentes'; txt.textContent=selectedComparison==='='?`Mostrando projetos com ${tt} em "${sn}"`:(selectedComparison==='<'?`Mostrando projetos com ${tt} em "${sn}" ou estágios anteriores`:`Mostrando projetos com ${tt} em "${sn}" ou estágios posteriores`); }
+    function updateFilterHint(){ const hint=document.getElementById('filter-hint'), txt=document.getElementById('filter-hint-text'); if(!selectedStage){hint.style.display='none';return;} hint.style.display='block'; const sn=stageLabels[selectedStage]; const tt=includeCompleted?'tasks (pending + completed)':'pending tasks'; txt.textContent=selectedComparison==='='?`Showing projects with ${tt} at "${sn}"`:(selectedComparison==='<'?`Showing projects with ${tt} at "${sn}" or earlier stages`:`Showing projects with ${tt} at "${sn}" or later stages`); }
     function clearStageFilter(){ document.getElementById('stage-filter').value=''; document.getElementById('stage-comparison').value='='; document.getElementById('task-status-filter').value='pending'; selectedStage=''; selectedComparison='='; includeCompleted=false; document.getElementById('filter-hint').style.display='none'; renderProjects(); }
 
     /* ===================== INIT ===================== */
     document.addEventListener('DOMContentLoaded', async () => {
       let ctx; try { ctx = await WA.initAppPage('research'); } catch(e){ return; }
       WardApp.db = WA.client;
-      userData = { id: ctx.user.id, full_name: ctx.profile.full_name };
+      userData = { id: ctx.user.id, full_name: ctx.profile.full_name, specialty: (ctx.profile && ctx.profile.specialty) || '' };
 
       await loadAllUsers();
       await loadProjects();
+      await loadRecruitments();
 
       populateStageFilter();
       document.getElementById('stage-filter').addEventListener('change', applyStageFilter);
@@ -585,7 +678,29 @@
 
       const projectIdParam = new URLSearchParams(window.location.search).get('project');
       if (projectIdParam) { const pid = Number(projectIdParam); if (pid && allProjects.find(p=>p.id===pid)) viewProject(pid); }
+
+      wireModalDismissal();
     });
+
+    /* Close a modal when clicking the dark overlay (outside the dialog) or pressing Esc.
+       Uses the overlay itself as the click target so clicks inside the dialog don't close it. */
+    function dismissOverlay(ov){
+      if (!ov) return;
+      if (ov.id === 'view-project-modal') closeViewProjectModal();
+      else if (ov.id === 'calendar-modal') closeCalendarModal();
+      else closeModal(ov.id);
+    }
+    function wireModalDismissal(){
+      document.querySelectorAll('.modal-overlay').forEach(ov => {
+        ov.addEventListener('mousedown', e => { if (e.target === ov) { ov._downOnBackdrop = true; } else { ov._downOnBackdrop = false; } });
+        ov.addEventListener('click', e => { if (e.target === ov && ov._downOnBackdrop) dismissOverlay(ov); });
+      });
+      document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        const open = Array.from(document.querySelectorAll('.modal-overlay.active'));
+        if (open.length) dismissOverlay(open[open.length - 1]);
+      });
+    }
 
     async function loadAllUsers(){
       const { data } = await WardApp.db.from('profiles').select('id, full_name, specialty').order('full_name');
@@ -598,7 +713,7 @@
       const { data, error } = await WardApp.db.from('research_projects')
         .select(`*, tasks:research_tasks(*), creator:created_by(id, full_name)`)
         .order('created_at', { ascending:false });
-      if (error) { console.error(error); WardApp.showToast('Erro ao carregar projetos','error'); return; }
+      if (error) { console.error(error); WardApp.showToast('Failed to load projects','error'); return; }
       allProjects = data || [];
       updateStats(); renderProjects();
     }
@@ -615,19 +730,19 @@
       let projects=allProjects.slice();
       if(searchQuery){ const inDesc=document.getElementById('search-description').checked; projects=projects.filter(p=>(p.title||'').toLowerCase().includes(searchQuery)||(inDesc&&(p.description||'').toLowerCase().includes(searchQuery))); }
       if(selectedStage) projects=projects.filter(projectMatchesFilter);
-      if(projects.length===0){ const hasFilter=selectedStage||searchQuery; container.innerHTML=hasFilter?`<div class="card"><div class="card-body text-center p-4"><div class="empty-state"><div class="empty-state-icon">🔍</div><h3 class="empty-state-title">Nenhum projeto encontrado</h3><p class="text-muted">${searchQuery?'Nenhum projeto corresponde à busca.':'Nenhum projeto com tarefas pendentes no estágio filtrado.'}</p></div></div></div>`:''; noProjects.style.display=hasFilter?'none':'block'; return; }
+      if(projects.length===0){ const hasFilter=selectedStage||searchQuery; container.innerHTML=hasFilter?`<div class="card"><div class="card-body text-center p-4"><div class="empty-state"><div class="empty-state-icon">🔍</div><h3 class="empty-state-title">No projects found</h3><p class="text-muted">${searchQuery?'No projects match your search.':'No projects with pending tasks at the filtered stage.'}</p></div></div></div>`:''; noProjects.style.display=hasFilter?'none':'block'; return; }
       noProjects.style.display='none';
       const archived=projects.filter(isArchivedProject), visible=projects.filter(p=>!isArchivedProject(p));
       const active=visible.filter(p=>p.status!=='completed'), completed=visible.filter(p=>p.status==='completed');
       let html='';
-      if(selectedStage) html+=`<p style="margin-bottom:1rem; color:var(--gray-500); font-size:.9rem;">Encontrados ${visible.length} projeto${visible.length!==1?'s':''}${archived.length?` (+${archived.length} arquivado${archived.length!==1?'s':''})`:''}</p>`;
-      if(active.length){ html+=`<h3 class="projects-section-title"><span>🔬 Em Andamento</span><span class="projects-section-count">${active.length}</span></h3>`; html+=active.map(p=>renderProjectCard(p)).join(''); }
-      if(completed.length){ html+=`<h3 class="projects-section-title" style="margin-top:2rem;"><span>✅ Concluídos</span><span class="projects-section-count">${completed.length}</span></h3>`; html+=completed.map(p=>renderProjectCard(p)).join(''); }
-      if(archived.length){ html+=`<button type="button" class="archived-toggle" onclick="toggleArchivedProjects()"><span>📦 Projetos arquivados <span class="archived-count">${archived.length}</span></span><span class="archived-chevron">${showArchived?'▲ ocultar':'▼ ver'}</span></button>`; if(showArchived){ html+=`<div class="archived-list">`+archived.map(p=>renderProjectCard(p)).join('')+`</div>`; } }
+      if(selectedStage) html+=`<p style="margin-bottom:1rem; color:var(--gray-500); font-size:.9rem;">Found ${visible.length} project${visible.length!==1?'s':''}${archived.length?` (+${archived.length} archived)`:''}</p>`;
+      if(active.length){ html+=`<h3 class="projects-section-title"><span>🔬 In Progress</span><span class="projects-section-count">${active.length}</span></h3>`; html+=active.map(p=>renderProjectCard(p)).join(''); }
+      if(completed.length){ html+=`<h3 class="projects-section-title" style="margin-top:2rem;"><span>✅ Completed</span><span class="projects-section-count">${completed.length}</span></h3>`; html+=completed.map(p=>renderProjectCard(p)).join(''); }
+      if(archived.length){ html+=`<button type="button" class="archived-toggle" onclick="toggleArchivedProjects()"><span>📦 Archived projects <span class="archived-count">${archived.length}</span></span><span class="archived-chevron">${showArchived?'▲ hide':'▼ show'}</span></button>`; if(showArchived){ html+=`<div class="archived-list">`+archived.map(p=>renderProjectCard(p)).join('')+`</div>`; } }
       container.innerHTML=html;
     }
 
-    const TAG_CONFIG={ congresso:{label:'🎤 CONGRESSO',css:'tag-congresso'}, publicado:{label:'📄 PUBLICADO',css:'tag-publicado'}, submetido:{label:'📨 SUBMETIDO',css:'tag-submetido'}, revisao:{label:'🔄 EM REVISAO',css:'tag-revisao'}, arquivado:{label:'📦 ARQUIVADO',css:'tag-arquivado'} };
+    const TAG_CONFIG={ congresso:{label:'🎤 CONFERENCE',css:'tag-congresso'}, publicado:{label:'📄 PUBLISHED',css:'tag-publicado'}, submetido:{label:'📨 SUBMITTED',css:'tag-submetido'}, revisao:{label:'🔄 IN REVIEW',css:'tag-revisao'}, arquivado:{label:'📦 ARCHIVED',css:'tag-arquivado'} };
     function renderProjectTags(tags){ if(!Array.isArray(tags)||!tags.length)return ''; const b=tags.map(t=>{ const c=TAG_CONFIG[t]; return c?`<span class="project-tag ${c.css}">${c.label}</span>`:''; }).filter(Boolean).join(''); return b?`<div class="project-tags">${b}</div>`:''; }
     function toggleTagCheckbox(cb){ const l=cb.closest('.tag-checkbox-label'); const t=l.dataset.tag; l.classList.toggle('checked-'+t, cb.checked); }
     function getSelectedTags(){ return Array.from(document.querySelectorAll('#edit-project-tags input[type="checkbox"]')).filter(cb=>cb.checked).map(cb=>cb.value); }
@@ -637,8 +752,8 @@
       const tasks=project.tasks||[]; const done=tasks.filter(t=>t.stage==='tarefa_concluida').length; const progress=tasks.length?Math.round(done/tasks.length*100):0;
       const active=Array.from(getActiveStages(project)).sort((a,b)=>stageOrder.indexOf(a)-stageOrder.indexOf(b));
       let badges=''; if(active.length){ const show=active.slice(0,3); const rem=active.length-3; badges=`<div class="project-stages" style="display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.75rem;">${show.map(s=>`<span class="stage-badge">${stageLabels[s]||s}</span>`).join('')}${rem>0?`<span class="stage-badge-more">+${rem}</span>`:''}</div>`; }
-      let sc='status-active', st='🔄 Em andamento'; if(project.status==='completed'){ sc='status-completed'; st='✅ Concluído'; }
-      return `<div class="project-card" onclick="viewProject(${project.id})"><div class="project-header"><h3 class="project-title">${calEsc(project.title)}</h3><span class="project-status ${sc}">${st}</span></div>${project.description?`<div class="project-description">${formatDescription(project.description)}</div>`:''}<div class="progress-container"><div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div><span class="progress-text">${progress}%</span></div>${badges}<div class="project-footer"><div class="project-footer-left"><span>📋 ${tasks.length} tarefas</span><span>👥 ${project.participants?.length||0} participantes</span></div>${renderProjectTags(project.tags)}</div></div>`;
+      let sc='status-active', st='🔄 In progress'; if(project.status==='completed'){ sc='status-completed'; st='✅ Completed'; }
+      return `<div class="project-card" onclick="viewProject(${project.id})"><div class="project-header"><h3 class="project-title">${calEsc(project.title)}</h3><span class="project-status ${sc}">${st}</span></div>${project.description?`<div class="project-description">${formatDescription(project.description)}</div>`:''}<div class="progress-container"><div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div><span class="progress-text">${progress}%</span></div>${badges}<div class="project-footer"><div class="project-footer-left"><span>📋 ${tasks.length} tasks</span><span>👥 ${project.participants?.length||0} co-authors</span></div>${renderProjectTags(project.tags)}</div></div>`;
     }
 
     async function viewProject(projectId){
@@ -647,7 +762,7 @@
       document.getElementById('view-project-title').textContent=currentProject.title;
       document.getElementById('view-project-description').innerHTML=formatDescription(currentProject.description||'');
       document.getElementById('view-project-description').style.display='block'; document.getElementById('description-edit-area').style.display='none'; isEditingDescription=false;
-      let meta=''; if(currentProject.deadline)meta+=`<span class="project-meta-item">📅 Prazo: ${WardApp.formatDate(currentProject.deadline)}</span>`; if(currentProject.drive_link)meta+=`<a href="${calEsc(currentProject.drive_link)}" target="_blank" class="project-meta-item link">📁 Google Drive</a>`;
+      let meta=''; if(currentProject.deadline)meta+=`<span class="project-meta-item">📅 Deadline: ${WardApp.formatDate(currentProject.deadline)}</span>`; if(currentProject.drive_link)meta+=`<a href="${calEsc(currentProject.drive_link)}" target="_blank" class="project-meta-item link">📁 Google Drive</a>`;
       document.getElementById('project-meta').innerHTML=meta;
       const vt=document.getElementById('view-project-tags'); const tags=currentProject.tags||[]; if(tags.length){ vt.innerHTML=renderProjectTags(tags); vt.style.display='block'; } else { vt.innerHTML=''; vt.style.display='none'; }
       const tasks=currentProject.tasks||[]; const done=tasks.filter(t=>t.stage==='tarefa_concluida').length; const progress=tasks.length?Math.round(done/tasks.length*100):0;
@@ -658,6 +773,7 @@
       document.getElementById('edit-project-btn').style.display=canEdit?'inline-flex':'none';
       document.getElementById('manage-participants-btn').style.display=canEdit?'inline-flex':'none';
       document.getElementById('delete-project-btn').style.display=(currentProject.created_by===userData.id)?'inline-flex':'none';
+      document.getElementById('recruit-project-btn').style.display=(currentProject.created_by===userData.id)?'inline-flex':'none';
       openModal('view-project-modal');
     }
     function closeViewProjectModal(){ const url=new URL(window.location); url.searchParams.delete('project'); window.history.pushState({},'',url); closeModal('view-project-modal'); }
@@ -665,16 +781,16 @@
     window.addEventListener('popstate',()=>{ const pid=new URL(window.location).searchParams.get('project'); if(pid)viewProject(Number(pid)); else closeModal('view-project-modal'); });
 
     async function loadParticipants(){
-      const ids=currentProject.participants||[]; if(!ids.length){ document.getElementById('participants-list').innerHTML='<p class="text-muted">Nenhum participante</p>'; window.participantsCache=[]; return; }
+      const ids=currentProject.participants||[]; if(!ids.length){ document.getElementById('participants-list').innerHTML='<p class="text-muted">No participants</p>'; window.participantsCache=[]; return; }
       const { data }=await WardApp.db.from('profiles').select('id, full_name, specialty').in('id',ids);
       window.participantsCache=data||[]; const sorted=sortUsersByName((data||[]).slice());
-      document.getElementById('participants-list').innerHTML=sorted.map(p=>`<div class="participant-chip"><span class="participant-avatar">👤</span><span>${calEsc(_dn(p.full_name)||'Membro')}</span></div>`).join('');
+      document.getElementById('participants-list').innerHTML=sorted.map(p=>`<div class="participant-chip"><span class="participant-avatar">👤</span><span>${calEsc(_dn(p.full_name)||'Member')}</span></div>`).join('');
     }
 
     function renderTasks(tasks){
       const container=document.getElementById('tasks-list'), countLabel=document.getElementById('tasks-count-label');
-      if(!tasks||!tasks.length){ container.innerHTML=`<div style="text-align:center; padding:2rem; color:#94a3b8;"><div style="font-size:3rem; margin-bottom:.5rem;">📋</div><p style="margin:0;">Nenhuma tarefa ainda</p></div>`; if(countLabel)countLabel.textContent='Nenhuma tarefa'; return; }
-      const done=tasks.filter(t=>t.stage==='tarefa_concluida').length; const pend=tasks.length-done; if(countLabel)countLabel.textContent=`${done}/${tasks.length} concluídas • ${pend} pendente${pend!==1?'s':''}`;
+      if(!tasks||!tasks.length){ container.innerHTML=`<div style="text-align:center; padding:2rem; color:#94a3b8;"><div style="font-size:3rem; margin-bottom:.5rem;">📋</div><p style="margin:0;">No tasks yet</p></div>`; if(countLabel)countLabel.textContent='No tasks'; return; }
+      const done=tasks.filter(t=>t.stage==='tarefa_concluida').length; const pend=tasks.length-done; if(countLabel)countLabel.textContent=`${done}/${tasks.length} completed \u2022 ${pend} pending`;
       const order=Object.keys(stageLabels);
       tasks=tasks.slice().sort((a,b)=>{ if(a.stage==='tarefa_concluida'&&b.stage!=='tarefa_concluida')return 1; if(b.stage==='tarefa_concluida'&&a.stage!=='tarefa_concluida')return -1; return order.indexOf(a.stage)-order.indexOf(b.stage); });
       const canEdit=canEditProject(currentProject);
@@ -684,7 +800,7 @@
         let assigneeName='',assigneeInitials='';
         if(task.assigned_to&&window.participantsCache){ const a=window.participantsCache.find(p=>p.id===task.assigned_to); if(a){ assigneeName=_dn(a.full_name)||''; assigneeInitials=assigneeName.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase(); } }
         let isOverdue=false, dinfo='';
-        if(task.deadline&&!isCompleted){ const diff=calDiffDays(task.deadline,todayKey); isOverdue=diff<0; if(diff<0)dinfo=`${Math.abs(diff)} dia${Math.abs(diff)>1?'s':''} atrasado`; else if(diff===0)dinfo='Hoje!'; else if(diff===1)dinfo='Amanhã'; else if(diff<=7)dinfo=`${diff} dias`; }
+        if(task.deadline&&!isCompleted){ const diff=calDiffDays(task.deadline,todayKey); isOverdue=diff<0; if(diff<0)dinfo=`${Math.abs(diff)} day${Math.abs(diff)>1?'s':''} overdue`; else if(diff===0)dinfo='Today!'; else if(diff===1)dinfo='Tomorrow'; else if(diff<=7)dinfo=`${diff} days`; }
         const clickAttr = canEdit ? `onclick="editTask(${task.id})"` : '';
         return `<div class="task-item ${isCompleted?'completed':''} ${isOverdue?'overdue':''}" ${clickAttr}><div class="task-checkbox"><input type="checkbox" ${isCompleted?'checked':''} ${canEdit?'':'disabled'} onclick="event.stopPropagation(); toggleTaskComplete(${task.id}, this.checked)"></div><div class="task-info"><div class="task-title">${calEsc(task.title)}</div><div class="task-meta"><span class="task-stage">${stageLabels[task.stage]||task.stage}</span>${assigneeName?`<span class="task-assignee"><span class="task-assignee-avatar">${calEsc(assigneeInitials)}</span>${calEsc(assigneeName)}</span>`:''}${task.deadline?`<span class="task-deadline ${isOverdue?'text-danger':''}">📅 ${WardApp.formatDate(task.deadline)}${dinfo?` <span style="opacity:.8;">(${dinfo})</span>`:''}</span>`:''}</div></div></div>`;
       }).join('');
@@ -700,7 +816,7 @@
 
     function participantOptionsHtml(selectedId){
       const ids=currentProject.participants||[]; const members=sortUsersByName(allUsers.filter(u=>ids.includes(u.id)));
-      let html='<option value="">Nenhum</option>'; html+=members.map(u=>`<option value="${u.id}" ${String(selectedId)===String(u.id)?'selected':''}>${calEsc(_dn(u.full_name)||'Membro')}</option>`).join(''); return html;
+      let html='<option value="">None</option>'; html+=members.map(u=>`<option value="${u.id}" ${String(selectedId)===String(u.id)?'selected':''}>${calEsc(_dn(u.full_name)||'Member')}</option>`).join(''); return html;
     }
     function openAddTaskModal(){
       document.getElementById('task-project-id').value=currentProject.id;
@@ -710,10 +826,10 @@
     }
     async function createTask(){
       const projectId=document.getElementById('task-project-id').value; const title=document.getElementById('task-title').value.trim();
-      if(!title){ WardApp.showToast('Preencha o título da tarefa','warning'); return; }
+      if(!title){ WardApp.showToast('Enter the task title','warning'); return; }
       const { error }=await WardApp.db.from('research_tasks').insert({ project_id:Number(projectId), title, stage:document.getElementById('task-stage').value, assigned_to:document.getElementById('task-assignee').value||null, deadline:document.getElementById('task-deadline').value||null });
-      if(error){ WardApp.showToast('Erro ao criar tarefa','error'); return; }
-      closeModal('add-task-modal'); WardApp.showToast('Tarefa criada!'); await loadProjects(); currentProject=allProjects.find(p=>p.id==projectId); viewProject(currentProject.id);
+      if(error){ WardApp.showToast('Failed to create task','error'); return; }
+      closeModal('add-task-modal'); WardApp.showToast('Task created!'); await loadProjects(); currentProject=allProjects.find(p=>p.id==projectId); viewProject(currentProject.id);
     }
     function editTask(taskId){
       if(!canEditProject(currentProject))return; const task=currentProject.tasks.find(t=>t.id===taskId); if(!task)return;
@@ -724,30 +840,36 @@
     }
     async function updateTask(){
       const id=document.getElementById('edit-task-id').value; const title=document.getElementById('edit-task-title').value.trim();
-      if(!title){ WardApp.showToast('Preencha o título','warning'); return; }
+      if(!title){ WardApp.showToast('Enter the title','warning'); return; }
       const { error }=await WardApp.db.from('research_tasks').update({ title, stage:document.getElementById('edit-task-stage').value, assigned_to:document.getElementById('edit-task-assignee').value||null, deadline:document.getElementById('edit-task-deadline').value||null, updated_at:new Date().toISOString() }).eq('id',id);
-      if(error){ WardApp.showToast('Erro ao atualizar tarefa','error'); return; }
-      closeModal('edit-task-modal'); WardApp.showToast('Tarefa atualizada!'); await loadProjects(); currentProject=allProjects.find(p=>p.id===currentProject.id); viewProject(currentProject.id);
+      if(error){ WardApp.showToast('Failed to update task','error'); return; }
+      closeModal('edit-task-modal'); WardApp.showToast('Task updated!'); await loadProjects(); currentProject=allProjects.find(p=>p.id===currentProject.id); viewProject(currentProject.id);
     }
     async function deleteTask(){
-      if(!confirm('Excluir esta tarefa?'))return; const id=document.getElementById('edit-task-id').value;
-      const { error }=await WardApp.db.from('research_tasks').delete().eq('id',id); if(error){ WardApp.showToast('Erro ao excluir','error'); return; }
-      closeModal('edit-task-modal'); WardApp.showToast('Tarefa excluída'); await loadProjects(); currentProject=allProjects.find(p=>p.id===currentProject.id); viewProject(currentProject.id);
+      if(!confirm('Delete this task?'))return; const id=document.getElementById('edit-task-id').value;
+      const { error }=await WardApp.db.from('research_tasks').delete().eq('id',id); if(error){ WardApp.showToast('Failed to delete','error'); return; }
+      closeModal('edit-task-modal'); WardApp.showToast('Task deleted'); await loadProjects(); currentProject=allProjects.find(p=>p.id===currentProject.id); viewProject(currentProject.id);
     }
 
     async function createProject(){
       const type=document.getElementById('project-type').value; const title=document.getElementById('project-title').value.trim();
       const description=document.getElementById('project-description').value.trim(); const deadline=document.getElementById('project-deadline').value||null;
       let driveLink=document.getElementById('project-drive-link').value.trim()||null; const participants=getSelectedAuthorIds('project-participants-list'); const createDrive=document.getElementById('create-drive-folder').checked;
-      if(!title){ WardApp.showToast('Preencha os campos para gerar o título','warning'); return; }
+      if(!title){ WardApp.showToast('Fill in the fields to generate the title','warning'); return; }
       WardApp.showLoading();
       let folderStructure=null;
-      if(createDrive){ try { folderStructure=await createProjectDriveFolder(title); driveLink=folderStructure.mainFolderUrl; } catch(e){ WardApp.showToast('Erro ao criar pastas no Drive. Continuando sem integração.','warning'); } }
+      if(createDrive){ try { folderStructure=await createProjectDriveFolder(title); driveLink=folderStructure.mainFolderUrl; } catch(e){ WardApp.showToast('Failed to create Drive folders. Continuing without integration.','warning'); } }
       let finalParticipants=participants.slice(); if(!finalParticipants.includes(userData.id))finalParticipants.push(userData.id);
       const { data:project, error }=await WardApp.db.from('research_projects').insert({ title, description, project_type:type, deadline, drive_link:driveLink, participants:finalParticipants, status:'active', created_by:userData.id }).select().single();
-      if(error){ WardApp.hideLoading(); console.error(error); WardApp.showToast('Erro ao criar projeto','error'); return; }
+      if(error){ WardApp.hideLoading(); console.error(error); WardApp.showToast('Failed to create project','error'); return; }
       if(folderStructure){ try { await saveFolderStructure(project.id, folderStructure); } catch(e){ console.error(e); } }
-      WardApp.hideLoading(); closeModal('new-project-modal'); WardApp.showToast('Projeto criado!'); await loadProjects();
+      if(document.getElementById('create-recruit').checked){
+        const spec=document.getElementById('create-recruit-specialty').value.trim()||userData.specialty||'';
+        const help=document.getElementById('create-recruit-help').value.trim()||null;
+        if(spec){ try { await WardApp.db.from('research_recruitments').insert({ project_id:project.id, created_by:userData.id, specialty:spec, help_area:help, status:'open' }); } catch(e){ console.error(e); WardApp.showToast('Project created, but the co-author call could not be posted.','warning'); } }
+        else { WardApp.showToast('Project created. Add your specialty to post a co-author call.','info'); }
+      }
+      WardApp.hideLoading(); closeModal('new-project-modal'); WardApp.showToast('Project created!'); await loadProjects(); await loadRecruitments();
     }
 
     function updateTitleFields(){
@@ -781,10 +903,10 @@
     function cancelDescriptionEdit(){ document.getElementById('description-edit-area').style.display='none'; document.getElementById('view-project-description').style.display='block'; isEditingDescription=false; }
     async function saveInlineDescription(){
       if(!currentProject)return; const editor=document.getElementById('inline-description-editor'); const newDesc=formatDescription(editor.innerHTML);
-      const btn=document.querySelector('.btn-save-desc'); const orig=btn.innerHTML; btn.innerHTML='⏳ Salvando...'; btn.disabled=true;
+      const btn=document.querySelector('.btn-save-desc'); const orig=btn.innerHTML; btn.innerHTML='⏳ Saving...'; btn.disabled=true;
       try { const { error }=await WardApp.db.from('research_projects').update({ description:newDesc, updated_at:new Date().toISOString() }).eq('id',currentProject.id); if(error)throw error;
-        currentProject.description=newDesc; document.getElementById('view-project-description').innerHTML=formatDescription(newDesc); cancelDescriptionEdit(); loadProjects(); WardApp.showToast('Descrição salva!','success');
-      } catch(err){ console.error(err); WardApp.showToast('Erro ao salvar descrição','error'); } finally { btn.innerHTML=orig; btn.disabled=false; }
+        currentProject.description=newDesc; document.getElementById('view-project-description').innerHTML=formatDescription(newDesc); cancelDescriptionEdit(); loadProjects(); WardApp.showToast('Description saved!','success');
+      } catch(err){ console.error(err); WardApp.showToast('Failed to save description','error'); } finally { btn.innerHTML=orig; btn.disabled=false; }
     }
 
     async function openEditProjectModal(){
@@ -813,20 +935,20 @@
       const deadline=document.getElementById('edit-project-deadline').value||null; const driveLink=document.getElementById('edit-project-link').value.trim()||null;
       let title=''; if(projectType==='single-arm'){ title=document.getElementById('edit-project-single-title').value.trim(); }
       else { const i=document.getElementById('edit-project-intervention').value.trim(), c=document.getElementById('edit-project-comparison').value.trim(), o=document.getElementById('edit-project-outcome').value.trim(); title=(i&&c&&o)?`${i} VS ${c} FOR ${o}`.toUpperCase():(i||''); }
-      if(!title){ WardApp.showToast('Preencha o título do projeto','warning'); return; }
+      if(!title){ WardApp.showToast('Enter the project title','warning'); return; }
       const { error }=await WardApp.db.from('research_projects').update({ title, description, project_type:projectType, status, deadline, drive_link:driveLink, tags:getSelectedTags(), updated_at:new Date().toISOString() }).eq('id',projectId);
-      if(error){ console.error(error); WardApp.showToast('Erro ao atualizar projeto','error'); return; }
-      closeModal('edit-project-modal'); closeModal('view-project-modal'); WardApp.showToast('Projeto atualizado!'); await loadProjects();
+      if(error){ console.error(error); WardApp.showToast('Failed to update project','error'); return; }
+      closeModal('edit-project-modal'); closeModal('view-project-modal'); WardApp.showToast('Project updated!'); await loadProjects();
     }
 
     async function deleteProject(){
       if(!currentProject)return;
-      if(currentProject.created_by!==userData.id){ WardApp.showToast('Apenas quem criou o projeto pode excluí-lo','error'); return; }
-      const conf=prompt(`Para excluir "${currentProject.title}", digite "excluir":\n\n⚠️ Esta ação não pode ser desfeita!`);
-      if(conf===null)return; if(conf.toLowerCase().trim()!=='excluir'){ WardApp.showToast('Confirmação incorreta. Projeto NÃO excluído.','warning'); return; }
+      if(currentProject.created_by!==userData.id){ WardApp.showToast('Only the project creator can delete it','error'); return; }
+      const conf=prompt(`To delete "${currentProject.title}", type "delete":\n\n⚠️ This action cannot be undone!`);
+      if(conf===null)return; if(conf.toLowerCase().trim()!=='delete'){ WardApp.showToast('Incorrect confirmation. Project NOT deleted.','warning'); return; }
       const { error }=await WardApp.db.from('research_projects').delete().eq('id',currentProject.id);
-      if(error){ console.error(error); WardApp.showToast('Erro ao excluir projeto: '+(error.message||''),'error'); return; }
-      closeModal('view-project-modal'); WardApp.showToast('Projeto excluído!'); currentProject=null;
+      if(error){ console.error(error); WardApp.showToast('Failed to delete project: '+(error.message||''),'error'); return; }
+      closeModal('view-project-modal'); WardApp.showToast('Project deleted!'); currentProject=null;
       const url=new URL(window.location); url.searchParams.delete('project'); window.history.pushState({},'',url); await loadProjects();
     }
 
@@ -837,32 +959,201 @@
       renderCurrentParticipants(); openModal('manage-participants-modal');
     }
     async function renderCurrentParticipants(){
-      const ids=currentProject.participants||[]; if(!ids.length){ document.getElementById('current-participants-list').innerHTML='<p class="text-muted">Nenhum participante</p>'; return; }
+      const ids=currentProject.participants||[]; if(!ids.length){ document.getElementById('current-participants-list').innerHTML='<p class="text-muted">No participants</p>'; return; }
       const { data }=await WardApp.db.from('profiles').select('id, full_name').in('id',ids); const sorted=sortUsersByName((data||[]).slice());
-      document.getElementById('current-participants-list').innerHTML=sorted.map(p=>`<div class="participant-manage-item d-flex justify-between align-center mb-2 p-2" style="background:var(--gray-50); border-radius:10px;"><div class="d-flex align-center gap-2"><span>👤</span><span>${calEsc(_dn(p.full_name)||'Membro')}</span></div><button class="btn btn-sm btn-danger" onclick="removeParticipant('${p.id}')">✕</button></div>`).join('');
+      document.getElementById('current-participants-list').innerHTML=sorted.map(p=>`<div class="participant-manage-item d-flex justify-between align-center mb-2 p-2" style="background:var(--gray-50); border-radius:10px;"><div class="d-flex align-center gap-2"><span>👤</span><span>${calEsc(_dn(p.full_name)||'Member')}</span></div><button class="btn btn-sm btn-danger" onclick="removeParticipant('${p.id}')">✕</button></div>`).join('');
     }
     async function addParticipant(){
-      const toAdd=getSelectedAuthorIds('add-participant-list'); if(!toAdd.length){ WardApp.showToast('Selecione ao menos um membro','warning'); return; }
+      const toAdd=getSelectedAuthorIds('add-participant-list'); if(!toAdd.length){ WardApp.showToast('Select at least one member','warning'); return; }
       const participants=[...new Set([...(currentProject.participants||[]), ...toAdd])];
       const { error }=await WardApp.db.from('research_projects').update({ participants, updated_at:new Date().toISOString() }).eq('id',currentProject.id);
-      if(error){ WardApp.showToast('Erro ao adicionar participante','error'); return; }
-      currentProject.participants=participants; WardApp.showToast(toAdd.length>1?`${toAdd.length} participantes adicionados!`:'Participante adicionado!'); openManageParticipantsModal(); loadParticipants();
+      if(error){ WardApp.showToast('Failed to add participant','error'); return; }
+      currentProject.participants=participants; WardApp.showToast(toAdd.length>1?`${toAdd.length} participants added!`:'Participant added!'); openManageParticipantsModal(); loadParticipants();
     }
     async function removeParticipant(userId){
-      if(!confirm('Remover este participante?'))return; const participants=(currentProject.participants||[]).filter(id=>id!==userId);
+      if(!confirm('Remove this participant?'))return; const participants=(currentProject.participants||[]).filter(id=>id!==userId);
       const { error }=await WardApp.db.from('research_projects').update({ participants, updated_at:new Date().toISOString() }).eq('id',currentProject.id);
-      if(error){ WardApp.showToast('Erro ao remover participante','error'); return; }
-      currentProject.participants=participants; WardApp.showToast('Participante removido!'); openManageParticipantsModal(); loadParticipants();
+      if(error){ WardApp.showToast('Failed to remove participant','error'); return; }
+      currentProject.participants=participants; WardApp.showToast('Participant removed!'); openManageParticipantsModal(); loadParticipants();
     }
 
     function openModal(id){ document.getElementById(id).classList.add('active'); }
     function closeModal(id){ document.getElementById(id).classList.remove('active'); }
-    function toggleDriveLinkField(){ const chk=document.getElementById('create-drive-folder'), inp=document.getElementById('project-drive-link'); if(chk.checked){ inp.disabled=true; inp.style.opacity='.5'; inp.value=''; } else { inp.disabled=false; inp.style.opacity='1'; } }
+
+    /* ===================== CO-AUTHOR RECRUITMENT ===================== */
+    let allRecruitments=[], allApplications=[], myApplications={}, showHiddenPositions=false;
+    const HIDDEN_KEY='wa_research_hidden_positions';
+    function getHiddenPositions(){ try { return JSON.parse(localStorage.getItem(HIDDEN_KEY)||'[]')||[]; } catch(e){ return []; } }
+    function setHiddenPositions(a){ try { localStorage.setItem(HIDDEN_KEY, JSON.stringify(a)); } catch(e){} }
+    function hidePosition(id){ const h=getHiddenPositions(); if(!h.includes(id)){ h.push(id); setHiddenPositions(h); } renderPositions(); }
+    function unhidePosition(id){ setHiddenPositions(getHiddenPositions().filter(x=>x!==id)); renderPositions(); }
+    function toggleHiddenPositions(){ showHiddenPositions=!showHiddenPositions; renderPositions(); }
+    function wordCount(s){ return ((s||'').trim().match(/\S+/g)||[]).length; }
+    function toggleRecruitFields(){
+      const chk=document.getElementById('create-recruit'); const f=document.getElementById('create-recruit-fields'); if(f)f.style.display=chk.checked?'block':'none';
+      if(chk.checked){ const sp=document.getElementById('create-recruit-specialty'); if(sp && !sp.value) sp.value=userData.specialty||''; }
+    }
+
+    async function loadRecruitments(){
+      try {
+        const { data:recs, error:re }=await WardApp.db.from('research_recruitments')
+          .select('*, owner:created_by(id, full_name, specialty)').eq('status','open').order('created_at',{ ascending:false });
+        if(re) throw re;
+        allRecruitments=recs||[];
+        const { data:apps }=await WardApp.db.from('research_applications').select('*, applicant:applicant_id(id, full_name, specialty)');
+        allApplications=apps||[];
+        myApplications={}; allApplications.forEach(a=>{ if(a.applicant_id===userData.id) myApplications[a.recruitment_id]=a; });
+        renderPositions();
+      } catch(e){
+        console.warn('Recruitment tables unavailable (run schema.sql section 9):', e.message||e);
+        const sec=document.getElementById('positions-section'); if(sec)sec.style.display='none';
+      }
+    }
+
+    function renderPositions(){
+      const section=document.getElementById('positions-section'), container=document.getElementById('positions-container'), toggleBtn=document.getElementById('toggle-hidden-positions');
+      const recs=allRecruitments.slice();
+      if(!recs.length){ section.style.display='none'; return; }
+      section.style.display='block';
+      const hidden=getHiddenPositions();
+      const hiddenCount=recs.filter(r=> r.created_by!==userData.id && hidden.includes(r.id)).length;
+      const toShow=showHiddenPositions ? recs : recs.filter(r=> r.created_by===userData.id || !hidden.includes(r.id));
+      if(hiddenCount>0){ toggleBtn.style.display='inline-flex'; toggleBtn.textContent=showHiddenPositions?`Hide hidden (${hiddenCount})`:`Show hidden (${hiddenCount})`; }
+      else { toggleBtn.style.display='none'; }
+      container.innerHTML = toShow.length ? toShow.map(r=>renderPositionCard(r, hidden.includes(r.id))).join('') : '<p class="text-muted" style="font-size:.85rem;">No open positions right now.</p>';
+    }
+    function renderPositionCard(r, isHidden){
+      const owner=r.owner||{}; const name=_dn(owner.full_name)||'Member';
+      const mine=r.created_by===userData.id; const app=myApplications[r.id]; let actions='';
+      if(mine){ const n=allApplications.filter(a=>a.recruitment_id===r.id).length;
+        actions=`<button class="btn btn-primary btn-sm" onclick="openApplicationsModal(${r.id})">📨 Applications (${n})</button><button class="btn btn-secondary btn-sm" onclick="closeRecruitment(${r.id})">Close position</button>`;
+      } else if(app){
+        actions = app.status==='accepted' ? '<span class="pos-status accepted">✓ Accepted — you\'re a co-author</span>'
+          : (app.status==='rejected' ? '<span class="pos-status rejected">Not selected</span>' : '<span class="pos-status pending">⏳ Application sent</span>');
+      } else {
+        actions=`<button class="btn btn-primary btn-sm" onclick="openApplyModal(${r.id})">✋ Apply to join</button>`
+          + (isHidden ? `<button class="btn btn-secondary btn-sm" onclick="unhidePosition(${r.id})">Unhide</button>` : `<button class="btn btn-secondary btn-sm" onclick="hidePosition(${r.id})">Hide</button>`);
+      }
+      return `<div class="position-card${mine?' mine':''}">
+        <div class="position-head"><span class="position-avatar">${calEsc(authorInitials(name))}</span><div class="position-who"><div class="position-name">${calEsc(name)}${mine?' <span class="pos-you">you</span>':''}</div><div class="position-spec">${calEsc(r.specialty||'')}</div></div></div>
+        ${r.help_area?`<div class="position-help"><strong>Needs help with:</strong> ${calEsc(r.help_area)}</div>`:''}
+        <div class="position-actions">${actions}</div>
+      </div>`;
+    }
+
+    /* ---- owner: create / close a position for the current project ---- */
+    function openRecruitModal(){
+      if(!currentProject)return;
+      const existing=allRecruitments.find(r=>r.project_id===currentProject.id && r.created_by===userData.id);
+      const form=document.getElementById('recruit-form'), ex=document.getElementById('recruit-existing'), submitBtn=document.getElementById('recruit-submit-btn');
+      if(existing){
+        const n=allApplications.filter(a=>a.recruitment_id===existing.id).length;
+        ex.style.display='block'; form.style.display='none'; submitBtn.style.display='none';
+        ex.innerHTML=`<div class="form-note-warn" style="background:#eef2ff; border-color:#c7d2fe; color:#3730a3;">This project already has an open position — <strong>${calEsc(existing.specialty)}</strong>${existing.help_area?' · '+calEsc(existing.help_area):''}. <strong>${n}</strong> application${n===1?'':'s'}.<div style="margin-top:.7rem; display:flex; gap:.5rem; flex-wrap:wrap;"><button class="btn btn-primary btn-sm" onclick="closeModal('recruit-modal'); openApplicationsModal(${existing.id})">📨 View applications</button><button class="btn btn-secondary btn-sm" onclick="closeRecruitment(${existing.id})">Close position</button></div></div>`;
+      } else {
+        ex.style.display='none'; form.style.display='block'; submitBtn.style.display='inline-flex';
+        document.getElementById('recruit-specialty').value=userData.specialty||''; document.getElementById('recruit-help').value='';
+      }
+      openModal('recruit-modal');
+    }
+    async function submitRecruitment(){
+      if(!currentProject)return;
+      const specialty=document.getElementById('recruit-specialty').value.trim(); const help=document.getElementById('recruit-help').value.trim();
+      if(!specialty){ WardApp.showToast('Enter your specialty','warning'); return; }
+      WardApp.showLoading();
+      const { error }=await WardApp.db.from('research_recruitments').insert({ project_id:currentProject.id, created_by:userData.id, specialty, help_area:help||null, status:'open' });
+      WardApp.hideLoading();
+      if(error){ console.error(error); WardApp.showToast('Failed to post position','error'); return; }
+      closeModal('recruit-modal'); WardApp.showToast('Position posted!','success'); await loadRecruitments();
+    }
+    async function closeRecruitment(recId){
+      if(!confirm('Close this position? It will be removed from the board.'))return;
+      WardApp.showLoading();
+      const { error }=await WardApp.db.from('research_recruitments').update({ status:'closed', updated_at:new Date().toISOString() }).eq('id',recId);
+      WardApp.hideLoading();
+      if(error){ WardApp.showToast('Failed to close position','error'); return; }
+      closeModal('recruit-modal'); closeModal('applications-modal'); WardApp.showToast('Position closed'); await loadRecruitments();
+    }
+
+    /* ---- applicant: apply to a position ---- */
+    function openApplyModal(recId){
+      const r=allRecruitments.find(x=>x.id===recId); if(!r)return;
+      document.getElementById('apply-recruitment-id').value=recId;
+      const owner=r.owner||{}; const name=_dn(owner.full_name)||'Member';
+      document.getElementById('apply-summary').innerHTML=`<div class="position-head"><span class="position-avatar">${calEsc(authorInitials(name))}</span><div class="position-who"><div class="position-name">${calEsc(name)}</div><div class="position-spec">${calEsc(r.specialty||'')}${r.help_area?' · '+calEsc(r.help_area):''}</div></div></div>`;
+      document.getElementById('apply-whatsapp').value=''; document.getElementById('apply-pitch').value=''; updatePitchCount();
+      openModal('apply-modal');
+    }
+    function updatePitchCount(){ const n=wordCount(document.getElementById('apply-pitch').value); const el=document.getElementById('pitch-count'); if(el){ el.textContent=n; el.style.color=n>100?'#dc2626':''; } }
+    async function submitApplication(){
+      const recId=Number(document.getElementById('apply-recruitment-id').value);
+      const whatsapp=document.getElementById('apply-whatsapp').value.trim(); const pitch=document.getElementById('apply-pitch').value.trim();
+      if(!whatsapp){ WardApp.showToast('Enter your WhatsApp number','warning'); return; }
+      if(wordCount(pitch)>100){ WardApp.showToast('Please keep your note under 100 words','warning'); return; }
+      const r=allRecruitments.find(x=>x.id===recId); if(!r)return;
+      WardApp.showLoading();
+      const { error }=await WardApp.db.from('research_applications').insert({ recruitment_id:recId, project_id:r.project_id, applicant_id:userData.id, whatsapp, pitch:pitch||null, status:'pending' });
+      WardApp.hideLoading();
+      if(error){ if(error.code==='23505'||/duplicate/i.test(error.message||'')){ WardApp.showToast('You already applied to this position','info'); closeModal('apply-modal'); } else { console.error(error); WardApp.showToast('Failed to send application','error'); } return; }
+      closeModal('apply-modal'); WardApp.showToast('Application sent!','success'); await loadRecruitments();
+    }
+
+    /* ---- owner: review applications, accept -> add as co-author ---- */
+    function openApplicationsModal(recId){
+      const apps=allApplications.filter(a=>a.recruitment_id===recId);
+      document.getElementById('applications-list').innerHTML = apps.length ? apps.map(renderApplicationItem).join('') : '<p class="text-muted">No applications yet.</p>';
+      openModal('applications-modal');
+    }
+    function renderApplicationItem(a){
+      const ap=a.applicant||{}; const name=_dn(ap.full_name)||'Member';
+      const wa=a.whatsapp?String(a.whatsapp):''; const waDigits=wa.replace(/[^0-9]/g,'');
+      const statusBadge = a.status==='accepted'?'<span class="pos-status accepted">✓ Accepted</span>':(a.status==='rejected'?'<span class="pos-status rejected">Rejected</span>':'<span class="pos-status pending">Pending</span>');
+      let btns='';
+      if(a.status==='pending'){ btns=`<button class="btn btn-primary btn-sm" onclick="acceptApplication(${a.id})">✓ Accept as co-author</button><button class="btn btn-danger btn-sm" onclick="rejectApplication(${a.id})">Reject</button>`; }
+      else if(a.status==='rejected'){ btns=`<button class="btn btn-primary btn-sm" onclick="acceptApplication(${a.id})">✓ Accept anyway</button>`; }
+      return `<div class="application-item">
+        <div class="d-flex justify-between align-center flex-wrap gap-2"><div class="d-flex align-center gap-2"><span class="position-avatar">${calEsc(authorInitials(name))}</span><div><div class="position-name">${calEsc(name)}</div>${ap.specialty?`<div class="position-spec">${calEsc(ap.specialty)}</div>`:''}</div></div>${statusBadge}</div>
+        ${a.pitch?`<div class="application-pitch">${calEsc(a.pitch)}</div>`:''}
+        <div class="application-meta">${wa?`📱 ${calEsc(wa)}${waDigits?` &nbsp;<a href="https://wa.me/${waDigits}" target="_blank" rel="noopener noreferrer" class="wa-link">Open WhatsApp ↗</a>`:''}`:'<span class="text-muted">No WhatsApp provided</span>'}</div>
+        <div class="application-actions">${btns}</div>
+      </div>`;
+    }
+    async function acceptApplication(appId){
+      const a=allApplications.find(x=>x.id===appId); if(!a)return;
+      if(!confirm('Accept this member as a co-author? They will get full access to the project.'))return;
+      WardApp.showLoading();
+      try {
+        const proj=allProjects.find(p=>p.id===a.project_id);
+        let participants;
+        if(proj){ participants=[...new Set([...(proj.participants||[]), a.applicant_id])]; }
+        else { const { data:pr }=await WardApp.db.from('research_projects').select('participants').eq('id',a.project_id).single(); participants=[...new Set([...((pr&&pr.participants)||[]), a.applicant_id])]; }
+        const { error:pe }=await WardApp.db.from('research_projects').update({ participants, updated_at:new Date().toISOString() }).eq('id',a.project_id); if(pe)throw pe;
+        const { error:ae }=await WardApp.db.from('research_applications').update({ status:'accepted', updated_at:new Date().toISOString() }).eq('id',appId); if(ae)throw ae;
+        WardApp.showToast('Accepted! Added as co-author.','success');
+        await loadProjects(); await loadRecruitments(); openApplicationsModal(a.recruitment_id);
+      } catch(e){ console.error(e); WardApp.showToast('Failed to accept application','error'); } finally { WardApp.hideLoading(); }
+    }
+    async function rejectApplication(appId){
+      const a=allApplications.find(x=>x.id===appId); if(!a)return;
+      if(!confirm('Reject this application?'))return;
+      WardApp.showLoading();
+      const { error }=await WardApp.db.from('research_applications').update({ status:'rejected', updated_at:new Date().toISOString() }).eq('id',appId);
+      WardApp.hideLoading();
+      if(error){ WardApp.showToast('Failed to reject','error'); return; }
+      WardApp.showToast('Application rejected'); await loadRecruitments(); openApplicationsModal(a.recruitment_id);
+    }
+    function toggleDriveLinkField(){
+      const chk=document.getElementById('create-drive-folder');
+      const grp=document.getElementById('drive-link-group');
+      const note=document.getElementById('drive-off-note');
+      if(chk.checked){ if(grp)grp.style.display='none'; if(note)note.style.display='none'; const inp=document.getElementById('project-drive-link'); if(inp)inp.value=''; }
+      else { if(grp)grp.style.display='block'; if(note)note.style.display='block'; }
+    }
 
     /* ===================== GOOGLE DRIVE ===================== */
     async function createProjectDriveFolder(projectTitle){
       const r=await fetch(GOOGLE_APPS_SCRIPT_URL,{ method:'POST', body:JSON.stringify({ action:'createProjectFolder', projectTitle }) });
-      if(!r.ok)throw new Error('HTTP '+r.status); const d=await r.json(); if(!d.success)throw new Error(d.error||'Erro ao criar pasta'); return d.folderStructure;
+      if(!r.ok)throw new Error('HTTP '+r.status); const d=await r.json(); if(!d.success)throw new Error(d.error||'Failed to create folder'); return d.folderStructure;
     }
     function flattenFolderStructure(projectId, fs){
       const recs=[{ project_id:projectId, folder_name:fs.mainFolderName, folder_id:fs.mainFolderId, parent_folder_name:null, folder_url:fs.mainFolderUrl }];
@@ -872,23 +1163,23 @@
     async function saveFolderStructure(projectId, fs){ const { error }=await WardApp.db.from('research_project_folders').insert(flattenFolderStructure(projectId,fs)); if(error)throw error; }
 
     async function createDriveFolderFromEdit(){
-      if(!currentProject)return; const btn=document.getElementById('edit-create-drive-btn'); const orig=btn.textContent; btn.disabled=true; btn.textContent='Criando...';
+      if(!currentProject)return; const btn=document.getElementById('edit-create-drive-btn'); const orig=btn.textContent; btn.disabled=true; btn.textContent='Creating...';
       try { const fs=await createProjectDriveFolder(currentProject.title); await saveFolderStructure(currentProject.id,fs);
         await WardApp.db.from('research_projects').update({ drive_link:fs.mainFolderUrl, updated_at:new Date().toISOString() }).eq('id',currentProject.id);
-        document.getElementById('edit-project-link').value=fs.mainFolderUrl; document.getElementById('edit-create-drive-folder-group').style.display='none'; WardApp.showToast('Pasta criada no Google Drive!');
-      } catch(e){ console.error(e); WardApp.showToast('Erro ao criar pasta no Drive','error'); } finally { btn.disabled=false; btn.textContent=orig; }
+        document.getElementById('edit-project-link').value=fs.mainFolderUrl; document.getElementById('edit-create-drive-folder-group').style.display='none'; WardApp.showToast('Folder created in Google Drive!');
+      } catch(e){ console.error(e); WardApp.showToast('Failed to create Drive folder','error'); } finally { btn.disabled=false; btn.textContent=orig; }
     }
     async function checkProjectFolders(){
-      if(!currentProject)return; const btn=document.getElementById('edit-check-folders-btn'), res=document.getElementById('check-folders-result'); const orig=btn.textContent; btn.disabled=true; btn.textContent='Verificando...'; res.style.display='none';
+      if(!currentProject)return; const btn=document.getElementById('edit-check-folders-btn'), res=document.getElementById('check-folders-result'); const orig=btn.textContent; btn.disabled=true; btn.textContent='Checking...'; res.style.display='none';
       try {
         const { data:main }=await WardApp.db.from('research_project_folders').select('folder_id').eq('project_id',currentProject.id).is('parent_folder_name',null).limit(1);
-        if(!main||!main.length){ res.innerHTML='<div style="color:#dc2626;">Pasta principal não encontrada. Crie a pasta primeiro.</div>'; res.style.display=''; return; }
+        if(!main||!main.length){ res.innerHTML='<div style="color:#dc2626;">Main folder not found. Create the folder first.</div>'; res.style.display=''; return; }
         const r=await fetch(GOOGLE_APPS_SCRIPT_URL,{ method:'POST', body:JSON.stringify({ action:'checkAndCreateMissingFolders', mainFolderId:main[0].folder_id }) });
-        if(!r.ok)throw new Error('HTTP '+r.status); const d=await r.json(); if(!d.success)throw new Error(d.error||'Erro ao verificar pastas');
+        if(!r.ok)throw new Error('HTTP '+r.status); const d=await r.json(); if(!d.success)throw new Error(d.error||'Failed to check folders');
         if(d.created&&d.created.length){ await WardApp.db.from('research_project_folders').insert(d.created.map(f=>({ project_id:currentProject.id, folder_name:f.name, folder_id:f.id, parent_folder_name:f.parent, folder_url:f.url }))); }
-        res.innerHTML=d.createdCount===0?'<div style="color:#166534;">Todas as pastas OK! Nenhuma faltante.</div>':`<div style="color:#166534; margin-bottom:.5rem;"><strong>${d.createdCount} pasta(s) criada(s):</strong></div><ul style="margin:0; padding-left:1.2rem;">${d.created.map(f=>`<li><strong>${calEsc(f.parent)} &gt; ${calEsc(f.name)}</strong></li>`).join('')}</ul>`;
-        res.style.display=''; WardApp.showToast(d.createdCount===0?'Todas as pastas OK!':`${d.createdCount} pasta(s) criada(s)!`);
-      } catch(e){ console.error(e); res.innerHTML=`<div style="color:#dc2626;">Erro: ${calEsc(e.message)}</div>`; res.style.display=''; WardApp.showToast('Erro ao verificar pastas','error'); } finally { btn.disabled=false; btn.textContent=orig; }
+        res.innerHTML=d.createdCount===0?'<div style="color:#166534;">All folders OK! None missing.</div>':`<div style="color:#166534; margin-bottom:.5rem;"><strong>${d.createdCount} folder(s) created:</strong></div><ul style="margin:0; padding-left:1.2rem;">${d.created.map(f=>`<li><strong>${calEsc(f.parent)} &gt; ${calEsc(f.name)}</strong></li>`).join('')}</ul>`;
+        res.style.display=''; WardApp.showToast(d.createdCount===0?'All folders OK!':`${d.createdCount} folder(s) created!`);
+      } catch(e){ console.error(e); res.innerHTML=`<div style="color:#dc2626;">Error: ${calEsc(e.message)}</div>`; res.style.display=''; WardApp.showToast('Failed to check folders','error'); } finally { btn.disabled=false; btn.textContent=orig; }
     }
 
     async function loadProjectDriveFolders(projectId){
@@ -899,28 +1190,28 @@
     }
     function renderDriveFolders(folders, files){
       const container=document.getElementById('drive-folders-container'); const main=folders.find(f=>f.parent_folder_name===null);
-      if(!main){ container.innerHTML='<p class="text-muted">Nenhuma pasta encontrada</p>'; return; }
-      container.innerHTML=`<div class="folder-item main-project-folder"><div class="folder-header" onclick="toggleFolder(this)"><span class="folder-toggle">▶</span><span class="folder-icon">📂</span><span class="folder-name">${calEsc(main.folder_name)}</span><span class="folder-count">(${folders.length-1} pastas, ${files.length} arquivos)</span><a href="${calEsc(main.folder_url)}" target="_blank" class="folder-link" onclick="event.stopPropagation()">Abrir no Drive ↗</a></div><div class="folder-content">${renderSubfolders(folders,files,main.folder_name)}</div></div>`;
+      if(!main){ container.innerHTML='<p class="text-muted">No folders found</p>'; return; }
+      container.innerHTML=`<div class="folder-item main-project-folder"><div class="folder-header" onclick="toggleFolder(this)"><span class="folder-toggle">▶</span><span class="folder-icon">📂</span><span class="folder-name">${calEsc(main.folder_name)}</span><span class="folder-count">(${folders.length-1} folders, ${files.length} files)</span><a href="${calEsc(main.folder_url)}" target="_blank" class="folder-link" onclick="event.stopPropagation()">Open in Drive ↗</a></div><div class="folder-content">${renderSubfolders(folders,files,main.folder_name)}</div></div>`;
     }
-    function renderSubfolders(all, files, parent){ const subs=all.filter(f=>f.parent_folder_name===parent); return subs.length?subs.map(f=>renderFolderItem(f,all,files,0)).join(''):'<p class="text-muted empty-folder">Nenhuma subpasta</p>'; }
+    function renderSubfolders(all, files, parent){ const subs=all.filter(f=>f.parent_folder_name===parent); return subs.length?subs.map(f=>renderFolderItem(f,all,files,0)).join(''):'<p class="text-muted empty-folder">No subfolders</p>'; }
     function renderFolderItem(folder, all, files, level){
       const ff=files.filter(f=>f.folder_id===folder.id); const subs=all.filter(f=>f.parent_folder_name===folder.folder_name);
       const canEdit=canEditProject(currentProject);
       const dz=canEdit?`ondragover="handleFolderDragOver(event, ${folder.id})" ondragleave="handleFolderDragLeave(event, ${folder.id})" ondrop="handleFolderDrop(event, ${folder.id})" data-folder-id="${folder.id}"`:'';
-      let html=`<div class="folder-item level-${level}" ${dz}><div class="folder-header" onclick="toggleFolder(this)"><span class="folder-toggle">▶</span><span class="folder-icon">📁</span><span class="folder-name">${calEsc(folder.folder_name)}</span><span class="folder-count">(${ff.length} arquivo${ff.length!==1?'s':''})</span>${canEdit?'<span class="drop-hint" style="display:none; color:#b31942; font-size:.75rem; margin-left:.5rem;">📥 Solte aqui</span>':''}<a href="${calEsc(folder.folder_url)}" target="_blank" class="folder-link" onclick="event.stopPropagation()">Abrir no Drive ↗</a></div><div class="folder-content">`;
+      let html=`<div class="folder-item level-${level}" ${dz}><div class="folder-header" onclick="toggleFolder(this)"><span class="folder-toggle">▶</span><span class="folder-icon">📁</span><span class="folder-name">${calEsc(folder.folder_name)}</span><span class="folder-count">(${ff.length} file${ff.length!==1?'s':''})</span>${canEdit?'<span class="drop-hint" style="display:none; color:#b31942; font-size:.75rem; margin-left:.5rem;">📥 Drop here</span>':''}<a href="${calEsc(folder.folder_url)}" target="_blank" class="folder-link" onclick="event.stopPropagation()">Open in Drive ↗</a></div><div class="folder-content">`;
       if(subs.length){ html+='<div class="subfolders-container">'+subs.map(s=>renderFolderItem(s,all,files,level+1)).join('')+'</div>'; }
       if(ff.length){ html+=`<div class="files-list">${ff.map(file=>`<div class="file-item"><a href="${calEsc(file.file_url)}" target="_blank" class="file-link"><span class="file-icon">${getFileIcon(file.mime_type)}</span><span class="file-name">${calEsc(file.file_name)}</span><span class="file-size">${formatFileSize(file.file_size)}</span></a>${canEdit?`<button class="btn btn-sm btn-danger" onclick="deleteProjectFile(${file.id}); event.stopPropagation();">🗑️</button>`:''}</div>`).join('')}</div>`; }
-      if(canEdit){ html+=`<div class="folder-actions"><input type="file" id="upload-${folder.id}" style="display:none;" onchange="handleFileSelect(event, ${folder.id})"><button class="btn btn-sm btn-primary" onclick="document.getElementById('upload-${folder.id}').click()">📤 Fazer Upload</button></div>`; }
+      if(canEdit){ html+=`<div class="folder-actions"><input type="file" id="upload-${folder.id}" style="display:none;" onchange="handleFileSelect(event, ${folder.id})"><button class="btn btn-sm btn-primary" onclick="document.getElementById('upload-${folder.id}').click()">📤 Upload</button></div>`; }
       return html+'</div></div>';
     }
     function toggleFolder(header){ const item=header.parentElement; const t=header.querySelector('.folder-toggle'); item.classList.toggle('open'); if(t)t.textContent=item.classList.contains('open')?'▼':'▶'; }
     function getFileIcon(m){ if(!m)return '📄'; if(m.includes('pdf'))return '📕'; if(m.includes('image'))return '🖼️'; if(m.includes('word')||m.includes('document'))return '📘'; if(m.includes('sheet')||m.includes('excel'))return '📊'; if(m.includes('presentation')||m.includes('powerpoint'))return '📙'; if(m.includes('video'))return '🎥'; if(m.includes('zip')||m.includes('rar'))return '📦'; return '📄'; }
     function formatFileSize(b){ if(!b)return ''; if(b<1024)return b+' B'; if(b<1048576)return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
 
-    async function handleFileSelect(event, folderId){ const file=event.target.files[0]; if(!file)return; if(file.size>MAX_FILE_SIZE){ WardApp.showToast('Arquivo muito grande (máx 100MB)','error'); return; } WardApp.showLoading(); try { await handleProjectFileUpload(file,folderId); WardApp.showToast('Arquivo enviado!'); await loadProjectDriveFolders(currentProject.id); } catch(e){ console.error(e); WardApp.showToast('Erro ao fazer upload','error'); } finally { WardApp.hideLoading(); event.target.value=''; } }
+    async function handleFileSelect(event, folderId){ const file=event.target.files[0]; if(!file)return; if(file.size>MAX_FILE_SIZE){ WardApp.showToast('File too large (max 100MB)','error'); return; } WardApp.showLoading(); try { await handleProjectFileUpload(file,folderId); WardApp.showToast('File uploaded!'); await loadProjectDriveFolders(currentProject.id); } catch(e){ console.error(e); WardApp.showToast('Failed to upload','error'); } finally { WardApp.hideLoading(); event.target.value=''; } }
     function handleFolderDragOver(event){ event.preventDefault(); event.stopPropagation(); const it=event.currentTarget; it.classList.add('drag-over'); const h=it.querySelector('.drop-hint'); if(h)h.style.display='inline'; event.dataTransfer.dropEffect='copy'; }
     function handleFolderDragLeave(event){ event.preventDefault(); event.stopPropagation(); const it=event.currentTarget; if(event.relatedTarget&&it.contains(event.relatedTarget))return; it.classList.remove('drag-over'); const h=it.querySelector('.drop-hint'); if(h)h.style.display='none'; }
-    async function handleFolderDrop(event, folderId){ event.preventDefault(); event.stopPropagation(); const it=event.currentTarget; it.classList.remove('drag-over'); const h=it.querySelector('.drop-hint'); if(h)h.style.display='none'; const files=event.dataTransfer.files; if(!files||!files.length)return; WardApp.showLoading(); let ok=0,err=0; try { for(const file of files){ if(file.size>MAX_FILE_SIZE){ WardApp.showToast(`"${file.name}" muito grande (máx 100MB)`,'error'); err++; continue; } try { await handleProjectFileUpload(file,folderId); ok++; } catch(e){ console.error(e); err++; } } if(ok)WardApp.showToast(`${ok} arquivo(s) enviado(s)!`); if(ok)await loadProjectDriveFolders(currentProject.id); if(err)WardApp.showToast(`${err} arquivo(s) falharam`,'error'); } finally { WardApp.hideLoading(); } }
+    async function handleFolderDrop(event, folderId){ event.preventDefault(); event.stopPropagation(); const it=event.currentTarget; it.classList.remove('drag-over'); const h=it.querySelector('.drop-hint'); if(h)h.style.display='none'; const files=event.dataTransfer.files; if(!files||!files.length)return; WardApp.showLoading(); let ok=0,err=0; try { for(const file of files){ if(file.size>MAX_FILE_SIZE){ WardApp.showToast(`"${file.name}" too large (max 100MB)`,'error'); err++; continue; } try { await handleProjectFileUpload(file,folderId); ok++; } catch(e){ console.error(e); err++; } } if(ok)WardApp.showToast(`${ok} file(s) uploaded!`); if(ok)await loadProjectDriveFolders(currentProject.id); if(err)WardApp.showToast(`${err} file(s) failed`,'error'); } finally { WardApp.hideLoading(); } }
     async function handleProjectFileUpload(file, folderId){
       const { data:folder }=await WardApp.db.from('research_project_folders').select('folder_id').eq('id',folderId).single(); if(!folder)throw new Error('Folder not found');
       const base64=await fileToBase64(file);
@@ -929,11 +1220,11 @@
       await WardApp.db.from('research_project_files').insert({ project_id:currentProject.id, folder_id:folderId, file_name:d.fileName, file_id:d.fileId, file_url:d.viewLink, mime_type:d.mimeType, file_size:d.size, uploaded_by:userData.id });
     }
     async function deleteProjectFile(fileId){
-      if(!confirm('Excluir este arquivo?'))return; WardApp.showLoading();
+      if(!confirm('Delete this file?'))return; WardApp.showLoading();
       try { const { data:file }=await WardApp.db.from('research_project_files').select('file_id').eq('id',fileId).single(); if(!file)throw new Error('File not found');
         await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=deleteFile&fileId=${file.file_id}`); await WardApp.db.from('research_project_files').delete().eq('id',fileId);
-        WardApp.showToast('Arquivo excluído!'); await loadProjectDriveFolders(currentProject.id);
-      } catch(e){ console.error(e); WardApp.showToast('Erro ao excluir arquivo','error'); } finally { WardApp.hideLoading(); }
+        WardApp.showToast('File deleted!'); await loadProjectDriveFolders(currentProject.id);
+      } catch(e){ console.error(e); WardApp.showToast('Failed to delete file','error'); } finally { WardApp.hideLoading(); }
     }
     function fileToBase64(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(file); }); }
   </script>
@@ -957,7 +1248,7 @@
     .project-description * { color:#1c2536 !important; background:transparent !important; }
     .project-description-formatted { color:#1c2536; font-size:.95rem; white-space:pre-wrap; word-wrap:break-word; padding:1rem; border-radius:var(--radius-md); border:2px solid var(--gray-200); cursor:pointer; transition:all .2s; min-height:56px; }
     .project-description-formatted:hover { border-color:var(--accent); background:#fffafb; }
-    .project-description-formatted:empty::before { content:'Clique para adicionar descrição...'; color:#9ca3af; font-style:italic; }
+    .project-description-formatted:empty::before { content:'Click to add a description...'; color:#9ca3af; font-style:italic; }
     .project-description-formatted a { color:#b31942 !important; text-decoration:underline; }
     .description-edit-area { border:2px solid var(--accent); border-radius:var(--radius-md); overflow:hidden; }
     .rich-text-editor { min-height:120px; max-height:340px; padding:1rem; border:1px solid var(--gray-200); border-radius:10px; background:#fff; overflow-y:auto; }
@@ -1078,6 +1369,9 @@
     .cal-view-btn { border:0; background:transparent; padding:.4rem .85rem; border-radius:7px; font-size:.85rem; font-weight:600; color:var(--gray-500); cursor:pointer; }
     .cal-view-btn.active { background:#fff; color:var(--accent); box-shadow:var(--shadow-sm); }
     .cal-body { overflow-y:auto; padding:1.1rem 1.25rem 1.5rem; }
+    /* .cal-month is only a wrapper here; override the global css/styles.css
+       .cal-month grid rule (used by calendar.html) that would otherwise break it. */
+    .cal-month { display:block; }
     .cal-weekdays, .cal-days { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
     .cal-weekdays { margin-bottom:6px; }
     .cal-weekday { text-align:center; font-size:.72rem; font-weight:700; text-transform:uppercase; color:#9ca3af; padding:.25rem 0; }

@@ -101,6 +101,7 @@ That’s it. Share the URL with the club.
 
 ## Quality-of-life features
 
+- **Notification bell** — a 🔔 in the nav bar (always visible, desktop and mobile) with an unread badge and a dropdown. It surfaces what changed for *you*: new sessions and posted meeting links, your **certificate** becoming available once a host confirms your presentation, updates to research **projects you're on**, **new applicants** to your co-author calls, your own application being **accepted/rejected**, and **new open positions**. Each item links to the relevant page. It's computed client-side from lightweight, RLS-scoped queries and diffed against a per-device “last opened” marker (so you start clean and only see genuinely new things), with a *Mark all read* action.
 - **Live-updating meeting link** — the home page re-checks every 60 seconds, so the *Join the call* button appears without refreshing when the host posts the link at the last minute. A **“next session / live now” banner** with a countdown sits at the top of the home page.
 - **One-click slot joining** — “Present here”, “volunteer to host”, calendar slot details, and even *empty* calendar cells deep-link into the availability form with the date, hour and role pre-selected. Session and open-slot cards on the home page have a **one-tap “I’ll attend”** button that registers you as attendee instantly.
 - **Occupancy hints while scheduling** — when adding availability, each 1-hour box shows how many members are already available at that time on the chosen day(s) (👥N, plus ⭐/📄 when a host/presenter is there).

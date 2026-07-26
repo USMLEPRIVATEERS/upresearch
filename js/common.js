@@ -359,6 +359,20 @@
     const r = WA.ROLES[role];
     return r && r.icon ? r.icon : "•";
   };
+  /* Compact icon strip for a slot — one icon per staffed role, attendees aside,
+     in a stable order. Shared by the calendar cells and the hour grid so the
+     small indicators can't drift out of sync with the role list. */
+  WA.SLOT_MARK_ORDER = ["host", "presenter", "methods_checker", "question_reader",
+    "scientific_lead", "clinical_lead"];
+  WA.slotMarks = function (byRole) {
+    const by = byRole || {};
+    return WA.SLOT_MARK_ORDER.filter((r) => (by[r] || []).length).map((r) => WA.roleIcon(r)).join("");
+  };
+  /* Legend line describing those icons, so every page explains them the same way. */
+  WA.slotMarkLegend = function () {
+    return WA.SLOT_MARK_ORDER.map((r) => WA.roleIcon(r) + " " + WA.ROLES[r].label.toLowerCase())
+      .join(" · ") + " · 👥 members in the slot";
+  };
 
   WA.STUDY_DESIGNS = [
     "Randomized Controlled Trial",

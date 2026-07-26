@@ -77,6 +77,7 @@
         <p class="muted small">Counted from past slots that actually had a presenter
           (i.e., sessions that happened), over the last 12 months.</p>
         <div class="stat-tiles" id="stat-tiles"></div>
+        <div id="ladder-progress" class="ladder-note" style="margin-top:14px; display:none"></div>
       </div>
 
       <div class="card">
@@ -158,6 +159,34 @@
         .map((r) => '<div class="stat-tile"><div class="num">' + (stats[r] || 0) + "</div>" +
           '<div class="lbl">' + WA.roleIcon(r) + " " + WA.esc(WA.roleLabel(r)) + "</div></div>")
         .join("");
+
+      /* Where this member is on the ladder, and what the next step is. */
+      (function ladderProgress() {
+        const el = $("ladder-progress");
+        const done = WA.ROLE_LADDER.filter((r) => (stats[r] || 0) > 0);
+        const next = WA.ROLE_LADDER.find((r) => !(stats[r] || 0));
+        if (!stats.sessions) return; // no history yet — nothing meaningful to say
+        const isMe = profileId === user.id;
+        const who = isMe ? "You have" : (profile.full_name || "This member") + " has";
+        const steps = WA.ROLE_LADDER.map((r) =>
+          ((stats[r] || 0) > 0 ? "<b>" + WA.roleIcon(r) + " " + WA.esc(WA.roleLabel(r)) + "</b>"
+                               : WA.esc(WA.roleLabel(r)))).join('<span class="ladder-arrow">→</span>');
+        let msg;
+        if (!next) {
+          msg = who + " completed every step of the ladder — including presenting. " +
+            (isMe ? "Consider mentoring someone taking their first turn." : "");
+        } else if (done.length) {
+          msg = who + " taken " + done.length + " of the 3 steps. Next up: <b>" +
+            WA.esc(WA.roleLabel(next)) + "</b>" +
+            (isMe ? ' — <a href="availability.html">sign up for it here</a>.' : ".");
+        } else {
+          msg = who + " attended but not taken a role yet. The easiest way in is <b>" +
+            WA.esc(WA.roleLabel("question_reader")) + "</b>" +
+            (isMe ? ' — <a href="availability.html">try it here</a>.' : ".");
+        }
+        el.innerHTML = '<div style="margin-bottom:6px">' + steps + "</div>" + msg;
+        el.style.display = "";
+      })();
 
       /* ---------- upcoming commitments ---------- */
       const now = new Date();

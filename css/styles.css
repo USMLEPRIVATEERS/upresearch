@@ -437,6 +437,19 @@ select.tz-inline {
 }
 .my-avail-item:last-child { border-bottom: 0; }
 
+/* single days off — an exception to a recurrence, so it reads as a side note
+   rather than as another way to sign up */
+.dayoff-card { border-left: 3px solid #d9a441; }
+.dayoff-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.dayoff-field { display: flex; flex-direction: column; gap: 4px; }
+.dayoff-field.grow { flex: 1 1 200px; }
+.dayoff-field label { color: var(--muted); }
+.dayoff-field input { margin: 0; }
+.dayoff-form .btn { flex-shrink: 0; }
+@media (max-width: 560px) {
+  .dayoff-field, .dayoff-form .btn { width: 100%; }
+}
+
 /* ---------------- calendar ---------------- */
 
 .cal-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }

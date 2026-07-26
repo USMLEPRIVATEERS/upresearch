@@ -438,12 +438,54 @@
     return true;
   };
 
-  WA.expandAvailabilities = function (rows, rangeStart, rangeEnd) {
+  /* ---------- single days off ----------
+     A weekly recurrence says "every Saturday", but a member can be away on one
+     specific Saturday. Those days are held in a module-level store rather than
+     threaded through every call site, because occurrence expansion happens in a
+     dozen places and any one of them forgetting would put the member back into
+     a slot they already said they can't make.
+
+     Each exception is a calendar day *in the timezone the member used when
+     adding it* — "August 15" is a different span of instants in São Paulo than
+     in Lisbon — so the row carries its timezone and the comparison is made in
+     that timezone. */
+
+  WA._blockouts = new Map(); // user_id -> [{ day: "YYYY-MM-DD", tz }]
+
+  WA.setBlockouts = function (rows) {
+    const m = new Map();
+    for (const r of rows || []) {
+      if (!m.has(r.user_id)) m.set(r.user_id, []);
+      m.get(r.user_id).push({ day: String(r.day).slice(0, 10), tz: r.tz || "UTC" });
+    }
+    WA._blockouts = m;
+  };
+
+  /* The calendar day an instant falls on, as seen in `tz` ("YYYY-MM-DD"). */
+  WA.dayKey = function (date, tz) {
+    const p = WA.zonedParts(date, tz);
+    const pad = (n) => (n < 10 ? "0" + n : "" + n);
+    return p.y + "-" + pad(p.m + 1) + "-" + pad(p.d);
+  };
+
+  WA.isBlockedOut = function (userId, date) {
+    const list = WA._blockouts.get(userId);
+    if (!list || !list.length) return false;
+    for (const b of list) if (WA.dayKey(date, b.tz) === b.day) return true;
+    return false;
+  };
+
+  /* opts.ignoreDaysOff keeps the blocked-out occurrences in — used by the
+     "days I can't make" list, which has to show what a day off takes away. */
+  WA.expandAvailabilities = function (rows, rangeStart, rangeEnd, opts) {
     const out = [];
+    const blocked = (opts && opts.ignoreDaysOff)
+      ? function () { return false; }
+      : WA.isBlockedOut;
     for (const row of rows) {
       if (row.kind === "single") {
         const d = new Date(row.slot_start);
-        if (d >= rangeStart && d <= rangeEnd) {
+        if (d >= rangeStart && d <= rangeEnd && !blocked(row.user_id, d)) {
           out.push({ iso: d.toISOString(), date: d, avail: row });
         }
       } else {
@@ -458,7 +500,8 @@
           if (cursor.getUTCDay() === row.weekday_utc) {
             const occ = new Date(cursor.getTime());
             occ.setUTCHours(row.hour_utc, 0, 0, 0);
-            if (occ >= rangeStart && occ <= rangeEnd && WA.isRowActiveAt(row, occ)) {
+            if (occ >= rangeStart && occ <= rangeEnd && WA.isRowActiveAt(row, occ) &&
+                !blocked(row.user_id, occ)) {
               out.push({ iso: occ.toISOString(), date: occ, avail: row });
             }
           }
@@ -823,12 +866,28 @@
 
   /* ---------- data access ---------- */
 
+  /* Every member's days off. Loaded alongside the availabilities so no page has
+     to remember to ask for them; an empty result (or a pending migration) just
+     means nobody is blocked out. */
+  WA.fetchExceptions = async function () {
+    const res = await WA.client
+      .from("availability_exceptions")
+      .select("user_id, day, tz")
+      .gte("day", WA.dayKey(new Date(Date.now() - 400 * 86400000), "UTC"));
+    if (res.error) return { rows: [], missing: true };
+    return { rows: res.data || [], missing: false };
+  };
+
   WA.fetchAllAvailabilities = async function () {
-    const { data, error } = await WA.client
-      .from("availabilities")
-      .select("*, profile:profiles(id, full_name, specialty, avatar), article:articles(*)")
-      .order("created_at", { ascending: true });
+    const [{ data, error }, exceptions] = await Promise.all([
+      WA.client
+        .from("availabilities")
+        .select("*, profile:profiles(id, full_name, specialty, avatar), article:articles(*)")
+        .order("created_at", { ascending: true }),
+      WA.fetchExceptions(),
+    ]);
     if (error) throw error;
+    WA.setBlockouts(exceptions.rows);
     return data || [];
   };
 

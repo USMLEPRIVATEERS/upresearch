@@ -50,12 +50,15 @@
 
       WA.tzInlineWidget($("tz-note"));
 
-      let rows, confirmations, confMissing;
+      let rows, confirmations, confMissing, absences, absMissing;
       try {
         rows = await WA.fetchAllAvailabilities();
         const c = await WA.fetchConfirmations();
         confirmations = c.map;
         confMissing = c.missing;
+        const a = await WA.fetchAbsences();
+        absences = a.set;
+        absMissing = a.missing;
       }
       catch (err) { $("history-list").textContent = "Could not load: " + err.message; return; }
 
@@ -99,23 +102,50 @@
          session nobody can confirm (and presenters without certificates) whenever
          the coordination slot was filled by a lead instead. */
       const ORGANIZER_ROLES = ["host", "scientific_lead", "clinical_lead"];
+      const isOrganizer = (g) => ORGANIZER_ROLES.some((r) =>
+        (g.byRole[r] || []).some((a) => a.user_id === user.id));
+
+      /* Attendance: the organizing team can mark anyone who signed up but
+         didn't turn up. An absent presenter gets no certificate, and nobody
+         marked absent is counted in the participation stats. */
+      function attendanceArea(g) {
+        if (absMissing || !isOrganizer(g)) return "";
+        const people = g.all.slice().sort((a, b) =>
+          String((a.profile && a.profile.full_name) || "").localeCompare(
+            String((b.profile && b.profile.full_name) || "")));
+        if (!people.length) return "";
+        return '<details class="attendance"><summary>👥 Attendance — mark anyone who didn’t show up (' +
+          people.filter((p) => WA.wasAbsent(absences, g.iso, p.user_id)).length + " absent)</summary>" +
+          '<p class="small muted" style="margin:6px 0 8px">Someone marked absent doesn’t get a certificate ' +
+          "for this session and isn’t counted in their participation stats.</p>" +
+          people.map((p) => {
+            const absent = WA.wasAbsent(absences, g.iso, p.user_id);
+            const name = (p.profile && p.profile.full_name) || "Member";
+            return '<label class="attend-row' + (absent ? " absent" : "") + '">' +
+              '<input type="checkbox" data-absent="' + WA.esc(g.iso) + '" data-user="' +
+              WA.esc(p.user_id) + '"' + (absent ? " checked" : "") + "> " +
+              '<span>' + WA.roleIcon(p.role) + " " + WA.esc(name) +
+              '<span class="small muted"> · ' + WA.esc(WA.roleLabel(p.role)) + "</span></span>" +
+              (absent ? '<span class="attend-tag">absent</span>' : "") + "</label>";
+          }).join("") + "</details>";
+      }
+
       function confirmArea(g) {
         const conf = confirmations.get(g.iso);
-        const iAmOrganizer = ORGANIZER_ROLES.some((r) =>
-          (g.byRole[r] || []).some((a) => a.user_id === user.id));
+        const iAmOrganizer = isOrganizer(g);
         if (conf) {
           const who = conf.confirmer ? conf.confirmer.full_name : "the organizing team";
           return '<div class="confirm-line ok">✓ <strong>Session confirmed</strong> by ' +
             WA.esc(who) + " — certificates available to presenters." +
             (conf.confirmed_by === user.id
               ? ' <button class="btn sm ghost" data-unconfirm="' + WA.esc(g.iso) + '">Undo</button>' : "") +
-            "</div>";
+            "</div>" + attendanceArea(g);
         }
         if (iAmOrganizer) {
           return '<div class="confirm-line pend">⏳ <strong>Awaiting your confirmation.</strong> ' +
             "You were on the organizing team for this session — confirm it took place to unlock the presenters’ certificates." +
             '<div style="margin-top:8px"><button class="btn sm" data-confirm="' + WA.esc(g.iso) +
-            '">✓ Confirm this session took place</button></div></div>';
+            '">✓ Confirm this session took place</button></div></div>' + attendanceArea(g);
         }
         return '<div class="confirm-line pend">⏳ Awaiting confirmation from the organizing team before certificates are issued.</div>';
       }
@@ -195,6 +225,29 @@
       }
 
       $("search").addEventListener("input", (e) => render(e.target.value));
+
+      // Attendance toggles (change, not click — checkboxes).
+      $("history-list").addEventListener("change", async (e) => {
+        const box = e.target.closest("[data-absent]");
+        if (!box) return;
+        const iso = box.getAttribute("data-absent");
+        const uid = box.getAttribute("data-user");
+        box.disabled = true;
+        if (box.checked) {
+          const { error } = await WA.client.from("session_absences")
+            .insert({ slot_start: iso, user_id: uid, marked_by: user.id });
+          if (error) { WA.toast("Could not save: " + error.message, "error"); box.checked = false; box.disabled = false; return; }
+          absences.add(iso + "|" + uid);
+          WA.toast("Marked as not present.", "success");
+        } else {
+          const { error } = await WA.client.from("session_absences")
+            .delete().eq("slot_start", iso).eq("user_id", uid);
+          if (error) { WA.toast("Could not undo: " + error.message, "error"); box.checked = true; box.disabled = false; return; }
+          absences.delete(iso + "|" + uid);
+          WA.toast("Marked as present again.", "success");
+        }
+        render($("search").value);
+      });
 
       // Host confirms / un-confirms a session (event delegation — render rebuilds the list).
       $("history-list").addEventListener("click", async (e) => {

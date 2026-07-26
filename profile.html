@@ -150,7 +150,8 @@
       paintHeader();
 
       /* ---------- stats ---------- */
-      const stats = WA.computeStats(allRows, 365)[profileId] || {};
+      const absences = (await WA.fetchAbsences()).set;
+      const stats = WA.computeStats(allRows, 365, absences)[profileId] || {};
       // Show a tile per role held, always including the ladder so the path is visible.
       const ALWAYS = ["presenter", "methods_checker", "question_reader", "attendee"];
       $("stat-tiles").innerHTML = ["presenter", "methods_checker", "question_reader", "attendee",

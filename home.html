@@ -133,7 +133,9 @@
       // Co-author recruitment board (shared with the Research page).
       if (WA.positions) WA.positions.mount($("positions-mount"), ctx);
 
-      const DAYS_AHEAD = 14;
+      // Two months ahead: the open-slot list is paged (20 at a time), so a
+      // wider horizon costs nothing on screen and standing weekly slots show up.
+      const DAYS_AHEAD = 60;
       const now = new Date();
       const rangeStart = new Date(now.getTime() - 3600000); // include a session in progress
       const rangeEnd = new Date(now.getTime() + DAYS_AHEAD * 86400000);
@@ -414,6 +416,8 @@
       /* ---------- render ---------- */
 
       function wireCards() {
+        const more = $("show-more-open");
+        if (more) more.addEventListener("click", () => { openLimit += OPEN_PAGE; renderSections(); });
         document.querySelectorAll(".ics-link").forEach((a) => {
           a.addEventListener("click", (e) => {
             e.preventDefault();
@@ -750,7 +754,10 @@
       $("flt-specialty").innerHTML = '<option value="">All specialties</option>' +
         specialties.map((s) => '<option value="' + WA.esc(s) + '">' + WA.esc(s) + "</option>").join("");
       ["flt-specialty", "srt-sessions", "srt-open"].forEach((id) =>
-        $(id).addEventListener("change", renderSections));
+        $(id).addEventListener("change", () => {
+          if (id === "srt-open") openLimit = OPEN_PAGE; // re-sorting starts from the top again
+          renderSections();
+        }));
 
       function visibleSessions() {
         let list = sessions.slice();
@@ -764,6 +771,9 @@
         return list;
       }
 
+      // Open slots are paged: show the best 20, then 20 more on request.
+      const OPEN_PAGE = 20;
+      let openLimit = OPEN_PAGE;
       function visibleOpen() {
         const list = open.slice();
         const how = $("srt-open").value;
@@ -786,8 +796,18 @@
         }
         if (open.length) {
           $("open-section").classList.remove("hidden");
-          // The list scrolls inside a fixed-height panel, so show everything.
-          $("open-list").innerHTML = visibleOpen().map(openCard).join("");
+          // Only the top slice is rendered — with a standing weekly recurrence
+          // per member this list gets long, and building every card costs more
+          // than anyone will ever scroll.
+          const list = visibleOpen();
+          const shown = openLimit ? list.slice(0, openLimit) : list;
+          $("open-list").innerHTML = shown.map(openCard).join("") +
+            (list.length > shown.length
+              ? '<button type="button" class="btn sm ghost" id="show-more-open" ' +
+                'style="width:100%; margin-top:8px">Show ' +
+                Math.min(OPEN_PAGE, list.length - shown.length) + " more of " +
+                (list.length - shown.length) + " remaining</button>"
+              : "");
         }
         if (!sessions.length && !open.length) $("empty-all").classList.remove("hidden");
         wireCards();

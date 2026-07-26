@@ -551,6 +551,20 @@ td.cal-cell.empty:hover { background: var(--red-soft); }
   font-size: 1.4rem; color: var(--muted); line-height: 1;
 }
 
+/* ---- attendance marking (history) ---- */
+.attendance { margin-top: 10px; border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; background: #fff; }
+.attendance summary { cursor: pointer; font-size: 0.86rem; font-weight: 600; color: var(--navy-800); }
+.attend-row {
+  display: flex; align-items: center; gap: 9px; padding: 6px 4px; font-size: 0.88rem;
+  border-top: 1px solid var(--gray-100); cursor: pointer;
+}
+.attend-row input { width: 17px; height: 17px; accent-color: var(--red); flex-shrink: 0; }
+.attend-row.absent { color: var(--muted); text-decoration: line-through; }
+.attend-tag {
+  margin-left: auto; font-size: 0.68rem; font-weight: 800; text-transform: uppercase;
+  color: var(--err); background: #fdecea; border-radius: 999px; padding: 1px 8px; text-decoration: none;
+}
+
 /* ---- WhatsApp group onboarding dialog (home) ---- */
 .wag-modal { max-width: 460px; }
 .wag-modal h3 { margin-right: 30px; }

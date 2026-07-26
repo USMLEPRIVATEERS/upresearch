@@ -179,6 +179,35 @@ create policy "delete own confirmation"
   on public.session_confirmations for delete to authenticated
   using (confirmed_by = auth.uid());
 
+-- Members who signed up for a slot but did not actually attend. Recorded by the
+-- organizing team when they confirm the session, so certificates and stats
+-- reflect who was really there instead of who clicked "I'll attend".
+create table if not exists public.session_absences (
+  slot_start timestamptz not null,
+  user_id    uuid not null references public.profiles (id) on delete cascade,
+  marked_by  uuid references public.profiles (id) on delete set null,
+  marked_at  timestamptz not null default now(),
+  primary key (slot_start, user_id)
+);
+
+alter table public.session_absences enable row level security;
+
+drop policy if exists "absences readable by members" on public.session_absences;
+create policy "absences readable by members"
+  on public.session_absences for select to authenticated using (true);
+
+-- Same trust model as the confirmations above: the UI only offers this to the
+-- organizing team, and the row records who marked it.
+drop policy if exists "insert absence" on public.session_absences;
+create policy "insert absence"
+  on public.session_absences for insert to authenticated
+  with check (marked_by = auth.uid());
+
+drop policy if exists "delete absence" on public.session_absences;
+create policy "delete absence"
+  on public.session_absences for delete to authenticated
+  using (marked_by = auth.uid());
+
 -- board (the single row is seeded above; members can read and edit it)
 drop policy if exists "board readable by members" on public.board;
 create policy "board readable by members"

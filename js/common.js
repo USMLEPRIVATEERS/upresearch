@@ -300,6 +300,9 @@
       badge: "badge-reader",
       group: "rotating",
       slots: 2,
+      // Only 2–3 questions get read per session, so a 4th reader would have
+      // nothing to do. Enforced when saving availability.
+      max: 3,
       prep: "5–10min prep",
       hint: "No prerequisites — the easiest way to start.",
       blurb: "Reads one Step question out loud and defends an answer before the group reveals it.",
@@ -497,7 +500,10 @@
      A slot in the past counts as a "session held" when it had at
      least one presenter. Every member signed up for that slot gets
      credit for the role they signed up with. Looks back `days`. */
-  WA.computeStats = function (allRows, days) {
+  /* `absences` (optional) is the Set from WA.fetchAbsences — anyone the
+     organizing team marked as not present is skipped, so the counts reflect
+     who actually showed up rather than who signed up. */
+  WA.computeStats = function (allRows, days, absences) {
     const now = new Date();
     const start = new Date(now.getTime() - (days || 180) * 86400000);
     const occs = WA.expandAvailabilities(allRows, start, now);
@@ -507,6 +513,7 @@
       if (g.date > now) continue;
       if (!g.presenters.length) continue; // no presenter → no session happened
       for (const a of g.all) {
+        if (WA.wasAbsent(absences, g.iso, a.user_id)) continue; // signed up, didn't show
         // (no logical-assignment operator here — older iOS Safari lacks it)
         if (!stats[a.user_id]) {
           const blank = { sessions: 0 };
@@ -845,6 +852,19 @@
     return { map, missing: false };
   };
 
+  /* Who was marked absent, as a Set of "slotIso|userId". Returns an empty set
+     when the table hasn't been created yet (migration pending). */
+  WA.fetchAbsences = async function () {
+    const res = await WA.client.from("session_absences").select("slot_start, user_id");
+    if (res.error) return { set: new Set(), missing: true };
+    const set = new Set();
+    for (const r of res.data || []) set.add(new Date(r.slot_start).toISOString() + "|" + r.user_id);
+    return { set, missing: false };
+  };
+  WA.wasAbsent = function (absences, slotIso, userId) {
+    return !!(absences && absences.has && absences.has(slotIso + "|" + userId));
+  };
+
   WA.fetchMeetingsBetween = async function (startIso, endIso) {
     const { data, error } = await WA.client
       .from("meetings")
@@ -1050,6 +1070,57 @@
       }
       return out;
     }
+
+    /* Staffing signals for upcoming sessions:
+         · a session that now has a presenter and is filling up — worth joining;
+         · a session with a presenter still missing a support role — the link
+           opens My Availability with the date, hour and role pre-selected, so
+           taking the turn is one Save away.
+       Only sessions with a presenter qualify: those are the ones that happen. */
+    async function cStaffing() {
+      const nowT = Date.now();
+      const winStart = new Date(nowT);
+      const winEnd = new Date(nowT + 21 * 86400000);
+      const rows = await WA.fetchAllAvailabilities();
+      const groups = WA.groupOccurrences(WA.expandAvailabilities(rows, winStart, winEnd));
+      const out = [];
+      for (const g of groups) {
+        if (!g.presenters.length) continue;
+        const st = WA.sessionStaffing(g);
+        const art = g.presenters[0] && g.presenters[0].article ? g.presenters[0].article.title : "";
+        const label = art ? " — <b>" + esc(art) + "</b>" : "";
+        const when = esc(WA.fmtDateTime(g.date));
+        const iAmIn = g.all.some((a) => a.user_id === me());
+        // Timestamp on the newest signup in the slot, so the item surfaces when
+        // the line-up actually changed rather than on a fixed schedule.
+        const newest = g.all.map((a) => a.created_at).filter(Boolean).sort().pop() ||
+          new Date(nowT).toISOString();
+
+        if (st.complete) {
+          out.push(mk(newest, "✅", "Session fully staffed for <b>" + when + "</b>" + label,
+            slotHref(g.iso), "staffed-" + g.iso));
+          continue;
+        }
+        // Gaps in the support roles — the ones a newcomer can take.
+        const gaps = st.missing.filter((m) => m.role === "methods_checker" || m.role === "question_reader");
+        for (const gap of gaps) {
+          if ((g.byRole[gap.role] || []).some((a) => a.user_id === me())) continue; // already yours
+          const meta = WA.ROLES[gap.role];
+          out.push(mk(newest, meta.icon,
+            "<b>" + when + "</b> needs a <b>" + esc(meta.label.toLowerCase()) + "</b>" + label +
+            " — tap to take it" + (meta.prep ? " (" + esc(meta.prep) + ")" : ""),
+            WA.slotHref(g.date, gap.role), "gap-" + gap.role + "-" + g.iso));
+        }
+        // A session that just gained its presenter is worth flagging even if
+        // the support roles are still open and you're not in it yet.
+        if (!gaps.length && !iAmIn) {
+          out.push(mk(newest, "📄", "Session taking shape for <b>" + when + "</b>" + label,
+            slotHref(g.iso), "shape-" + g.iso));
+        }
+      }
+      return out;
+    }
+
     async function cCertificates() {
       const [av, confs] = await Promise.all([
         WA.client.from("availabilities").select("slot_start, article:articles(title)").eq("user_id", me()).eq("role", "presenter").eq("kind", "single"),
@@ -1110,7 +1181,7 @@
 
     async function load() {
       const groups = await Promise.all([
-        safe(cReminders), safe(cSessions), safe(cMeetings), safe(cCertificates),
+        safe(cReminders), safe(cStaffing), safe(cSessions), safe(cMeetings), safe(cCertificates),
         safe(cResearchProjects), safe(cResearchApps), safe(cOpenPositions),
       ]);
       const seen = new Set();

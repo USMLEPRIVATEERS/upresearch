@@ -221,16 +221,15 @@
       const selectedHours = new Set();
       let allRows = []; // everyone's availability, loaded async below
 
-      function hourCounts() {
-        if (!allRows.length) return {};
-        const others = allRows.filter((r) => r.user_id !== user.id);
-        const dayList = []; // {y, m, d} in the member's timezone
+      /* The days the current selection points at, in the member's timezone:
+         the chosen date, or the next occurrence of each chosen weekday. */
+      function selectedDayList() {
+        const dayList = []; // {y, m, d}
         if (mode === "single") {
-          if (!$("single-date").value) return {};
+          if (!$("single-date").value) return dayList;
           const [y, m, d] = $("single-date").value.split("-").map(Number);
           dayList.push({ y, m: m - 1, d });
         } else {
-          // next occurrence of each selected weekday
           const p = WA.zonedParts(new Date());
           for (const wd of selectedDays) {
             let ms = Date.UTC(p.y, p.m, p.d);
@@ -239,6 +238,14 @@
             dayList.push({ y: c.getUTCFullYear(), m: c.getUTCMonth(), d: c.getUTCDate() });
           }
         }
+        return dayList;
+      }
+
+      function hourCounts() {
+        if (!allRows.length) return {};
+        const others = allRows.filter((r) => r.user_id !== user.id);
+        const dayList = selectedDayList();
+        if (!dayList.length) return {};
         const res = {};
         for (const day of dayList) {
           const start = WA.zonedToUtc(day.y, day.m, day.d, 0);
@@ -337,6 +344,30 @@
             return;
           }
           if (!WA.safeUrl(url)) { err.textContent = "The article link must be a valid http(s) URL."; return; }
+        }
+
+        // Some roles have a hard cap (only 2–3 questions get read per session,
+        // so a 4th reader would have nothing to do). Check the slots we're
+        // about to take and refuse the ones that are already full.
+        const cap = WA.ROLES[role] && WA.ROLES[role].max;
+        if (cap) {
+          const full = [];
+          const others = allRows.filter((r) => r.user_id !== user.id);
+          for (const day of selectedDayList()) {
+            for (const h of selectedHours) {
+              const slot = WA.zonedToUtc(day.y, day.m, day.d, h);
+              const groups = WA.groupOccurrences(
+                WA.expandAvailabilities(others, slot, slot));
+              const taken = groups.length ? (groups[0].byRole[role] || []).length : 0;
+              if (taken >= cap) full.push(slot);
+            }
+          }
+          if (full.length) {
+            err.textContent = WA.roleLabel(role) + " is already full (max " + cap + ") for " +
+              full.map((d) => WA.fmtDateTime(d)).join(", ") +
+              ". Pick another slot, or join in a different role.";
+            return;
+          }
         }
 
         $("save-btn").disabled = true;

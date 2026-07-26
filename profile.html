@@ -76,11 +76,7 @@
         <h2>Journal club participation</h2>
         <p class="muted small">Counted from past slots that actually had a presenter
           (i.e., sessions that happened), over the last 12 months.</p>
-        <div class="stat-tiles">
-          <div class="stat-tile"><div class="num" id="s-host">0</div><div class="lbl">⭐ Times as Host</div></div>
-          <div class="stat-tile"><div class="num" id="s-presenter">0</div><div class="lbl">📄 Times as Presenter</div></div>
-          <div class="stat-tile"><div class="num" id="s-attendee">0</div><div class="lbl">👥 Times as Attendee</div></div>
-        </div>
+        <div class="stat-tiles" id="stat-tiles"></div>
       </div>
 
       <div class="card">
@@ -153,10 +149,15 @@
       paintHeader();
 
       /* ---------- stats ---------- */
-      const stats = WA.computeStats(allRows, 365)[profileId] || { host: 0, presenter: 0, attendee: 0 };
-      $("s-host").textContent = stats.host;
-      $("s-presenter").textContent = stats.presenter;
-      $("s-attendee").textContent = stats.attendee;
+      const stats = WA.computeStats(allRows, 365)[profileId] || {};
+      // Show a tile per role held, always including the ladder so the path is visible.
+      const ALWAYS = ["presenter", "methods_checker", "question_reader", "attendee"];
+      $("stat-tiles").innerHTML = ["presenter", "methods_checker", "question_reader", "attendee",
+        "host", "scientific_lead", "clinical_lead"]
+        .filter((r) => (stats[r] || 0) > 0 || ALWAYS.indexOf(r) !== -1)
+        .map((r) => '<div class="stat-tile"><div class="num">' + (stats[r] || 0) + "</div>" +
+          '<div class="lbl">' + WA.roleIcon(r) + " " + WA.esc(WA.roleLabel(r)) + "</div></div>")
+        .join("");
 
       /* ---------- upcoming commitments ---------- */
       const now = new Date();

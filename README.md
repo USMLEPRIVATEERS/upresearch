@@ -23,13 +23,32 @@ Built as **static HTML pages hosted on GitHub Pages** with **[Supabase](https://
 | `profile.html` | Member profile: bio, stats (times as Host / Presenter / Attendee), upcoming commitments, articles submitted |
 | `research.html` | Research project board: members create **private** systematic-review/meta-analysis projects (visible only to their team), track tasks through the research pipeline (stages), set deadlines, tag status, optionally create/upload to Google Drive folders, and **recruit co-authors** through an anonymous open-positions board |
 
-### The three journal club roles
+### The journal club roles
 
-- **Host** — moderates the session, keeps time, opens the discussion, and **provides the meeting link** (Zoom/Meet). The host can post the link days ahead or the moment the call starts; the home page shows it as soon as it exists.
-- **Presenter** — presents and critically appraises the article. Presenting requires attaching the article: link (full manuscript preferred; Google Drive link if paywalled), study design, specialty/subspecialty, and what caught their attention.
-- **Attendee** — joins the call and participates in the discussion.
+**Rotating roles** — these take turns every session and form a ladder into presenting:
 
-A slot only appears under **“Upcoming journal club sessions”** when at least one presenter committed to it. Slots with a confirmed host are visually highlighted (amber) since the session is then fully staffed.
+- **Question reader** (2 per session, 5–10 min prep) — reads one Step question out loud and defends an answer before the group reveals it. *No prerequisites: this is the way in.*
+- **Methods checker** (1, 30–45 min prep) — reads the article for design, sample, analysis and limitations, and brings 3–5 written critical points. Also the natural **backup for the presenter**, since they've already read the article closely.
+- **Presenter** (1, 2–4 h prep) — chooses the article, posts it at least 72 h ahead, presents it in English and leads the discussion. Requires attaching the article: link (full manuscript preferred), study design, specialty/subspecialty, and what caught their attention.
+- **Attendee** — joins the call and takes part in the discussion.
+
+The ladder is **question reader → methods checker → presenter**: each step is a little more preparation than the last, so a first presentation never has to feel like a leap. It's stated on the *My Availability* page so the path is visible rather than folklore. Prerequisites are shown as guidance, not enforced — the platform counts *signups*, not verified attendance, so blocking on them would punish the wrong people.
+
+**Organizing team** — standing roles that don't rotate:
+
+- **Host / coordination** — opens the room, **provides the meeting link** (Zoom/Meet), keeps time and publishes the report. The link can be posted days ahead or the moment the call starts.
+- **Scientific lead** — leads the methodology and statistics discussion and validates research ideas.
+- **Clinical lead** — runs the Step question block and brings the bedside reading of the article.
+
+#### When does a session actually happen?
+
+| Tier | Condition | Shown as |
+|---|---|---|
+| **Complete** | presenter + host + methods checker + 2 readers | ✅ Fully staffed |
+| **Viable** | host + a presenter with an article — it happens | ⭐📄 Session confirmed, listing what's still open |
+| **At risk** | no presenter yet, under 72 h to go | 🚨 Needs a presenter |
+
+Only the **presenter** blocks a session; the smaller rotating roles never do (if no one checks the methods, the scientific lead covers it, as always). Sessions list the line-up **with names**, not empty vacancies — a published roster shows the rotation is real, where a list of open slots advertises that nobody has stepped up.
 
 ---
 
@@ -40,7 +59,7 @@ A slot only appears under **“Upcoming journal club sessions”** when at least
 1. Go to [supabase.com](https://supabase.com), sign in, and click **New project** (free tier is fine).
 2. Once the project is ready, open **SQL Editor → New query**, paste the entire contents of [`supabase/schema.sql`](supabase/schema.sql), and click **Run**. This creates the tables (`profiles`, `articles`, `availabilities`, `meetings`, the shared board, session confirmations, and the `research_*` tables), the signup trigger, and all Row Level Security policies.
 
-   > The script is **idempotent** (`create table if not exists`, `drop policy if exists`), so re-running it after an update is safe. If you already ran an earlier version, **run it again** — the **Research** page needs the `research_*` tables from section 8, the co-author recruitment tables (`research_recruitments`, `research_applications`) from section 9, and the section-8 policy update that makes research projects **private to their team** (only the creator and accepted co-authors can read a project).
+   > The script is **idempotent** (`create table if not exists`, `drop policy if exists`), so re-running it after an update is safe. If you already ran an earlier version, **run it again** — the **Research** page needs the `research_*` tables from section 8, the co-author recruitment tables (`research_recruitments`, `research_applications`) from section 9, and the section-8 policy update that makes research projects **private to their team** (only the creator and accepted co-authors can read a project). Re-running it also widens the `availabilities.role` constraint to allow the rotating and organizing roles (methods checker, question reader, scientific lead, clinical lead) — without it those signups are rejected by the database.
 
 ### 2. Configure authentication
 
@@ -101,6 +120,7 @@ That’s it. Share the URL with the club.
 
 ## Quality-of-life features
 
+- **Presenter queue** — the home page publishes **who's up next to present**: members who have taken part in at least two sessions and haven't presented yet, most experienced first, showing the ladder steps they've already done. It's computed from the same signup history as the stats — no extra bookkeeping — and anyone already signed up to present a future slot drops off automatically. This is what replaces asking "who wants to volunteer?" in the group: the next person is simply obvious, and the copy makes clear that passing is fine and keeps your place.
 - **Notification bell** — a 🔔 in the nav bar (always visible, desktop and mobile) with an unread badge and a dropdown. It surfaces what changed for *you*: new sessions and posted meeting links, your **certificate** becoming available once a host confirms your presentation, updates to research **projects you're on**, **new applicants** to your co-author calls, your own application being **accepted/rejected**, and **new open positions**. Notifications open the thing they're about, rather than dropping you on a page to hunt for it: a session notification **opens that session's details** (`home.html?slot=…`), “a project is looking for co-authors” **opens the apply form** (`research.html?apply=…`), and “someone applied to your project” **opens the review list** so you can accept or reject on the spot (`research.html?applications=…`). It's computed client-side from lightweight, RLS-scoped queries and diffed against a per-device “last opened” marker (so you start clean and only see genuinely new things), with a *Mark all read* action.
 - **Session reminders** — the bell also counts down to each upcoming session, escalating through three stages: **“coming up”** (within a day), **“starting in N min”** (within the hour) and **“🔴 Live now”**. Each stage arrives as its own fresh unread, so a badge pops when a call is about to start even if the tab has been open for hours (the bell re-checks every couple of minutes and whenever you return to the tab). Once the host has posted the meeting link, the “starting soon” and “live now” reminders **link directly to the call** — one tap to join — and posting the link also notifies everyone else in the slot.
 - **WhatsApp group onboarding** — a short guided dialog on the home page that recruits presenters and walks members into the club's WhatsApp group: it links the signup **form** and the group **WhatsApp number**, and offers *“I'm already in the group”* to dismiss it for good. Closing without ticking that asks whether they'd rather not join — *“No thanks”* silences it permanently, *“Yes, I want to join”* starts a two-step flow (**1** open the form → tick *“I've filled it out”*, **2** message us on WhatsApp → tick *“I've sent the message”*), after which it never shows again. Progress is remembered per member, so a half-finished flow resumes where it left off, and it stays out of the way when a notification link already opened a session. To change the form or number, edit `FORM_URL` / `WA_NUMBER` in `home.html`.

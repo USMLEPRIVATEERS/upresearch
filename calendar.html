@@ -268,6 +268,13 @@
           }
           html += "</div>";
         }
+        ["scientific_lead", "clinical_lead", "methods_checker", "question_reader"].forEach((r) => {
+          const list = (g.byRole && g.byRole[r]) || [];
+          if (list.length) {
+            html += '<p class="small">' + WA.roleIcon(r) + " <strong>" + WA.esc(WA.roleLabel(r)) +
+              ":</strong> " + list.map(personLink).join(", ") + "</p>";
+          }
+        });
         if (g.attendees.length)
           html += '<p class="small muted">Attendees: ' + g.attendees.map(personLink).join(", ") + "</p>";
         html += '<p class="small"><a href="' + WA.esc(WA.slotHref(g.date)) + '">Join this slot →</a></p>';

@@ -272,7 +272,8 @@
               '<br/><span class="chip red">' + WA.esc(art.study_design) + "</span>" +
               '<span class="chip">' + WA.esc(art.specialty) +
               (art.subspecialty ? " · " + WA.esc(art.subspecialty) : "") + "</span>" +
-              '<p class="small" style="margin:6px 0 0">' + WA.esc(art.summary) + "</p>";
+              '<p class="small" style="margin:6px 0 0">' + WA.esc(art.summary) + "</p>" +
+              (url ? '<div class="art-actions">' + WA.articleLinkBtn(url) + "</div>" : "");
           }
           html += "</div>";
         }

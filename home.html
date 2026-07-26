@@ -186,6 +186,7 @@
           '<p class="small" style="margin:0"><strong>Why it caught the presenter’s attention:</strong> ' +
           WA.esc(art.summary) + "</p>" +
           '<p class="small muted" style="margin:6px 0 0">Presented by ' + personLink(a) + "</p>" +
+          (url ? '<div class="art-actions">' + WA.articleLinkBtn(url) + "</div>" : "") +
           "</div>";
       }
 
@@ -252,13 +253,21 @@
           return '<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center">' +
             WA.roleBadge(mine.role) +
             ' <span class="small muted">You’re in · <a href="availability.html">manage</a></span>' +
-            openRoleButtons(g, mine) +
+            openRoleButtons(g, mine) + detailsBtn(g) +
             "</div>";
         }
         return '<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">' +
           '<button class="btn sm join-btn" data-slot="' + WA.esc(g.iso) + '">✋ I’ll attend</button>' +
-          openRoleButtons(g, null) +
+          openRoleButtons(g, null) + detailsBtn(g) +
           "</div>";
+      }
+
+      /* The date at the top of a card opens the same panel, but a heading that
+         only underlines on hover doesn't read as clickable — so every card also
+         carries a plainly labelled button. */
+      function detailsBtn(g) {
+        return '<button type="button" class="btn sm ghost" data-details="' + WA.esc(g.iso) +
+          '">🔎 See full details</button>';
       }
 
       /* One-tap buttons for the roles this session still needs, so taking a
@@ -339,6 +348,7 @@
               ? ' <a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, "presenter")) + '">📄 Present instead</a>' : "")
           : '<button class="btn sm join-btn" data-slot="' + WA.esc(g.iso) + '">✋ I’ll attend</button>' +
             '<a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, "presenter")) + '">Present here</a>';
+        const cta2 = cta + detailsBtn(g);
         return '<div class="card tight session-card ev-' + st.cls + '">' +
           '<div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center">' +
           "<div>" +
@@ -349,7 +359,7 @@
           most + " member" + (most === 1 ? "" : "s") + " available</span>" +
           "</div>" +
           '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">' + peopleAvatars(g.all) +
-          cta + "</div>" +
+          cta2 + "</div>" +
           "</div></div>";
       }
 
@@ -569,7 +579,9 @@
             '<p class="small" style="margin:0"><strong>Why it caught the presenter’s attention:</strong> ' + WA.esc(art.summary) + "</p>" +
             '<p class="small muted" style="margin:6px 0 0">Presented by ' +
             '<a href="profile.html?id=' + encodeURIComponent(p.user_id) + '">' +
-            WA.esc(p.profile ? p.profile.full_name : "Member") + "</a></p></div>";
+            WA.esc(p.profile ? p.profile.full_name : "Member") + "</a></p>" +
+            (au ? '<div class="art-actions">' + WA.articleLinkBtn(au) + "</div>" : "") +
+            "</div>";
         }
 
         // roster

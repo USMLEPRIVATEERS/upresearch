@@ -720,6 +720,16 @@
           String((b.profile && b.profile.full_name) || "")));
   };
 
+  /* An underlined title reads as decoration to most people, so the paper went
+     unopened. Every page that shows an article renders this same labelled
+     button, so the affordance is impossible to miss and can't drift apart. */
+  WA.articleLinkBtn = function (url, label) {
+    const safe = WA.safeUrl(url);
+    if (!safe) return "";
+    return '<a class="btn sm ghost art-open" href="' + WA.esc(safe) + '" ' +
+      'target="_blank" rel="noopener noreferrer">🔗 ' + WA.esc(label || "Open the article") + " ↗</a>";
+  };
+
   /* ---------- calendar export & deep links ---------- */
 
   const icsStamp = (d) => d.toISOString().replace(/[-:]|\.\d{3}/g, "");

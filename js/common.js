@@ -318,6 +318,8 @@
       badge: "badge-host",
       group: "organizer",
       slots: 1,
+      usually: "Marcos Vilela",
+      hint: "Usually Marcos Vilela — sign up here if you're covering for him.",
       blurb: "Opens the room, provides the meeting link, keeps time and publishes the report afterwards.",
     },
     scientific_lead: {
@@ -326,6 +328,8 @@
       badge: "badge-scilead",
       group: "organizer",
       slots: 1,
+      usually: "Fernando Vasconcellos",
+      hint: "Usually Dr. Fernando Vasconcellos.",
       blurb: "Leads the methodology and statistics discussion and validates research ideas.",
     },
     clinical_lead: {
@@ -334,6 +338,8 @@
       badge: "badge-clinlead",
       group: "organizer",
       slots: 1,
+      usually: "Iria da Costa",
+      hint: "Usually Dra. Iria da Costa.",
       blurb: "Runs the Step question block and brings the bedside reading of the article.",
     },
   };

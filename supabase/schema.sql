@@ -208,6 +208,42 @@ create policy "delete absence"
   on public.session_absences for delete to authenticated
   using (marked_by = auth.uid());
 
+-- Single days a member cannot make, even though a weekly recurrence says they
+-- can. One row = one calendar day off; it silently removes that member from
+-- every slot falling on that day, without touching the recurrence itself.
+-- `day` is a calendar date in `tz` (the timezone the member was using when they
+-- added it), because the same date means different UTC instants per timezone.
+create table if not exists public.availability_exceptions (
+  id         bigint generated always as identity primary key,
+  user_id    uuid not null references public.profiles (id) on delete cascade,
+  day        date not null,
+  tz         text not null default 'UTC',
+  note       text,
+  created_at timestamptz not null default now(),
+  unique (user_id, day)
+);
+
+create index if not exists availability_exceptions_day_idx
+  on public.availability_exceptions (day);
+
+alter table public.availability_exceptions enable row level security;
+
+-- Readable by everyone: the whole club's slot expansion has to know about them,
+-- otherwise a slot would still show someone who already said they can't make it.
+drop policy if exists "exceptions readable by members" on public.availability_exceptions;
+create policy "exceptions readable by members"
+  on public.availability_exceptions for select to authenticated using (true);
+
+drop policy if exists "insert own exception" on public.availability_exceptions;
+create policy "insert own exception"
+  on public.availability_exceptions for insert to authenticated
+  with check (user_id = auth.uid());
+
+drop policy if exists "delete own exception" on public.availability_exceptions;
+create policy "delete own exception"
+  on public.availability_exceptions for delete to authenticated
+  using (user_id = auth.uid());
+
 -- board (the single row is seeded above; members can read and edit it)
 drop policy if exists "board readable by members" on public.board;
 create policy "board readable by members"

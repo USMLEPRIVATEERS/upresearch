@@ -985,11 +985,112 @@
       } catch(e){ console.error(e); res.innerHTML=`<div style="color:#dc2626;">Error: ${calEsc(e.message)}</div>`; res.style.display=''; WardApp.showToast('Failed to check folders','error'); } finally { btn.disabled=false; btn.textContent=orig; }
     }
 
+    /* Ask the Apps Script for the folder's real contents. Returns null when the
+       deployment doesn't implement `listProjectTree` yet, so we can fall back to
+       the snapshot stored in the database. */
+    async function fetchDriveTree(mainFolderId){
+      try {
+        const r = await fetch(GOOGLE_APPS_SCRIPT_URL, { method:'POST',
+          body: JSON.stringify({ action:'listProjectTree', mainFolderId }) });
+        if(!r.ok) return null;
+        const d = await r.json();
+        if(!d || !d.success || !d.tree) return null;
+        return d.tree;
+      } catch(e){ return null; }
+    }
+
     async function loadProjectDriveFolders(projectId){
       const { data:folders }=await WardApp.db.from('research_project_folders').select('*').eq('project_id',projectId).order('parent_folder_name',{ ascending:true, nullsFirst:true }).order('folder_name');
       if(!folders||!folders.length){ document.getElementById('drive-files-section').style.display='none'; return; }
+      document.getElementById('drive-files-section').style.display='block';
+      const container=document.getElementById('drive-folders-container');
+      const main=folders.find(f=>f.parent_folder_name===null);
+
+      // Live view: Drive is the source of truth, so folders added, renamed or
+      // deleted by hand there show up here. Falls back to the stored snapshot
+      // when the Apps Script has no listProjectTree action.
+      if(main && main.folder_id){
+        container.innerHTML='<p class="text-muted">Loading folders from Google Drive…</p>';
+        const tree=await fetchDriveTree(main.folder_id);
+        if(tree){ driveLive=true; renderDriveTree(tree); return; }
+      }
+      driveLive=false;
       const { data:files }=await WardApp.db.from('research_project_files').select('*').eq('project_id',projectId);
-      document.getElementById('drive-files-section').style.display='block'; renderDriveFolders(folders, files||[]);
+      renderDriveFolders(folders, files||[]);
+    }
+
+    /* ---- live rendering (tree straight from Drive) ---- */
+    let driveLive=false;
+    function countTree(node){
+      let f=(node.folders||[]).length, x=(node.files||[]).length;
+      (node.folders||[]).forEach(s=>{ const c=countTree(s); f+=c.folders; x+=c.files; });
+      return { folders:f, files:x };
+    }
+    function renderDriveTree(tree){
+      const container=document.getElementById('drive-folders-container');
+      const c=countTree(tree);
+      container.innerHTML=`<div class="folder-item main-project-folder"><div class="folder-header" onclick="toggleFolder(this)"><span class="folder-toggle">▶</span><span class="folder-icon">📂</span><span class="folder-name">${calEsc(tree.name||'Project folder')}</span><span class="folder-count">(${c.folders} folders, ${c.files} files · live)</span><a href="${calEsc(tree.url||'#')}" target="_blank" class="folder-link" onclick="event.stopPropagation()">Open in Drive ↗</a></div><div class="folder-content">${
+        ((tree.folders||[]).length || (tree.files||[]).length)
+          ? (tree.folders||[]).map(f=>renderLiveFolder(f,0)).join('')+renderLiveFiles(tree.files||[])
+          : '<p class="text-muted empty-folder">This folder is empty</p>'
+      }</div></div>`;
+    }
+    function renderLiveFiles(files){
+      const canEdit=canEditProject(currentProject);
+      if(!files.length) return '';
+      return `<div class="files-list">${files.map(file=>`<div class="file-item"><a href="${calEsc(file.url)}" target="_blank" class="file-link"><span class="file-icon">${getFileIcon(file.mimeType)}</span><span class="file-name">${calEsc(file.name)}</span><span class="file-size">${formatFileSize(file.size)}</span></a>${canEdit?`<button class="btn btn-sm btn-danger" onclick="deleteDriveFile('${calEsc(file.id)}'); event.stopPropagation();">🗑️</button>`:''}</div>`).join('')}</div>`;
+    }
+    function renderLiveFolder(folder, level){
+      const canEdit=canEditProject(currentProject);
+      const fid=calEsc(folder.id);
+      const subs=folder.folders||[], files=folder.files||[];
+      const dz=canEdit?`ondragover="handleFolderDragOver(event)" ondragleave="handleFolderDragLeave(event)" ondrop="handleDriveDrop(event, '${fid}')" data-folder-id="${fid}"`:'';
+      let html=`<div class="folder-item level-${level}" ${dz}><div class="folder-header" onclick="toggleFolder(this)"><span class="folder-toggle">▶</span><span class="folder-icon">📁</span><span class="folder-name">${calEsc(folder.name)}</span><span class="folder-count">(${files.length} file${files.length!==1?'s':''}${subs.length?`, ${subs.length} folder${subs.length!==1?'s':''}`:''})</span>${canEdit?'<span class="drop-hint" style="display:none; color:#b31942; font-size:.75rem; margin-left:.5rem;">📥 Drop here</span>':''}<a href="${calEsc(folder.url||'#')}" target="_blank" class="folder-link" onclick="event.stopPropagation()">Open in Drive ↗</a></div><div class="folder-content">`;
+      if(subs.length) html+='<div class="subfolders-container">'+subs.map(s=>renderLiveFolder(s,level+1)).join('')+'</div>';
+      html+=renderLiveFiles(files);
+      if(!subs.length && !files.length) html+='<p class="text-muted empty-folder">Empty</p>';
+      if(canEdit) html+=`<div class="folder-actions"><input type="file" id="up-${fid}" style="display:none;" onchange="handleDriveFileSelect(event, '${fid}')"><button class="btn btn-sm btn-primary" onclick="document.getElementById('up-${fid}').click()">📤 Upload</button></div>`;
+      return html+'</div></div>';
+    }
+
+    /* Uploads/deletes in live mode talk to Drive directly — no DB row needed. */
+    async function uploadToDriveFolder(file, driveFolderId){
+      const base64=await fileToBase64(file);
+      const r=await fetch(GOOGLE_APPS_SCRIPT_URL,{ method:'POST', body:JSON.stringify({ action:'uploadToFolder', folderId:driveFolderId, fileName:file.name, fileContent:base64, mimeType:file.type }) });
+      const d=await r.json(); if(!d.success)throw new Error(d.error||'Failed to upload');
+    }
+    async function handleDriveFileSelect(event, driveFolderId){
+      const file=event.target.files[0]; if(!file)return;
+      if(file.size>MAX_FILE_SIZE){ WardApp.showToast('File too large (max 100MB)','error'); event.target.value=''; return; }
+      WardApp.showLoading();
+      try { await uploadToDriveFolder(file, driveFolderId); WardApp.showToast('File uploaded!'); await loadProjectDriveFolders(currentProject.id); }
+      catch(e){ console.error(e); WardApp.showToast('Failed to upload','error'); }
+      finally { WardApp.hideLoading(); event.target.value=''; }
+    }
+    async function handleDriveDrop(event, driveFolderId){
+      event.preventDefault(); event.stopPropagation();
+      const it=event.currentTarget; it.classList.remove('drag-over');
+      const h=it.querySelector('.drop-hint'); if(h)h.style.display='none';
+      const files=event.dataTransfer.files; if(!files||!files.length)return;
+      WardApp.showLoading(); let ok=0, err=0;
+      try {
+        for(const file of files){
+          if(file.size>MAX_FILE_SIZE){ WardApp.showToast(`"${file.name}" too large (max 100MB)`,'error'); err++; continue; }
+          try { await uploadToDriveFolder(file, driveFolderId); ok++; } catch(e){ console.error(e); err++; }
+        }
+        if(ok){ WardApp.showToast(`${ok} file(s) uploaded!`); await loadProjectDriveFolders(currentProject.id); }
+        if(err)WardApp.showToast(`${err} file(s) failed`,'error');
+      } finally { WardApp.hideLoading(); }
+    }
+    async function deleteDriveFile(driveFileId){
+      if(!confirm('Delete this file from Google Drive?'))return;
+      WardApp.showLoading();
+      try {
+        const r=await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=deleteFile&fileId=${encodeURIComponent(driveFileId)}`);
+        try { const d=await r.json(); if(d && d.success===false) throw new Error(d.error||'Failed'); } catch(e){ if(!r.ok) throw e; }
+        WardApp.showToast('File deleted!'); await loadProjectDriveFolders(currentProject.id);
+      } catch(e){ console.error(e); WardApp.showToast('Failed to delete file','error'); }
+      finally { WardApp.hideLoading(); }
     }
     function renderDriveFolders(folders, files){
       const container=document.getElementById('drive-folders-container'); const main=folders.find(f=>f.parent_folder_name===null);

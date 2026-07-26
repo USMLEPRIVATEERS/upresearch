@@ -244,6 +244,38 @@ create policy "delete own exception"
   on public.availability_exceptions for delete to authenticated
   using (user_id = auth.uid());
 
+-- "Not yet" on the presenter queue. One row per member who asked to skip their
+-- turn; they drop off the list until another session is actually held, then
+-- come back in the same position. Deleting the row means "I'm ready now".
+create table if not exists public.presenter_passes (
+  user_id   uuid primary key references public.profiles (id) on delete cascade,
+  passed_at timestamptz not null default now(),
+  note      text
+);
+
+alter table public.presenter_passes enable row level security;
+
+-- Readable by everyone: the queue is a shared list, so it has to look the same
+-- to the whole club.
+drop policy if exists "passes readable by members" on public.presenter_passes;
+create policy "passes readable by members"
+  on public.presenter_passes for select to authenticated using (true);
+
+drop policy if exists "insert own pass" on public.presenter_passes;
+create policy "insert own pass"
+  on public.presenter_passes for insert to authenticated
+  with check (user_id = auth.uid());
+
+drop policy if exists "update own pass" on public.presenter_passes;
+create policy "update own pass"
+  on public.presenter_passes for update to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "delete own pass" on public.presenter_passes;
+create policy "delete own pass"
+  on public.presenter_passes for delete to authenticated
+  using (user_id = auth.uid());
+
 -- board (the single row is seeded above; members can read and edit it)
 drop policy if exists "board readable by members" on public.board;
 create policy "board readable by members"

@@ -457,8 +457,11 @@
             }
             WA.toast("You’re in! Added as attendee for " +
               (g ? WA.fmtDateTime(g.date) : "this slot") + ".", "success");
+            rows.push({ ...me, kind: "single", slot_start: iso,
+              created_at: new Date().toISOString(), open_ended: false, expires_at: null });
             renderSections();
             renderHero();
+            renderQueue(); // signing up changes who's eligible for the rotation
           });
         });
         document.querySelectorAll("[data-details]").forEach((b) => {
@@ -818,13 +821,23 @@
          Computed from the same signup history as the stats: members who have
          taken part but never presented, most experienced first. Publishing it
          replaces "who wants to volunteer?" with "it's your turn next". */
-      (function renderQueue() {
+      const QUEUE_PAGE = 10;
+      let queueLimit = QUEUE_PAGE;
+      let passes = new Map();   // user_id -> passed_at, filled below
+      let passesMissing = false;
+
+      function renderQueue() {
         const profilesById = {};
         rows.forEach((r) => { if (r.profile) profilesById[r.user_id] = r.profile; });
-        const queue = WA.presenterQueue(rows, profilesById);
-        if (!queue.length) return;
+        const queue = WA.presenterQueue(rows, profilesById, { passes });
+        const iPassed = !passesMissing &&
+          WA.passIsCurrent(passes.get(user.id), WA.lastSessionHeld(rows));
+        if (!queue.length && !iPassed) { $("queue-section").classList.add("hidden"); return; }
         $("queue-section").classList.remove("hidden");
-        $("queue-list").innerHTML = queue.slice(0, 10).map((q, i) => {
+
+        const shown = queue.slice(0, queueLimit);
+        const rest = queue.length - shown.length;
+        $("queue-list").innerHTML = shown.map((q, i) => {
           const name = (q.profile && q.profile.full_name) || "Member";
           const steps = [];
           if (q.methods_checker) steps.push(q.methods_checker + "× methods checker");
@@ -832,16 +845,59 @@
           const sub = q.sessions + " session" + (q.sessions === 1 ? "" : "s") +
             (steps.length ? " · " + steps.join(" · ") : "");
           const isMe = q.user_id === user.id;
-          return '<div class="queue-item' + (i === 0 ? " next" : "") + '">' +
+          // Only you can pass on your own turn, and only from your own row.
+          const mineActions = isMe
+            ? '<span class="queue-acts">' +
+              '<a class="btn sm ghost" href="availability.html?role=presenter">📢 I\'ll present</a>' +
+              '<button type="button" class="btn sm ghost" id="queue-pass">Not yet</button></span>'
+            : "";
+          return '<div class="queue-item' + (i === 0 ? " next" : "") + (isMe ? " me" : "") + '">' +
             '<span class="queue-pos">' + (i + 1) + "</span>" +
             WA.avatarHtml(q.profile, "roster-av", "") +
             '<span class="queue-main"><span class="queue-name">' +
             '<a href="profile.html?id=' + encodeURIComponent(q.user_id) + '">' + WA.esc(name) + "</a>" +
             (isMe ? ' <span class="small muted">(you)</span>' : "") + "</span>" +
             '<span class="queue-sub">' + WA.esc(sub) + "</span></span>" +
-            (i === 0 ? '<span class="queue-tag">next up</span>' : "") +
+            mineActions +
+            (i === 0 && !isMe ? '<span class="queue-tag">next up</span>' : "") +
             "</div>";
-        }).join("");
+        }).join("") +
+          (rest > 0
+            ? '<button type="button" class="btn sm ghost" id="show-more-queue" ' +
+              'style="width:100%; margin-top:8px">Show ' + Math.min(QUEUE_PAGE, rest) +
+              " more of " + rest + " remaining</button>"
+            : "") +
+          (iPassed
+            ? '<div class="queue-passed">You said <strong>not yet</strong> — you\'re off the list ' +
+              "until the next session is held, and you keep your place. " +
+              '<button type="button" class="btn sm ghost" id="queue-unpass">I\'m ready now</button></div>'
+            : "");
+
+        const more = $("show-more-queue");
+        if (more) more.addEventListener("click", () => { queueLimit += QUEUE_PAGE; renderQueue(); });
+        const pass = $("queue-pass");
+        if (pass) pass.addEventListener("click", () => setPass(true));
+        const unpass = $("queue-unpass");
+        if (unpass) unpass.addEventListener("click", () => setPass(false));
+      }
+
+      async function setPass(on) {
+        if (on && !confirm("Skip your turn for now?\n\nYou come back to the list as soon as the next session is held, in the same position — nothing is lost.")) return;
+        const { error } = on
+          ? await WA.client.from("presenter_passes")
+              .upsert({ user_id: user.id, passed_at: new Date().toISOString() }, { onConflict: "user_id" })
+          : await WA.client.from("presenter_passes").delete().eq("user_id", user.id);
+        if (error) { WA.toast("Could not save that: " + error.message, "error"); return; }
+        if (on) { passes.set(user.id, new Date()); WA.toast("No problem — you'll be back next time.", "info"); }
+        else { passes.delete(user.id); WA.toast("You're back on the list.", "success"); }
+        renderQueue();
+      }
+
+      renderQueue();
+      (async function loadPasses() {
+        const res = await WA.fetchPresenterPasses();
+        passes = res.map; passesMissing = res.missing;
+        renderQueue(); // the "not yet" list arrives a beat after the page
       })();
 
       /* Deep link: home.html?slot=<iso> opens that session's details modal

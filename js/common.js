@@ -656,9 +656,40 @@
      Who is up next: members who have taken part in at least `minSessions`
      sessions and have never presented, most-experienced first. Computed from
      the same signup history as the stats — no extra bookkeeping. */
+  /* Everyone who asked to skip their turn, as a Map user_id -> passed_at.
+     Empty when the table hasn't been created yet (migration pending). */
+  WA.fetchPresenterPasses = async function () {
+    const res = await WA.client.from("presenter_passes").select("user_id, passed_at");
+    const map = new Map();
+    if (res.error) return { map, missing: true };
+    for (const r of res.data || []) map.set(r.user_id, new Date(r.passed_at));
+    return { map, missing: false };
+  };
+
+  /* A "not yet" lasts until another session is actually held — that is what
+     "you keep your place for next time" means. Passing again is always
+     possible, so nobody is ever pushed into presenting. */
+  WA.passIsCurrent = function (passedAt, lastSessionHeld) {
+    if (!passedAt) return false;
+    if (!lastSessionHeld) return true; // no session since — still skipping
+    return new Date(passedAt) >= lastSessionHeld;
+  };
+
+  WA.lastSessionHeld = function (allRows, days) {
+    const start = new Date(Date.now() - (days || 365) * 86400000);
+    const groups = WA.groupOccurrences(WA.expandAvailabilities(allRows, start, new Date()));
+    let last = null;
+    for (const g of groups) {
+      if (g.presenters.length && (!last || g.date > last)) last = g.date;
+    }
+    return last;
+  };
+
   WA.presenterQueue = function (allRows, profilesById, opts) {
     const o = opts || {};
     const minSessions = o.minSessions == null ? 2 : o.minSessions;
+    const passes = o.passes || new Map();
+    const lastHeld = passes.size ? WA.lastSessionHeld(allRows, o.days || 365) : null;
     const stats = WA.computeStats(allRows, o.days || 365);
     // Anyone already signed up to present a future slot is off the queue.
     const upcoming = WA.groupOccurrences(
@@ -674,6 +705,8 @@
         const p = profilesById && profilesById[id];
         return !(p && WA.isFixedRoleHolder(p.full_name));
       })
+      // "Not yet" — off the list until the next session is held.
+      .filter((id) => !WA.passIsCurrent(passes.get(id), lastHeld))
       .map((id) => ({
         user_id: id,
         profile: (profilesById && profilesById[id]) || null,

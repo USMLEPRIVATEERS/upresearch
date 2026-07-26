@@ -37,7 +37,7 @@
       <div>
         <h1>Certificates</h1>
         <p class="muted" id="intro">Download an official certificate for each article you have presented
-          at the Ward Academy Journal Club. Certificates are issued once the session’s host confirms it
+          at the Ward Academy Journal Club. Certificates are issued once the session’s organizing team confirms it
           took place — you can <strong>Download</strong> the image or <strong>Print / Save as PDF</strong>.</p>
       </div>
     </div>
@@ -279,15 +279,15 @@
           "<div><strong>📄 " + WA.esc(art.title) + "</strong>" +
           '<div class="small muted">' + WA.esc([art.study_design, art.specialty].filter(Boolean).join(" · ")) +
           " · presented " + WA.esc(formalDate(c.date)) + "</div>" +
-          '<div class="small" style="color:#43506a; margin-top:4px">⏳ Awaiting host confirmation that the ' +
-          'session took place — the certificate unlocks once the host confirms it in <a href="history.html">History</a>.</div></div>' +
+          '<div class="small" style="color:#43506a; margin-top:4px">⏳ Awaiting confirmation that the ' +
+          'session took place — the certificate unlocks once the organizing team confirms it in <a href="history.html">History</a>.</div></div>' +
           '<button class="btn sm ghost" disabled>🔒 Locked</button></div>';
       }
 
       if (!mine.length && !pending.length) {
         $("cert-list").innerHTML =
           '<div class="empty-state"><h3>No certificates yet</h3>' +
-          "<p>Once you present an article at a Journal Club session <strong>and the host confirms " +
+          "<p>Once you present an article at a Journal Club session <strong>and the organizing team confirms " +
           "the session took place</strong>, an official certificate for that presentation will appear " +
           "here to download.</p>" +
           '<a class="btn" href="availability.html">Sign up to present</a></div>';
@@ -313,9 +313,9 @@
           '<button class="btn sm" data-i="' + i + '">🎓 View certificate</button></div>';
       }).join("");
       if (pending.length) {
-        listHtml += '<h2 style="margin:22px 0 10px; font-size:1.1rem">⏳ Awaiting host confirmation</h2>' +
+        listHtml += '<h2 style="margin:22px 0 10px; font-size:1.1rem">⏳ Awaiting confirmation</h2>' +
           '<p class="muted small" style="margin:0 0 10px">These presentations are recorded, but the ' +
-          "certificate is only issued after the session’s host confirms it actually took place.</p>" +
+          "certificate is only issued after the session’s organizing team confirms it actually took place.</p>" +
           pending.map(pendingCard).join("");
       }
       $("cert-list").innerHTML = listHtml;

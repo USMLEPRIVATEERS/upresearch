@@ -163,7 +163,7 @@
       $("role-options").innerHTML =
         '<div class="role-group-label">Rotating roles <span>— these take turns every session</span></div>' +
         ["attendee"].concat(WA.ROLE_LADDER).map(roleCard).join("") +
-        '<div class="role-group-label">Organizing team <span>— standing roles</span></div>' +
+        '<div class="role-group-label">Organizing team <span>— standing roles, usually the same people. Sign up if you\'re covering.</span></div>' +
         ["host", "scientific_lead", "clinical_lead"].map(roleCard).join("");
       $("role-options").addEventListener("click", (e) => {
         const btn = e.target.closest(".role-option");

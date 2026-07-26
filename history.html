@@ -94,24 +94,30 @@
           list.map(personLink).join(", ") + "</p>";
       }
 
+      /* Any of the organizing roles can confirm a session — not just the host.
+         The leads run the session too, and gating on `host` alone would leave a
+         session nobody can confirm (and presenters without certificates) whenever
+         the coordination slot was filled by a lead instead. */
+      const ORGANIZER_ROLES = ["host", "scientific_lead", "clinical_lead"];
       function confirmArea(g) {
         const conf = confirmations.get(g.iso);
-        const iAmHost = g.hosts.some((h) => h.user_id === user.id);
+        const iAmOrganizer = ORGANIZER_ROLES.some((r) =>
+          (g.byRole[r] || []).some((a) => a.user_id === user.id));
         if (conf) {
-          const who = conf.confirmer ? conf.confirmer.full_name : "the host";
+          const who = conf.confirmer ? conf.confirmer.full_name : "the organizing team";
           return '<div class="confirm-line ok">✓ <strong>Session confirmed</strong> by ' +
             WA.esc(who) + " — certificates available to presenters." +
             (conf.confirmed_by === user.id
               ? ' <button class="btn sm ghost" data-unconfirm="' + WA.esc(g.iso) + '">Undo</button>' : "") +
             "</div>";
         }
-        if (iAmHost) {
+        if (iAmOrganizer) {
           return '<div class="confirm-line pend">⏳ <strong>Awaiting your confirmation.</strong> ' +
-            "As the host, confirm this session took place to unlock the presenters’ certificates." +
+            "You were on the organizing team for this session — confirm it took place to unlock the presenters’ certificates." +
             '<div style="margin-top:8px"><button class="btn sm" data-confirm="' + WA.esc(g.iso) +
             '">✓ Confirm this session took place</button></div></div>';
         }
-        return '<div class="confirm-line pend">⏳ Awaiting host confirmation before certificates are issued.</div>';
+        return '<div class="confirm-line pend">⏳ Awaiting confirmation from the organizing team before certificates are issued.</div>';
       }
 
       function sessionCard(g) {

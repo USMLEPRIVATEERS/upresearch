@@ -898,14 +898,16 @@
     }
     async function cResearchApps() {
       const { data } = await WA.client.from("research_applications")
-        .select("id, status, created_at, updated_at, applicant_id, applicant:applicant_id(full_name), recruitment:recruitment_id(created_by, project_id)")
+        .select("id, status, created_at, updated_at, applicant_id, recruitment_id, applicant:applicant_id(full_name), recruitment:recruitment_id(created_by, project_id)")
         .order("created_at", { ascending: false }).limit(25);
       const out = [];
       for (const a of data || []) {
         const rec = a.recruitment || {};
         if (rec.created_by === me() && a.applicant_id !== me()) {
           const who = a.applicant ? a.applicant.full_name || "Someone" : "Someone";
-          out.push(mk(a.created_at, "📨", "<b>" + esc(who) + "</b> applied to co-author your project", "research.html?project=" + rec.project_id, "app-" + a.id));
+          // Opens the review modal for that call, so the owner can decide right away.
+          out.push(mk(a.created_at, "📨", "<b>" + esc(who) + "</b> applied to co-author your project — tap to review",
+            "research.html?applications=" + encodeURIComponent(a.recruitment_id), "app-" + a.id));
         }
         if (a.applicant_id === me() && (a.status === "accepted" || a.status === "rejected")) {
           const accepted = a.status === "accepted";
@@ -924,7 +926,7 @@
         const where = spec ? " in <b>" + esc(spec) + "</b>" : "";
         return mk(r.created_at, "🤝",
           "A research project" + where + " is looking for co-authors — tap to volunteer",
-          "research.html", "rec-" + r.id);
+          "research.html?apply=" + encodeURIComponent(r.id), "rec-" + r.id);
       });
     }
 
@@ -1172,10 +1174,43 @@
         applications = apps || [];
         myApps = {}; applications.forEach((a) => { if (a.applicant_id === ctx.user.id) myApps[a.recruitment_id] = a; });
         render();
+        handleDeepLink();
       } catch (e) {
         console.warn("Open-positions board unavailable (run schema.sql sections 8-9):", (e && e.message) || e);
         if (container) container.innerHTML = "";
       }
+    }
+
+    /* Notification deep links:
+         ?apply=<id>        → open the "apply to join" form for that call
+         ?applications=<id> → open the owner's review list for that call
+       Runs once, after the board's data is in, then strips the param so a
+       refresh doesn't reopen the modal. */
+    let deepLinkDone = false;
+    function handleDeepLink() {
+      if (deepLinkDone) return;
+      deepLinkDone = true;
+      const params = new URLSearchParams(window.location.search);
+      const applyId = params.get("apply");
+      const appsId = params.get("applications");
+      if (!applyId && !appsId) return;
+      const id = Number(applyId || appsId);
+      const r = recruitments.find((x) => String(x.id) === String(id));
+      if (!r) {
+        WA.toast("That position is no longer open.", "info");
+      } else if (appsId || r.created_by === ctx.user.id) {
+        if (r.created_by !== ctx.user.id) WA.toast("Only the project owner can review applications.", "info");
+        else openApps(id);
+      } else if (myApps[id]) {
+        WA.toast("You already applied to this position.", "info");
+      } else {
+        openApply(id);
+      }
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("apply"); url.searchParams.delete("applications");
+        window.history.replaceState({}, "", url);
+      } catch (e) {}
     }
 
     function render() {

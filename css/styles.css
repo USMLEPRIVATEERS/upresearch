@@ -514,6 +514,19 @@ td.cal-cell.empty:hover { background: var(--red-soft); }
   font-size: 1.4rem; color: var(--muted); line-height: 1;
 }
 
+/* ---- WhatsApp group onboarding dialog (home) ---- */
+.wag-modal { max-width: 460px; }
+.wag-modal h3 { margin-right: 30px; }
+.wag-steps { margin: 0 0 4px; padding-left: 20px; }
+.wag-steps li { margin-bottom: 5px; }
+.wag-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0 2px; }
+.wag-actions .btn { flex: 1; min-width: 165px; justify-content: center; }
+.wag-check {
+  display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
+  margin-top: 16px; padding-top: 13px; border-top: 1px solid var(--border); font-size: 0.9rem;
+}
+.wag-check input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--red); flex-shrink: 0; }
+
 /* ---------------- members ---------------- */
 
 .member-card { display: flex; gap: 14px; align-items: flex-start; }

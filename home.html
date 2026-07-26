@@ -100,6 +100,7 @@
   </main>
 
   <div id="modal-root"></div>
+  <div id="wag-root"></div>
 
   <footer class="site">Ward Academy · Journal Club</footer>
 
@@ -592,6 +593,103 @@
         $("modal-root").innerHTML = "";
         document.body.style.overflow = "";
       }
+
+      /* ---------- WhatsApp group onboarding ----------
+         A small guided flow, shown once per member (per device) until they
+         either confirm they're in the group, finish the two steps, or opt
+         out. State lives in localStorage so we never nag someone twice. */
+      (function whatsAppGroupFlow() {
+        const FORM_URL = "https://forms.gle/3mPYYR5JFv6n5jVv8";
+        const WA_NUMBER = "5517996777474";
+        const WA_DISPLAY = "+55 17 99677-7474";
+        const WA_MSG = "Hi! I just filled out the Ward Academy Journal Club form — I'd like to join the WhatsApp group.";
+        const waLink = "https://wa.me/" + WA_NUMBER + "?text=" + encodeURIComponent(WA_MSG);
+        const KEY = "wa_wagroup_" + user.id;
+        const root = $("wag-root");
+        if (!root) return;
+
+        const get = () => { try { return localStorage.getItem(KEY) || ""; } catch (e) { return "done"; } };
+        const set = (v) => { try { localStorage.setItem(KEY, v); } catch (e) {} };
+
+        let step = get();
+        if (step === "done" || step === "declined") return;
+        // A notification deep link already opens a modal — don't stack on it.
+        if (new URLSearchParams(window.location.search).get("slot")) return;
+
+        let dismiss = close;
+        function close() { root.innerHTML = ""; document.body.style.overflow = ""; dismiss = close; }
+        function finish(state) { set(state); close(); }
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && root.innerHTML) dismiss();
+        });
+
+        function shell(title, bodyHtml, onDismiss) {
+          root.innerHTML = '<div class="modal-backdrop wag-backdrop"><div class="modal wag-modal">' +
+            '<button class="modal-close" aria-label="Close">×</button>' +
+            "<h3>" + title + "</h3>" + bodyHtml + "</div></div>";
+          document.body.style.overflow = "hidden";
+          dismiss = onDismiss || close;
+          root.querySelector(".modal-close").onclick = () => dismiss();
+          root.querySelector(".wag-backdrop").addEventListener("click", (e) => {
+            if (e.target.classList.contains("wag-backdrop")) dismiss();
+          });
+        }
+
+        function showIntro() {
+          set("intro");
+          shell("📣 We need someone to present!",
+            "<p>We’re looking for a member to volunteer and present an article at the next journal club.</p>" +
+            '<p class="small muted" style="margin-bottom:6px">To join the WhatsApp group, where sessions get organised:</p>' +
+            '<ol class="wag-steps"><li>Fill out this quick form.</li>' +
+            "<li>Then send a message to <b>" + WA_DISPLAY + "</b> so we can add you.</li></ol>" +
+            '<div class="wag-actions">' +
+            '<a class="btn" href="' + FORM_URL + '" target="_blank" rel="noopener noreferrer">📝 Open the form</a>' +
+            '<a class="btn secondary" href="' + waLink + '" target="_blank" rel="noopener noreferrer">💬 Message on WhatsApp</a>' +
+            "</div>" +
+            '<label class="wag-check"><input type="checkbox" id="wag-already"> I’m already in the WhatsApp group</label>',
+            showAsk);
+          root.querySelector("#wag-already").addEventListener("change", (e) => {
+            if (e.target.checked) { finish("done"); WA.toast("Great — we won’t ask again.", "success"); }
+          });
+        }
+
+        function showAsk() {
+          shell("Join the WhatsApp group?",
+            "<p>That’s where the club organises everything — which article is next, what time the call is, and the meeting link.</p>" +
+            '<div class="wag-actions">' +
+            '<button class="btn" id="wag-yes">Yes, I want to join</button>' +
+            '<button class="btn ghost" id="wag-no">No thanks — don’t ask again</button></div>');
+          root.querySelector("#wag-yes").onclick = showForm;
+          root.querySelector("#wag-no").onclick = () => finish("declined");
+        }
+
+        function showForm() {
+          set("form");
+          shell("Step 1 of 2 · Fill out the form",
+            "<p>Open the form and fill it in — it only takes a minute. Then come back here and tick the box below.</p>" +
+            '<div class="wag-actions"><a class="btn" href="' + FORM_URL + '" target="_blank" rel="noopener noreferrer">📝 Open the form</a></div>' +
+            '<label class="wag-check"><input type="checkbox" id="wag-filled"> I’ve filled out the form</label>');
+          root.querySelector("#wag-filled").addEventListener("change", (e) => { if (e.target.checked) showWhats(); });
+        }
+
+        function showWhats() {
+          set("whatsapp");
+          shell("Step 2 of 2 · Send us a message",
+            "<p>Last step: message <b>" + WA_DISPLAY + "</b> on WhatsApp to let us know you filled out the form, and we’ll add you to the group.</p>" +
+            '<div class="wag-actions"><a class="btn" href="' + waLink + '" target="_blank" rel="noopener noreferrer">💬 Message on WhatsApp</a></div>' +
+            '<label class="wag-check"><input type="checkbox" id="wag-sent"> I’ve sent the message</label>');
+          root.querySelector("#wag-sent").addEventListener("change", (e) => {
+            if (e.target.checked) { finish("done"); WA.toast("All set — see you in the group! 🎉", "success"); }
+          });
+        }
+
+        // Let the page paint first, and resume wherever the member left off.
+        setTimeout(() => {
+          if (step === "form") showForm();
+          else if (step === "whatsapp") showWhats();
+          else showIntro();
+        }, 700);
+      })();
 
       /* ---------- filters & sorting ---------- */
 

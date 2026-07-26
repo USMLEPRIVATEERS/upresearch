@@ -145,8 +145,11 @@
           html += '<p class="small muted" style="margin:6px 0 0">Presented by ' + personLink(p) + "</p>";
           html += "</div>";
         }
-        html += peopleLine("⭐", "Host", g.hosts);
-        html += peopleLine("👥", "Attendees", g.attendees);
+        // Full line-up, so the record shows every role people took that session.
+        ["host", "methods_checker", "question_reader", "scientific_lead", "clinical_lead", "attendee"]
+          .forEach((r) => {
+            html += peopleLine(WA.roleIcon(r), WA.roleLabel(r), g.byRole[r] || []);
+          });
         if (!confMissing) html += confirmArea(g);
         html += "</div>";
         return html;

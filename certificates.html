@@ -94,6 +94,21 @@
       const mine = allMine.filter((c) => c.confirmed);
       const pending = allMine.filter((c) => !c.confirmed);
 
+      /* Participation record — the other roles you took in confirmed sessions.
+         Deliberately NOT a certificate: the nominal certificate stays exclusive
+         to presenting, so it keeps its weight. This is the ladder made visible. */
+      const RECORD_ROLES = ["methods_checker", "question_reader", "host", "scientific_lead", "clinical_lead"];
+      const myRecord = WA.groupOccurrences(WA.expandAvailabilities(rows, lookback, now))
+        .filter((g) => g.date.getTime() + 3600000 <= now.getTime() &&
+          g.presenters.length && confirmations.has(g.iso))
+        .reverse()
+        .map((g) => {
+          const roles = RECORD_ROLES.filter((r) => (g.byRole[r] || []).some((a) => a.user_id === user.id));
+          const art = g.presenters[0] && g.presenters[0].article;
+          return roles.length ? { date: g.date, roles, article: art } : null;
+        })
+        .filter(Boolean);
+
       function refId(iso, articleId) {
         const s = user.id + "|" + iso + "|" + (articleId || "");
         let h = 0;
@@ -285,12 +300,26 @@
       }
 
       if (!mine.length && !pending.length) {
+        // Still show the participation record: it's the evidence of the steps
+        // already taken towards a first presentation.
+        const recordHtml = myRecord.length
+          ? '<h2 style="margin:22px 0 10px; font-size:1.1rem">📋 Participation record</h2>' +
+            '<p class="muted small" style="margin:0 0 10px">Roles you took in confirmed sessions. ' +
+            "You're already on the ladder — presenting is the step that earns a certificate.</p>" +
+            myRecord.map((r) => '<div class="card tight">' +
+              '<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center">' +
+              r.roles.map((role) => WA.roleBadge(role)).join(" ") +
+              '<span class="small muted">' + WA.esc(formalDate(r.date)) + "</span></div>" +
+              (r.article ? '<div class="small muted" style="margin-top:6px">📄 ' +
+                WA.esc(r.article.title) + "</div>" : "") + "</div>").join("")
+          : "";
+        $("cert-list").className = "";
         $("cert-list").innerHTML =
           '<div class="empty-state"><h3>No certificates yet</h3>' +
           "<p>Once you present an article at a Journal Club session <strong>and the organizing team confirms " +
           "the session took place</strong>, an official certificate for that presentation will appear " +
           "here to download.</p>" +
-          '<a class="btn" href="availability.html">Sign up to present</a></div>';
+          '<a class="btn" href="availability.html">Sign up to present</a></div>' + recordHtml;
         return;
       }
 
@@ -317,6 +346,17 @@
           '<p class="muted small" style="margin:0 0 10px">These presentations are recorded, but the ' +
           "certificate is only issued after the session’s organizing team confirms it actually took place.</p>" +
           pending.map(pendingCard).join("");
+      }
+      if (myRecord.length) {
+        listHtml += '<h2 style="margin:22px 0 10px; font-size:1.1rem">📋 Participation record</h2>' +
+          '<p class="muted small" style="margin:0 0 10px">Other roles you took in confirmed sessions. ' +
+          "These build the experience that leads to presenting — the certificate itself is issued for presentations.</p>" +
+          myRecord.map((r) => '<div class="card tight">' +
+            '<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center">' +
+            r.roles.map((role) => WA.roleBadge(role)).join(" ") +
+            '<span class="small muted">' + WA.esc(formalDate(r.date)) + "</span></div>" +
+            (r.article ? '<div class="small muted" style="margin-top:6px">📄 ' +
+              WA.esc(r.article.title) + "</div>" : "") + "</div>").join("");
       }
       $("cert-list").innerHTML = listHtml;
 

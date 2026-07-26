@@ -75,27 +75,27 @@
           All times below (and everywhere on the site) follow this timezone.</span>
       </label>
 
+      <!-- Weekly recurrence is the default: a standing slot is far more useful
+           to the club than a one-off, and most people keep the preselected option. -->
       <div class="seg" id="mode-seg">
-        <button type="button" data-mode="single" class="active">Single date</button>
-        <button type="button" data-mode="recurring">Weekly recurrence</button>
+        <button type="button" data-mode="single">Single date</button>
+        <button type="button" data-mode="recurring" class="active">Weekly recurrence</button>
       </div>
 
-      <div id="single-fields" class="mt">
+      <div id="single-fields" class="mt hidden">
         <label class="field" style="max-width:260px">Date
           <input type="date" id="single-date" />
         </label>
       </div>
 
-      <div id="recurring-fields" class="mt hidden">
+      <div id="recurring-fields" class="mt">
         <p class="small" style="margin-bottom:2px"><strong>Days of the week</strong> (pick one or more)</p>
         <div class="day-chips" id="day-chips"></div>
       </div>
 
       <p class="small mt" style="margin-bottom:2px"><strong>1-hour time slots</strong>
         (in your selected timezone — pick one or more)</p>
-      <p class="small muted" id="count-hint" style="margin:0 0 2px">👥 = members already available ·
-        ⭐ = a host is in that slot · 📄 = a presenter is in that slot. Join the ones that already
-        have people to make a session happen.</p>
+      <p class="small muted" id="count-hint" style="margin:0 0 2px"></p>
       <div class="hour-grid" id="hour-grid"></div>
 
       <div class="checkbox-row" id="open-ended-row">
@@ -177,7 +177,7 @@
       $("art-design").innerHTML = '<option value="">Select…</option>' +
         WA.STUDY_DESIGNS.map((d) => "<option>" + WA.esc(d) + "</option>").join("");
 
-      let mode = "single";
+      let mode = "recurring";
       $("mode-seg").addEventListener("click", (e) => {
         const btn = e.target.closest("button");
         if (!btn) return;
@@ -188,12 +188,17 @@
         $("recurring-fields").classList.toggle("hidden", mode !== "recurring");
         // The >1 month commitment only makes sense for recurring patterns.
         $("open-ended-row").classList.toggle("hidden", mode !== "recurring");
-        $("count-hint").textContent = mode === "recurring"
-          ? "👥 members · ⭐ host present · 📄 presenter present — on the next occurrence of your selected day(s), busiest day shown."
-          : "👥 members already available · ⭐ a host is in that slot · 📄 a presenter is in that slot.";
+        $("count-hint").textContent = countHint();
         renderHourGrid();
       });
-      $("open-ended-row").classList.add("hidden"); // start in single mode
+      // One legend for both modes, built from the role list so it can't drift.
+      function countHint() {
+        return WA.slotMarkLegend() + (mode === "recurring"
+          ? " — on the next occurrence of your selected day(s), busiest day shown."
+          : ". Join the ones that already have people to make a session happen.");
+      }
+      // Start in recurring mode: the ">1 month" option applies here.
+      $("count-hint").textContent = countHint();
 
       const selectedDays = new Set();
       $("day-chips").innerHTML = WA.WEEKDAYS.map((d, i) =>
@@ -241,10 +246,12 @@
           const groups = WA.groupOccurrences(WA.expandAvailabilities(others, start, end));
           for (const g of groups) {
             const h = WA.zonedParts(g.date).hour;
-            const cur = res[h] || { n: 0, host: false, pres: false };
+            const cur = res[h] || { n: 0, roles: {} };
             if (g.all.length > cur.n) cur.n = g.all.length; // busiest of the selected days
-            cur.host = cur.host || g.hosts.length > 0;
-            cur.pres = cur.pres || g.presenters.length > 0;
+            // Remember every staffed role so the box can show its icon.
+            WA.SLOT_MARK_ORDER.forEach((r) => {
+              if ((g.byRole[r] || []).length) cur.roles[r] = [1];
+            });
             res[h] = cur;
           }
         }
@@ -256,8 +263,7 @@
         $("hour-grid").innerHTML = Array.from({ length: 24 }, (_, h) => {
           const c = counts[h];
           const badge = c && c.n
-            ? '<span class="hour-count">' + (c.host ? "⭐" : "") + (c.pres ? "📄" : "") +
-              "👥" + c.n + "</span>"
+            ? '<span class="hour-count">' + WA.slotMarks(c.roles) + "👥" + c.n + "</span>"
             : "";
           return '<button type="button" class="hour-box' + (selectedHours.has(h) ? " selected" : "") +
             '" data-hour="' + h + '">' + WA.hourRange(h) + badge + "</button>";
@@ -295,7 +301,13 @@
           const btn = document.querySelector('.role-option[data-role="' + qRole + '"]');
           if (btn) btn.click();
         }
-        if (qDate && /^\d{4}-\d{2}-\d{2}$/.test(qDate)) $("single-date").value = qDate;
+        // A link that names a specific date means a one-off slot, so switch out
+        // of the default weekly mode before filling it in.
+        if (qDate && /^\d{4}-\d{2}-\d{2}$/.test(qDate)) {
+          const singleBtn = document.querySelector('#mode-seg button[data-mode="single"]');
+          if (singleBtn) singleBtn.click();
+          $("single-date").value = qDate;
+        }
         if (qHour !== null && /^\d{1,2}$/.test(qHour)) {
           const btn = document.querySelector('.hour-box[data-hour="' + Number(qHour) + '"]');
           if (btn && !selectedHours.has(Number(qHour))) btn.click();

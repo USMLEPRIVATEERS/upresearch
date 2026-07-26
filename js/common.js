@@ -539,15 +539,44 @@
       .map(([role, want]) => ({ role, missing: want - count(role) }));
     const hasPresenter = count("presenter") > 0;
     const hasHost = count("host") > 0;
+    // Any organizing role present — a slot with a lead but no host is still
+    // "the team can make this happen", not an empty slot.
+    const hasTeam = hasHost || count("scientific_lead") > 0 || count("clinical_lead") > 0;
     const hoursAway = (g.date - new Date()) / 3600000;
     return {
-      hasPresenter, hasHost, missing,
+      hasPresenter, hasHost, hasTeam, missing,
       complete: missing.length === 0,
       viable: hasPresenter && hasHost,
       // The club's cutoff: a session this close with no presenter needs the queue.
       urgent: !hasPresenter && hoursAway > 0 && hoursAway <= 72,
       hoursAway,
     };
+  };
+
+  /* How worth joining an open slot is, as a single score. Three signals, each
+     capped so none of them dominates:
+       team   (0–3) the organizing team is already there, so a presenter is all
+                    it takes — the strongest signal, but capped so a distant
+                    team slot can't bury a session happening this week;
+       crowd  (0–2) more members means more likely to actually run, with
+                    diminishing returns after a handful;
+       soon   (0–2) sooner is better, inside a sensible horizon.
+     Max ≈ 7, with team worth at most ~40% — enough to steer people towards
+     slots the team can staff without making everything else invisible. */
+  WA.slotJoinScore = function (g) {
+    const by = g.byRole || {};
+    const has = (r) => (by[r] || []).length > 0;
+    const team = Math.min(3, (has("host") ? 2 : 0) + (has("scientific_lead") ? 1 : 0) +
+      (has("clinical_lead") ? 1 : 0));
+    const crowd = Math.min(2, (g.all || []).length * 0.4);
+    const days = (g.date - new Date()) / 86400000;
+    if (days < 0) return 0;
+    const soon = days <= 3 ? 2 : days <= 7 ? 1.5 : days <= 14 ? 0.75 : 0;
+    // Who's already in matters less the further away the slot is — otherwise a
+    // fully-staffed slot next month would permanently outrank a session that
+    // needs someone this week.
+    const decay = days <= 7 ? 1 : days <= 14 ? 0.8 : days <= 30 ? 0.55 : 0.35;
+    return (team + crowd) * decay + soon;
   };
 
   /* ---------- presenter queue ----------

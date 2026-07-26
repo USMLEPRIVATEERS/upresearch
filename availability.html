@@ -26,6 +26,14 @@
       <h2>Add availability</h2>
 
       <h3 class="mt">1 · How do you want to participate?</h3>
+      <div class="ladder-note">
+        <b>Everyone presents eventually — and there's a path to get there.</b>
+        Start by reading a question, then check the methods of someone else's article,
+        then present your own:
+        <b>Question reader</b><span class="ladder-arrow">→</span><b>Methods checker</b><span class="ladder-arrow">→</span><b>Presenter</b>.
+        Each step is a bit more preparation than the last, so the first presentation never
+        has to feel like a leap.
+      </div>
       <div class="role-options" id="role-options"></div>
 
       <div id="article-form" class="hidden" style="margin-top:18px; border-top:1px solid var(--border); padding-top:16px">
@@ -142,11 +150,21 @@
       /* ---------- build the form controls ---------- */
 
       let role = "attendee";
-      $("role-options").innerHTML = ["attendee", "presenter", "host"].map((r) => {
+      // Rotating roles first (in ladder order), then the standing organizer ones.
+      const roleCard = (r) => {
         const meta = WA.ROLES[r];
         return '<button type="button" class="role-option role-' + r + (r === role ? " selected" : "") +
-          '" data-role="' + r + '">' + WA.roleBadge(r) + "<p>" + WA.esc(meta.blurb) + "</p></button>";
-      }).join("");
+          '" data-role="' + r + '">' + WA.roleBadge(r) +
+          (meta.prep ? '<span class="role-prep">' + WA.esc(meta.prep) + "</span>" : "") +
+          "<p>" + WA.esc(meta.blurb) + "</p>" +
+          (meta.hint ? '<p class="role-hint">' + WA.esc(meta.hint) + "</p>" : "") +
+          "</button>";
+      };
+      $("role-options").innerHTML =
+        '<div class="role-group-label">Rotating roles <span>— these take turns every session</span></div>' +
+        ["attendee"].concat(WA.ROLE_LADDER).map(roleCard).join("") +
+        '<div class="role-group-label">Organizing team <span>— standing roles</span></div>' +
+        ["host", "scientific_lead", "clinical_lead"].map(roleCard).join("");
       $("role-options").addEventListener("click", (e) => {
         const btn = e.target.closest(".role-option");
         if (!btn) return;

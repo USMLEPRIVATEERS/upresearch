@@ -71,6 +71,16 @@
       </div>
     </section>
 
+    <section id="queue-section" class="hidden">
+      <h2>🎓 Who's up next to present</h2>
+      <p class="muted small">Everyone presents eventually. This is the order we invite people in —
+        members who've taken part in the club but haven't presented yet, most experienced first.
+        Being here isn't an obligation: if it's not your moment, say so and you keep your place for next time.</p>
+      <div class="card tight">
+        <div id="queue-list" class="queue-list"></div>
+      </div>
+    </section>
+
     <section id="positions-section-home">
       <div id="positions-mount"></div>
     </section>
@@ -239,22 +249,47 @@
           return '<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center">' +
             WA.roleBadge(mine.role) +
             ' <span class="small muted">You’re in · <a href="availability.html">manage</a></span>' +
-            (mine.role !== "presenter" && !g.presenters.length
-              ? '<a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, "presenter")) + '">📄 Present instead</a>' : "") +
+            openRoleButtons(g, mine) +
             "</div>";
         }
         return '<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">' +
           '<button class="btn sm join-btn" data-slot="' + WA.esc(g.iso) + '">✋ I’ll attend</button>' +
-          (g.presenters.length ? "" : '<a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, "presenter")) + '">📄 Present too</a>') +
+          openRoleButtons(g, null) +
           "</div>";
       }
 
+      /* One-tap buttons for the roles this session still needs, so taking a
+         turn is as easy as attending. */
+      const TAKE_LABEL = {
+        presenter: "Present this one",
+        methods_checker: "Check the methods",
+        question_reader: "Read a question",
+        host: "Host this slot",
+      };
+      function openRoleButtons(g, mine) {
+        return WA.sessionStaffing(g).missing
+          .filter((m) => !(mine && mine.role === m.role))
+          .map((m) => '<a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, m.role)) + '">' +
+            WA.roleIcon(m.role) + " " + WA.esc(TAKE_LABEL[m.role] || WA.roleLabel(m.role)) + "</a>")
+          .join("");
+      }
+
       // Colour-coded status so people can tell at a glance what a slot has.
+      function gapText(missing) {
+        return missing.map((m) => {
+          const label = WA.roleLabel(m.role).toLowerCase();
+          return m.missing > 1 ? m.missing + " " + label + "s" : label;
+        }).join(", ");
+      }
       function evStatus(g) {
-        const h = g.hosts.length, p = g.presenters.length;
-        if (h && p) return { cls: "both", chip: "⭐📄 Host & Presenter confirmed" };
-        if (p) return { cls: "pres", chip: "📄 Presenter confirmed — needs a host" };
-        if (h) return { cls: "host", chip: "⭐ Host available — needs a presenter" };
+        const st = WA.sessionStaffing(g);
+        if (st.complete) return { cls: "both", chip: "✅ Fully staffed" };
+        if (st.viable) {
+          return { cls: "both", chip: "⭐📄 Session confirmed — still open: " + gapText(st.missing) };
+        }
+        if (st.hasPresenter) return { cls: "pres", chip: "📄 Presenter confirmed — needs coordination" };
+        if (st.urgent) return { cls: "host", chip: "🚨 Needs a presenter — under 72h to go" };
+        if (st.hasHost) return { cls: "host", chip: "⭐ Host available — needs a presenter" };
         return { cls: "none", chip: "👥 Members available" };
       }
 
@@ -273,6 +308,13 @@
             g.hosts.map(personLink).join(", ") +
             ' <span class="badge badge-host">Host</span></div>';
         }
+        // Publish the line-up with names — it shows the rotation is real.
+        const castLine = ["scientific_lead", "clinical_lead", "methods_checker", "question_reader"]
+          .filter((r) => (g.byRole[r] || []).length)
+          .map((r) => WA.roleIcon(r) + " " + WA.esc(WA.roleLabel(r)) + ": " +
+            g.byRole[r].map(personLink).join(", "))
+          .join(" &nbsp;·&nbsp; ");
+        if (castLine) html += '<div class="session-host-line">' + castLine + "</div>";
         for (const p of g.presenters) html += articleBlock(p);
         if (g.attendees.length) {
           html += '<p class="small muted" style="margin:8px 0 0">Attendees (' + g.attendees.length + "): " +
@@ -469,6 +511,12 @@
             if (WA.safeUrl(p.article.article_url)) lines.push("🔗 Article: " + p.article.article_url);
           }
         });
+        // The rest of the line-up, so the invite reads as a published roster.
+        const names = (list) => list.map((a) => a.profile ? (a.profile.full_name || "Member") : "Member").join(", ");
+        const cast = ["methods_checker", "question_reader", "scientific_lead", "clinical_lead"]
+          .filter((r) => (g.byRole[r] || []).length)
+          .map((r) => WA.roleIcon(r) + " " + WA.roleLabel(r) + ": " + names(g.byRole[r]));
+        if (cast.length) { lines.push(""); cast.forEach((l) => lines.push(l)); }
         lines.push("");
         lines.push(m && WA.safeUrl(m.meeting_url) ? "🎥 Join: " + m.meeting_url : "🎥 Meeting link: to be posted by the host");
         lines.push("👉 Details: " + WA.pageUrl("home.html"));
@@ -516,9 +564,10 @@
         }
 
         // roster
-        html += rosterBlock("Host", g.hosts, "⭐");
-        html += rosterBlock("Presenters", g.presenters, "📄");
-        html += rosterBlock("Attendees", g.attendees, "👥");
+        ["scientific_lead", "clinical_lead", "host", "presenter", "methods_checker", "question_reader", "attendee"]
+          .forEach((r) => {
+            html += rosterBlock(WA.roleLabel(r), g.byRole[r] || [], WA.roleIcon(r));
+          });
 
         // your status / quick actions
         html += '<div style="border-top:1px solid var(--border); margin-top:12px; padding-top:12px">';
@@ -737,6 +786,36 @@
         wireCards();
       }
       renderSections();
+
+      /* ---------- presenter queue ----------
+         Computed from the same signup history as the stats: members who have
+         taken part but never presented, most experienced first. Publishing it
+         replaces "who wants to volunteer?" with "it's your turn next". */
+      (function renderQueue() {
+        const profilesById = {};
+        rows.forEach((r) => { if (r.profile) profilesById[r.user_id] = r.profile; });
+        const queue = WA.presenterQueue(rows, profilesById);
+        if (!queue.length) return;
+        $("queue-section").classList.remove("hidden");
+        $("queue-list").innerHTML = queue.slice(0, 10).map((q, i) => {
+          const name = (q.profile && q.profile.full_name) || "Member";
+          const steps = [];
+          if (q.methods_checker) steps.push(q.methods_checker + "× methods checker");
+          if (q.question_reader) steps.push(q.question_reader + "× question reader");
+          const sub = q.sessions + " session" + (q.sessions === 1 ? "" : "s") +
+            (steps.length ? " · " + steps.join(" · ") : "");
+          const isMe = q.user_id === user.id;
+          return '<div class="queue-item' + (i === 0 ? " next" : "") + '">' +
+            '<span class="queue-pos">' + (i + 1) + "</span>" +
+            WA.avatarHtml(q.profile, "roster-av", "") +
+            '<span class="queue-main"><span class="queue-name">' +
+            '<a href="profile.html?id=' + encodeURIComponent(q.user_id) + '">' + WA.esc(name) + "</a>" +
+            (isMe ? ' <span class="small muted">(you)</span>' : "") + "</span>" +
+            '<span class="queue-sub">' + WA.esc(sub) + "</span></span>" +
+            (i === 0 ? '<span class="queue-tag">next up</span>' : "") +
+            "</div>";
+        }).join("");
+      })();
 
       /* Deep link: home.html?slot=<iso> opens that session's details modal
          straight away — used by the notification bell so clicking "X will

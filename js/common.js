@@ -269,27 +269,89 @@
 
   /* ---------- role metadata ---------- */
 
+  /* The club's roles. `group` splits the picker into the rotating roles that
+     form the ladder into presenting (question reader → methods checker →
+     presenter) and the standing organizer roles. `slots` is the number of
+     people the format expects — informational, not enforced. */
   WA.ROLES = {
-    host: {
-      label: "Host",
-      badge: "badge-host",
-      blurb: "Moderates the session, keeps time, opens the discussion and provides the meeting link.",
-    },
     presenter: {
       label: "Presenter",
+      icon: "📄",
       badge: "badge-presenter",
-      blurb: "Presents and critically appraises the article. Requires attaching the article.",
+      group: "rotating",
+      slots: 1,
+      prep: "2–4h prep",
+      hint: "Best after you've attended at least one session.",
+      blurb: "Chooses the article, posts it here at least 72h ahead, presents it in English and leads the discussion.",
+    },
+    methods_checker: {
+      label: "Methods checker",
+      icon: "🔎",
+      badge: "badge-methods",
+      group: "rotating",
+      slots: 1,
+      prep: "30–45min prep",
+      hint: "The natural next step before presenting — and the presenter's backup.",
+      blurb: "Reads the article for design, sample, analysis and limitations, and brings 3–5 written critical points.",
+    },
+    question_reader: {
+      label: "Question reader",
+      icon: "🙋",
+      badge: "badge-reader",
+      group: "rotating",
+      slots: 2,
+      prep: "5–10min prep",
+      hint: "No prerequisites — the easiest way to start.",
+      blurb: "Reads one Step question out loud and defends an answer before the group reveals it.",
     },
     attendee: {
       label: "Attendee",
+      icon: "👥",
       badge: "badge-attendee",
-      blurb: "Joins the call, listens and participates in the discussion.",
+      group: "rotating",
+      slots: null,
+      blurb: "Joins the call, listens and takes part in the discussion.",
+    },
+    host: {
+      label: "Host / coordination",
+      icon: "⭐",
+      badge: "badge-host",
+      group: "organizer",
+      slots: 1,
+      blurb: "Opens the room, provides the meeting link, keeps time and publishes the report afterwards.",
+    },
+    scientific_lead: {
+      label: "Scientific lead",
+      icon: "🧪",
+      badge: "badge-scilead",
+      group: "organizer",
+      slots: 1,
+      blurb: "Leads the methodology and statistics discussion and validates research ideas.",
+    },
+    clinical_lead: {
+      label: "Clinical lead",
+      icon: "🩺",
+      badge: "badge-clinlead",
+      group: "organizer",
+      slots: 1,
+      blurb: "Runs the Step question block and brings the bedside reading of the article.",
     },
   };
+  /* Rotating roles in ladder order — used for the picker and the queue copy. */
+  WA.ROLE_LADDER = ["question_reader", "methods_checker", "presenter"];
+  WA.ROLE_KEYS = Object.keys(WA.ROLES);
 
   WA.roleBadge = function (role) {
     const r = WA.ROLES[role] || { label: role, badge: "badge-attendee" };
     return '<span class="badge ' + r.badge + '">' + WA.esc(r.label) + "</span>";
+  };
+  WA.roleLabel = function (role) {
+    const r = WA.ROLES[role];
+    return r ? r.label : role;
+  };
+  WA.roleIcon = function (role) {
+    const r = WA.ROLES[role];
+    return r && r.icon ? r.icon : "•";
   };
 
   WA.STUDY_DESIGNS = [
@@ -385,18 +447,23 @@
   };
 
   /* Groups occurrences by slot. Returns an array of
-     { iso, date, hosts, presenters, attendees, all } sorted by time,
-     de-duplicating a user who appears twice in the same slot+role. */
+     { iso, date, hosts, presenters, attendees, byRole, all } sorted by time,
+     de-duplicating a user who appears twice in the same slot+role.
+     `byRole` holds every role (including the newer rotating/organizer ones);
+     hosts/presenters/attendees stay as aliases so existing pages keep working. */
   WA.groupOccurrences = function (occurrences) {
     const map = new Map();
     for (const occ of occurrences) {
       let g = map.get(occ.iso);
       if (!g) {
-        g = { iso: occ.iso, date: occ.date, hosts: [], presenters: [], attendees: [], all: [] };
+        g = { iso: occ.iso, date: occ.date, byRole: {}, all: [] };
+        WA.ROLE_KEYS.forEach((k) => { g.byRole[k] = []; });
+        g.hosts = g.byRole.host;
+        g.presenters = g.byRole.presenter;
+        g.attendees = g.byRole.attendee;
         map.set(occ.iso, g);
       }
-      const bucket = occ.avail.role === "host" ? g.hosts
-        : occ.avail.role === "presenter" ? g.presenters : g.attendees;
+      const bucket = g.byRole[occ.avail.role] || g.byRole.attendee;
       const dupe = bucket.some((a) => a.user_id === occ.avail.user_id);
       if (!dupe) {
         bucket.push(occ.avail);
@@ -421,13 +488,75 @@
       if (!g.presenters.length) continue; // no presenter → no session happened
       for (const a of g.all) {
         // (no logical-assignment operator here — older iOS Safari lacks it)
-        if (!stats[a.user_id]) stats[a.user_id] = { host: 0, presenter: 0, attendee: 0, sessions: 0 };
+        if (!stats[a.user_id]) {
+          const blank = { sessions: 0 };
+          WA.ROLE_KEYS.forEach((k) => { blank[k] = 0; });
+          stats[a.user_id] = blank;
+        }
         const s = stats[a.user_id];
+        if (typeof s[a.role] !== "number") s[a.role] = 0;
         s[a.role] += 1;
         s.sessions += 1;
       }
     }
     return stats;
+  };
+
+  /* ---------- session staffing ----------
+     Three tiers, matching how the club actually runs:
+       complete — presenter + host + methods checker + 2 readers
+       viable   — coordination (host) + a presenter with an article: it happens
+       at-risk  — no presenter yet; only this blocks the session
+     The smaller rotating roles are never blocking. */
+  WA.SESSION_ROLE_TARGETS = [
+    ["presenter", 1], ["host", 1], ["methods_checker", 1], ["question_reader", 2],
+  ];
+  WA.sessionStaffing = function (g) {
+    const by = g.byRole || {};
+    const count = (r) => (by[r] || []).length;
+    const missing = WA.SESSION_ROLE_TARGETS
+      .filter(([role, want]) => count(role) < want)
+      .map(([role, want]) => ({ role, missing: want - count(role) }));
+    const hasPresenter = count("presenter") > 0;
+    const hasHost = count("host") > 0;
+    const hoursAway = (g.date - new Date()) / 3600000;
+    return {
+      hasPresenter, hasHost, missing,
+      complete: missing.length === 0,
+      viable: hasPresenter && hasHost,
+      // The club's cutoff: a session this close with no presenter needs the queue.
+      urgent: !hasPresenter && hoursAway > 0 && hoursAway <= 72,
+      hoursAway,
+    };
+  };
+
+  /* ---------- presenter queue ----------
+     Who is up next: members who have taken part in at least `minSessions`
+     sessions and have never presented, most-experienced first. Computed from
+     the same signup history as the stats — no extra bookkeeping. */
+  WA.presenterQueue = function (allRows, profilesById, opts) {
+    const o = opts || {};
+    const minSessions = o.minSessions == null ? 2 : o.minSessions;
+    const stats = WA.computeStats(allRows, o.days || 365);
+    // Anyone already signed up to present a future slot is off the queue.
+    const upcoming = WA.groupOccurrences(
+      WA.expandAvailabilities(allRows, new Date(), new Date(Date.now() + 90 * 86400000))
+    );
+    const committed = new Set();
+    upcoming.forEach((g) => (g.presenters || []).forEach((a) => committed.add(a.user_id)));
+    return Object.keys(stats)
+      .filter((id) => !stats[id].presenter && !committed.has(id) && stats[id].sessions >= minSessions)
+      .map((id) => ({
+        user_id: id,
+        profile: (profilesById && profilesById[id]) || null,
+        sessions: stats[id].sessions,
+        methods_checker: stats[id].methods_checker || 0,
+        question_reader: stats[id].question_reader || 0,
+      }))
+      .sort((a, b) => b.sessions - a.sessions ||
+        (b.methods_checker - a.methods_checker) ||
+        String((a.profile && a.profile.full_name) || "").localeCompare(
+          String((b.profile && b.profile.full_name) || "")));
   };
 
   /* ---------- calendar export & deep links ---------- */

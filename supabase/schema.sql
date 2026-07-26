@@ -67,6 +67,8 @@ create table if not exists public.articles (
 create table if not exists public.availabilities (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references public.profiles (id) on delete cascade,
+  -- See the "role set" migration below: this list grew after launch, and the
+  -- alter statement is what updates an existing database.
   role        text not null check (role in ('attendee', 'presenter', 'host')),
   kind        text not null check (kind in ('single', 'recurring')),
   slot_start  timestamptz,
@@ -86,6 +88,18 @@ create table if not exists public.availabilities (
 
 create index if not exists availabilities_user_idx  on public.availabilities (user_id);
 create index if not exists availabilities_slot_idx  on public.availabilities (slot_start);
+
+-- Role set migration (safe to re-run). The club runs rotating roles that form
+-- a ladder into presenting — question reader → methods checker → presenter —
+-- plus standing organizer roles. `host` keeps its original meaning:
+-- coordination (opens the room, posts the meeting link).
+alter table public.availabilities drop constraint if exists availabilities_role_check;
+alter table public.availabilities add constraint availabilities_role_check
+  check (role in (
+    'attendee', 'presenter', 'host',
+    'methods_checker', 'question_reader',
+    'scientific_lead', 'clinical_lead'
+  ));
 
 -- ------------------------------------------------------------
 -- 4. Meetings (call link posted by a host for a specific slot)

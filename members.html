@@ -55,7 +55,7 @@
       }
 
       function card(p) {
-        const s = stats[p.id] || { host: 0, presenter: 0, attendee: 0 };
+        const s = stats[p.id] || {};
         return '<a class="card tight" style="text-decoration:none; color:inherit" ' +
           'href="profile.html?id=' + encodeURIComponent(p.id) + '">' +
           '<div class="member-card">' +
@@ -64,9 +64,12 @@
           '<div class="small muted">' + WA.esc(p.specialty || "—") +
           (p.institution ? " · " + WA.esc(p.institution) : "") + "</div>" +
           '<div class="stats">' +
-          '<span class="badge badge-host">⭐ ' + s.host + " hosted</span>" +
-          '<span class="badge badge-presenter">📄 ' + s.presenter + " presented</span>" +
-          '<span class="badge badge-attendee">👥 ' + s.attendee + " attended</span>" +
+          // Only show the roles this member has actually held, so cards stay readable.
+          ["presenter", "methods_checker", "question_reader", "host", "scientific_lead", "clinical_lead"]
+            .filter((r) => (s[r] || 0) > 0)
+            .map((r) => '<span class="badge ' + WA.ROLES[r].badge + '">' + WA.roleIcon(r) + " " +
+              s[r] + " × " + WA.esc(WA.roleLabel(r)) + "</span>").join("") +
+          '<span class="badge badge-attendee">👥 ' + (s.attendee || 0) + " attended</span>" +
           "</div></div></div></a>";
       }
 

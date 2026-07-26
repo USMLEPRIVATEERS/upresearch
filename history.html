@@ -168,7 +168,8 @@
               '<span class="chip red">' + WA.esc(art.study_design) + "</span>" +
               '<span class="chip">' + WA.esc(art.specialty) +
               (art.subspecialty ? " · " + WA.esc(art.subspecialty) : "") + "</span></div>" +
-              '<p class="small" style="margin:0">' + WA.esc(art.summary) + "</p>";
+              '<p class="small" style="margin:0">' + WA.esc(art.summary) + "</p>" +
+              (url ? '<div class="art-actions">' + WA.articleLinkBtn(url) + "</div>" : "");
           } else {
             html += '<p class="small muted" style="margin:0">Article details no longer available.</p>';
           }

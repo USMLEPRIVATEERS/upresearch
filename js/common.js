@@ -919,8 +919,13 @@
     async function cOpenPositions() {
       const { data } = await WA.client.from("research_recruitments")
         .select("id, specialty, created_at, created_by").eq("status", "open").order("created_at", { ascending: false }).limit(15);
-      return (data || []).filter((r) => r.created_by !== me())
-        .map((r) => mk(r.created_at, "🤝", "New co-author position in <b>" + esc(r.specialty || "research") + "</b>", "research.html", "rec-" + r.id));
+      return (data || []).filter((r) => r.created_by !== me()).map((r) => {
+        const spec = (r.specialty || "").trim();
+        const where = spec ? " in <b>" + esc(spec) + "</b>" : "";
+        return mk(r.created_at, "🤝",
+          "A research project" + where + " is looking for co-authors — tap to volunteer",
+          "research.html", "rec-" + r.id);
+      });
     }
 
     async function load() {

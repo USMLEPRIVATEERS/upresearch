@@ -56,6 +56,7 @@
         present yet. Pick one, attach an article, and make it happen.</p>
       <div class="filter-bar">
         <select id="srt-open" aria-label="Sort open slots">
+          <option value="best">Best to join (team + soonest)</option>
           <option value="members">Most members first</option>
           <option value="date">Soonest first</option>
         </select>
@@ -283,13 +284,14 @@
       }
       function evStatus(g) {
         const st = WA.sessionStaffing(g);
-        if (st.complete) return { cls: "both", chip: "✅ Fully staffed" };
+        if (st.complete) return { cls: "full", chip: "✅ Fully staffed" };
         if (st.viable) {
           return { cls: "both", chip: "⭐📄 Session confirmed — still open: " + gapText(st.missing) };
         }
         if (st.hasPresenter) return { cls: "pres", chip: "📄 Presenter confirmed — needs coordination" };
-        if (st.urgent) return { cls: "host", chip: "🚨 Needs a presenter — under 72h to go" };
-        if (st.hasHost) return { cls: "host", chip: "⭐ Host available — needs a presenter" };
+        // Distinct from "needs a presenter" below: this one is running out of time.
+        if (st.urgent) return { cls: "urgent", chip: "🚨 Needs a presenter — under 72h to go" };
+        if (st.hasHost || st.hasTeam) return { cls: "host", chip: "⭐ Team available — needs a presenter" };
         return { cls: "none", chip: "👥 Members available" };
       }
 
@@ -764,8 +766,13 @@
 
       function visibleOpen() {
         const list = open.slice();
-        if ($("srt-open").value === "date") list.sort((a, b) => a.date - b.date);
-        else list.sort((a, b) => (b.all.length - a.all.length) || (a.date - b.date));
+        const how = $("srt-open").value;
+        if (how === "date") list.sort((a, b) => a.date - b.date);
+        else if (how === "members") list.sort((a, b) => (b.all.length - a.all.length) || (a.date - b.date));
+        // Default: a weighted mix of "the team is already there", how many
+        // members are in, and how soon it is — so team slots are encouraged
+        // without permanently outranking everything else.
+        else list.sort((a, b) => (WA.slotJoinScore(b) - WA.slotJoinScore(a)) || (a.date - b.date));
         return list;
       }
 

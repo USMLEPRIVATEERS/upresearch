@@ -805,7 +805,9 @@
     }
     function markRead() { try { localStorage.setItem(seenKey(), new Date().toISOString()); } catch (e) {} }
     const me = () => ctx.user.id;
-    const mk = (ts, icon, html, href, key) => ({ ts, icon, html, href, key });
+    const mk = (ts, icon, html, href, key, ext) => ({ ts, icon, html, href, key, ext: !!ext });
+    /* Deep link that opens the session's details modal on the home page. */
+    const slotHref = (iso) => "home.html?slot=" + encodeURIComponent(new Date(iso).toISOString());
 
     async function safe(fn) { try { return (await fn()) || []; } catch (e) { return []; } }
 
@@ -816,8 +818,10 @@
       return (data || []).filter((a) => a.user_id !== me()).map((a) => {
         const who = a.profile ? a.profile.full_name || "A member" : "A member";
         const art = a.article ? a.article.title : "an article";
-        const when = a.kind === "single" && a.slot_start ? " · " + WA.fmtDateTime(new Date(a.slot_start)) : "";
-        return mk(a.created_at, "📄", "<b>" + esc(who) + "</b> will present <b>" + esc(art) + "</b>" + esc(when), "home.html", "sess-" + a.id);
+        const single = a.kind === "single" && a.slot_start;
+        const when = single ? " · " + WA.fmtDateTime(new Date(a.slot_start)) : "";
+        return mk(a.created_at, "📄", "<b>" + esc(who) + "</b> will present <b>" + esc(art) + "</b>" + esc(when),
+          single ? slotHref(a.slot_start) : "home.html", "sess-" + a.id);
       });
     }
     async function cMeetings() {
@@ -825,7 +829,48 @@
         .select("slot_start, meeting_url, updated_at, host_id").order("updated_at", { ascending: false }).limit(15);
       const floor = Date.now() - 3600000;
       return (data || []).filter((m) => m.host_id !== me() && m.meeting_url && new Date(m.slot_start).getTime() >= floor)
-        .map((m) => mk(m.updated_at, "🎥", "Meeting link posted for <b>" + esc(WA.fmtDateTime(new Date(m.slot_start))) + "</b>", "home.html", "meet-" + m.slot_start));
+        .map((m) => mk(m.updated_at, "🎥", "Meeting link posted for <b>" + esc(WA.fmtDateTime(new Date(m.slot_start))) + "</b> — tap to join",
+          slotHref(m.slot_start), "meet-" + m.slot_start));
+    }
+
+    /* Session reminders. One item per upcoming session, escalating through
+       tiers as it approaches — each tier has its own key + activation time,
+       so a fresh unread pops when the session moves into "starting soon"
+       and again when it goes live. */
+    async function cReminders() {
+      const nowT = Date.now();
+      const winStart = new Date(nowT - 3600000);        // include a session already running
+      const winEnd = new Date(nowT + 36 * 3600000);
+      const rows = await WA.fetchAllAvailabilities();
+      const groups = WA.groupOccurrences(WA.expandAvailabilities(rows, winStart, winEnd));
+      let meetings = new Map();
+      try { meetings = await WA.fetchMeetingsBetween(winStart.toISOString(), winEnd.toISOString()); } catch (e) {}
+      const out = [];
+      for (const g of groups) {
+        if (!g.presenters.length) continue;             // only sessions that will actually happen
+        const start = g.date.getTime();
+        if (start + 3600000 <= nowT) continue;          // already over
+        const art = g.presenters[0] && g.presenters[0].article ? g.presenters[0].article.title : "";
+        const label = art ? " — <b>" + esc(art) + "</b>" : "";
+        const m = meetings.get(g.iso);
+        const link = m && WA.safeUrl(m.meeting_url) ? m.meeting_url : null;
+        const mine = g.all.some((a) => a.user_id === me());
+        if (nowT >= start) {
+          out.push(mk(new Date(start).toISOString(), "🔴",
+            "Live now" + label + (link ? " · tap to join" : ""),
+            link || slotHref(g.iso), "live-" + g.iso, !!link));
+        } else if (start - nowT <= 3600000) {
+          const mins = Math.max(1, Math.round((start - nowT) / 60000));
+          out.push(mk(new Date(start - 3600000).toISOString(), "⏰",
+            "Starting in <b>" + mins + " min</b>" + label + (link ? " · link is up" : ""),
+            link || slotHref(g.iso), "soon-" + g.iso, !!link));
+        } else if (start - nowT <= 24 * 3600000) {
+          out.push(mk(new Date(start - 24 * 3600000).toISOString(), "📅",
+            (mine ? "You're in a session soon: " : "Coming up: ") + esc(WA.fmtDateTime(g.date)) + label,
+            slotHref(g.iso), "soon24-" + g.iso));
+        }
+      }
+      return out;
     }
     async function cCertificates() {
       const [av, confs] = await Promise.all([
@@ -880,7 +925,7 @@
 
     async function load() {
       const groups = await Promise.all([
-        safe(cSessions), safe(cMeetings), safe(cCertificates),
+        safe(cReminders), safe(cSessions), safe(cMeetings), safe(cCertificates),
         safe(cResearchProjects), safe(cResearchApps), safe(cOpenPositions),
       ]);
       const seen = new Set();
@@ -910,7 +955,10 @@
       const last = getLastOpened();
       const rows = items.length ? items.map((it) => {
         const unseen = it.ts > last ? " unseen" : "";
-        return '<a class="notif-item' + unseen + '" href="' + esc(it.href) + '">' +
+        // Meeting links point off-site: open them in a new tab.
+        const target = it.ext ? ' target="_blank" rel="noopener noreferrer"' : "";
+        const href = it.ext ? (WA.safeUrl(it.href) || "home.html") : it.href;
+        return '<a class="notif-item' + unseen + '" href="' + esc(href) + '"' + target + ">" +
           '<span class="notif-ic">' + it.icon + "</span>" +
           '<span class="notif-body"><span class="notif-text">' + it.html + "</span>" +
           '<span class="notif-time">' + esc(WA.timeAgo(it.ts)) + "</span></span></a>";
@@ -967,6 +1015,11 @@
       wire();
       try { const c = sessionStorage.getItem(cacheKey()); if (c) { items = JSON.parse(c) || []; render(); } } catch (e) {}
       load();
+      // Re-run periodically so time-based reminders ("starting in 20 min",
+      // "live now") arrive even if the tab is left open, and refresh as soon
+      // as the member comes back to the tab.
+      setInterval(() => { if (!document.hidden) load(); }, 120000);
+      document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
     }
     return { init, reload: load };
   })();

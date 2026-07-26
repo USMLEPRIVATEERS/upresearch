@@ -1351,6 +1351,13 @@
     let ctx = null, container = null, onChange = null;
     let recruitments = [], applications = [], myApps = {}, showHidden = false, wired = false;
     const HIDDEN_KEY = "wa_research_hidden_positions";
+    const CLOSED_KEY = "wa_research_show_closed";
+    let showClosed = false;
+    try { showClosed = localStorage.getItem(CLOSED_KEY) === "1"; } catch (e) { /* ignore */ }
+    function setShowClosed(v) {
+      showClosed = !!v;
+      try { localStorage.setItem(CLOSED_KEY, showClosed ? "1" : "0"); } catch (e) { /* ignore */ }
+    }
     const esc = (s) => WA.esc(s);
     const $ = (id) => document.getElementById(id);
     const openM = (id) => { const e = $(id); if (e) e.classList.add("active"); };
@@ -1370,6 +1377,11 @@
       ".wapo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem;}",
       ".wapo-item{border:1px solid #e2e8f2;border-radius:14px;padding:1rem;background:#fff;display:flex;flex-direction:column;gap:.6rem;}",
       ".wapo-item.mine{border-color:#0a3161;background:linear-gradient(180deg,#f8faff,#fff);}",
+      ".wapo-item.closed{border-style:dashed;background:#fbfcfe;}",
+      ".wapo-archive{margin-top:1.4rem;padding-top:1rem;border-top:1px dashed #e2e8f2;}",
+      ".wapo-archhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}",
+      ".wapo-archtitle{font-weight:800;color:#0a3161;font-size:.98rem;}",
+      ".wapo-closedbanner{background:#eef1f6;border-radius:10px;padding:.6rem .8rem;font-size:.83rem;color:#475569;margin-bottom:1rem;}",
       ".wapo-cardhead{display:flex;align-items:center;gap:.6rem;}",
       ".wapo-avatar{flex-shrink:0;width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;color:#fff;background:#0a3161;}",
       ".wapo-name{font-weight:700;color:#0a3161;font-size:.95rem;}",
@@ -1473,8 +1485,11 @@
 
     async function load() {
       try {
+        // Closed calls come back too: their applications carry names, WhatsApp
+        // numbers and notes the owner may still need weeks later. RLS already
+        // limits who can read the applications themselves.
         const { data: recs, error } = await WA.client.from("research_recruitments")
-          .select("*, owner:created_by(id, full_name, specialty)").eq("status", "open").order("created_at", { ascending: false });
+          .select("*, owner:created_by(id, full_name, specialty)").order("created_at", { ascending: false });
         if (error) throw error;
         recruitments = recs || [];
         const { data: apps } = await WA.client.from("research_applications")
@@ -1509,6 +1524,8 @@
       } else if (appsId || r.created_by === ctx.user.id) {
         if (r.created_by !== ctx.user.id) WA.toast("Only the project owner can review applications.", "info");
         else openApps(id);
+      } else if (r.status !== "open") {
+        WA.toast("That position is no longer open.", "info");
       } else if (myApps[id]) {
         WA.toast("You already applied to this position.", "info");
       } else {
@@ -1521,12 +1538,18 @@
       } catch (e) {}
     }
 
+    const openList = () => recruitments.filter((r) => r.status === "open");
+    const myClosed = () => recruitments.filter(
+      (r) => r.status !== "open" && r.created_by === ctx.user.id
+    );
+
     function render() {
       if (!container) return;
-      if (!recruitments.length) { container.innerHTML = ""; return; }
+      const open = openList(), closed = myClosed();
+      if (!open.length && !closed.length) { container.innerHTML = ""; return; }
       const hidden = getHidden();
-      const hiddenCount = recruitments.filter((r) => r.created_by !== ctx.user.id && hidden.includes(r.id)).length;
-      const toShow = showHidden ? recruitments : recruitments.filter((r) => r.created_by === ctx.user.id || !hidden.includes(r.id));
+      const hiddenCount = open.filter((r) => r.created_by !== ctx.user.id && hidden.includes(r.id)).length;
+      const toShow = showHidden ? open : open.filter((r) => r.created_by === ctx.user.id || !hidden.includes(r.id));
       const toggle = hiddenCount > 0
         ? "<button type='button' class='wapo-btn ghost' data-toggle-hidden>" + (showHidden ? "Hide hidden (" + hiddenCount + ")" : "Show hidden (" + hiddenCount + ")") + "</button>"
         : "";
@@ -1535,9 +1558,12 @@
         "<section class='wapo-section'><div class='wapo-card'>" +
         "<div class='wapo-head'><h2 class='wapo-title'>🤝 Open positions — co-authors wanted</h2>" + toggle + "</div>" +
         "<p class='wapo-intro'>Members looking for co-authors. Project titles and links stay private — you'll see the full project only if the owner accepts you.</p>" +
-        "<div class='wapo-grid'>" + cards + "</div></div></section>";
+        "<div class='wapo-grid'>" + cards + "</div>" +
+        archiveHtml(closed) + "</div></section>";
       const tg = container.querySelector("[data-toggle-hidden]");
       if (tg) tg.addEventListener("click", () => { showHidden = !showHidden; render(); });
+      const ar = container.querySelector("[data-toggle-archive]");
+      if (ar) ar.addEventListener("click", () => { setShowClosed(!showClosed); render(); });
       Array.prototype.forEach.call(container.querySelectorAll("button[data-act]"), (btn) => {
         btn.addEventListener("click", () => {
           const id = Number(btn.getAttribute("data-id")); const act = btn.getAttribute("data-act");
@@ -1546,8 +1572,42 @@
           else if (act === "unhide") { setHidden(getHidden().filter((x) => x !== id)); render(); }
           else if (act === "apps") openApps(id);
           else if (act === "close") closeRecruitment(id);
+          else if (act === "reopen") reopenRecruitment(id);
         });
       });
+    }
+
+    /* Closed calls the current member posted. Off the board for everyone else,
+       but the owner keeps the applications — who volunteered, their WhatsApp
+       and what they offered to do — and decides when to look at them. */
+    function archiveHtml(closed) {
+      if (!closed.length) return "";
+      const n = closed.length;
+      const head = "<div class='wapo-archhead'>" +
+        "<span class='wapo-archtitle'>🗂 My closed positions (" + n + ")</span>" +
+        "<button type='button' class='wapo-btn ghost' data-toggle-archive>" +
+        (showClosed ? "Hide" : "Show applications") + "</button></div>";
+      if (!showClosed) {
+        return "<div class='wapo-archive'>" + head +
+          "<p class='wapo-intro' style='margin:.4rem 0 0'>Closed calls are off the board, but the applications you received are kept here.</p></div>";
+      }
+      const cards = closed.map((r) => {
+        const apps = applications.filter((a) => a.recruitment_id === r.id);
+        const acc = apps.filter((a) => a.status === "accepted").length;
+        const when = r.updated_at || r.created_at;
+        return "<div class='wapo-item closed'>" +
+          "<div class='wapo-frow'><span class='wapo-flabel'>Specialty</span><span class='wapo-fval wapo-spec'>" + esc(r.specialty || "—") + "</span></div>" +
+          (r.help_area ? "<div class='wapo-frow'><span class='wapo-flabel'>Asked for</span><span class='wapo-fval'>" + esc(r.help_area) + "</span></div>" : "") +
+          "<div class='wapo-frow'><span class='wapo-flabel'>Closed</span><span class='wapo-fval'>" +
+          esc(when ? WA.fmtDate(new Date(when)) : "—") + "</span></div>" +
+          "<div class='wapo-frow'><span class='wapo-flabel'>Applications</span><span class='wapo-fval'>" +
+          apps.length + (acc ? " · " + acc + " accepted" : "") + "</span></div>" +
+          "<div class='wapo-actions'>" +
+          "<button type='button' class='wapo-btn primary' data-act='apps' data-id='" + r.id + "'>📨 View applications (" + apps.length + ")</button>" +
+          "<button type='button' class='wapo-btn ghost' data-act='reopen' data-id='" + r.id + "'>Reopen</button>" +
+          "</div></div>";
+      }).join("");
+      return "<div class='wapo-archive'>" + head + "<div class='wapo-grid' style='margin-top:.8rem'>" + cards + "</div></div>";
     }
 
     function cardHtml(r, isHidden) {
@@ -1598,8 +1658,13 @@
     }
 
     function openApps(recId) {
+      const rec = recruitments.find((x) => String(x.id) === String(recId));
       const apps = applications.filter((a) => a.recruitment_id === recId);
-      $("wapo-apps-list").innerHTML = apps.length ? apps.map(appItemHtml).join("") : "<p class='wapo-empty'>No applications yet.</p>";
+      const banner = rec && rec.status !== "open"
+        ? "<div class='wapo-closedbanner'>This position is <strong>closed</strong> — nobody can apply any more, but everything you received is kept here. You can still accept someone as a co-author.</div>"
+        : "";
+      $("wapo-apps-list").innerHTML = banner +
+        (apps.length ? apps.map(appItemHtml).join("") : "<p class='wapo-empty'>No applications yet.</p>");
       openM("wapo-apps");
     }
     function appItemHtml(a) {
@@ -1640,9 +1705,15 @@
     function openRecruitForProject(project) {
       if (!project) return;
       ensureDom();
-      const existing = recruitments.find((r) => r.project_id === project.id && r.created_by === ctx.user.id);
+      const mineHere = recruitments.filter((r) => r.project_id === project.id && r.created_by === ctx.user.id);
+      const existing = mineHere.find((r) => r.status === "open");
+      const lastClosed = mineHere.find((r) => r.status !== "open");
       const form = $("wapo-recruit-form"), ex = $("wapo-recruit-existing"), send = $("wapo-recruit-send");
       $("wapo-recruit-pid").value = project.id;
+      const showForm = () => {
+        ex.style.display = "none"; form.style.display = "block"; send.style.display = "inline-flex";
+        $("wapo-recruit-spec").value = (ctx.profile && ctx.profile.specialty) || ""; $("wapo-recruit-help").value = "";
+      };
       if (existing) {
         const n = applications.filter((a) => a.recruitment_id === existing.id).length;
         ex.style.display = "block"; form.style.display = "none"; send.style.display = "none";
@@ -1650,9 +1721,18 @@
           ".<div style='margin-top:.7rem;display:flex;gap:.5rem;flex-wrap:wrap;'><button type='button' class='wapo-btn primary' data-open-apps='" + existing.id + "'>📨 View applications</button><button type='button' class='wapo-btn ghost' data-close-rec='" + existing.id + "'>Close position</button></div></div>";
         ex.querySelector("[data-open-apps]").addEventListener("click", () => { closeM("wapo-recruit"); openApps(existing.id); });
         ex.querySelector("[data-close-rec]").addEventListener("click", () => closeRecruitment(existing.id));
+      } else if (lastClosed) {
+        // Closed calls stay reachable from the project that posted them, so the
+        // owner never has to go hunting for who volunteered.
+        const n = applications.filter((a) => a.recruitment_id === lastClosed.id).length;
+        ex.style.display = "block"; form.style.display = "none"; send.style.display = "none";
+        ex.innerHTML = "<div class='wapo-note'>You closed a position for this project — <strong>" + esc(lastClosed.specialty) + "</strong>" + (lastClosed.help_area ? " · " + esc(lastClosed.help_area) : "") + ". <strong>" + n + "</strong> application" + (n === 1 ? "" : "s") + " kept." +
+          "<div style='margin-top:.7rem;display:flex;gap:.5rem;flex-wrap:wrap;'><button type='button' class='wapo-btn primary' data-open-apps='" + lastClosed.id + "'>📨 View applications</button><button type='button' class='wapo-btn ghost' data-reopen='" + lastClosed.id + "'>Reopen it</button><button type='button' class='wapo-btn ghost' data-new-rec>Post a new position</button></div></div>";
+        ex.querySelector("[data-open-apps]").addEventListener("click", () => { closeM("wapo-recruit"); openApps(lastClosed.id); });
+        ex.querySelector("[data-reopen]").addEventListener("click", async () => { closeM("wapo-recruit"); await reopenRecruitment(lastClosed.id); });
+        ex.querySelector("[data-new-rec]").addEventListener("click", showForm);
       } else {
-        ex.style.display = "none"; form.style.display = "block"; send.style.display = "inline-flex";
-        $("wapo-recruit-spec").value = (ctx.profile && ctx.profile.specialty) || ""; $("wapo-recruit-help").value = "";
+        showForm();
       }
       openM("wapo-recruit");
     }
@@ -1665,10 +1745,21 @@
       closeM("wapo-recruit"); WA.toast("Position posted!", "success"); await load();
     }
     async function closeRecruitment(recId) {
-      if (!confirm("Close this position? It will be removed from the board.")) return;
+      if (!confirm("Close this position? Nobody will be able to apply any more.\n\nThe applications you already received are kept — you'll find them under \"My closed positions\" on the board, with names, WhatsApp numbers and notes.")) return;
       const { error } = await WA.client.from("research_recruitments").update({ status: "closed", updated_at: new Date().toISOString() }).eq("id", recId);
       if (error) { WA.toast("Failed to close position", "error"); return; }
-      closeM("wapo-recruit"); closeM("wapo-apps"); WA.toast("Position closed", "info"); await load();
+      closeM("wapo-recruit"); closeM("wapo-apps");
+      setShowClosed(true); // so the applications don't appear to vanish
+      WA.toast("Position closed — the applications are kept under \"My closed positions\".", "info");
+      await load();
+    }
+
+    async function reopenRecruitment(recId) {
+      const { error } = await WA.client.from("research_recruitments")
+        .update({ status: "open", updated_at: new Date().toISOString() }).eq("id", recId);
+      if (error) { WA.toast("Failed to reopen position", "error"); return; }
+      WA.toast("Position reopened — it's back on the board.", "success");
+      await load();
     }
 
     /* Post a call for a freshly-created project (used by the Research create flow). */

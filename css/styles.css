@@ -373,14 +373,18 @@ select.tz-inline {
 .ladder-arrow { color: var(--red); font-weight: 700; margin: 0 4px; }
 
 /* presenter queue */
+/* Home stacks several independent blocks; without this their headings sit
+   right on top of the panel above them. */
+main > section + section { margin-top: 30px; }
+
 .queue-list { display: flex; flex-direction: column; gap: 8px; }
 .queue-item { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 11px; background: #fff; }
 .queue-item.next { border-color: var(--red); background: var(--red-soft); }
 .queue-pos { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--navy-800); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; }
 .queue-item.next .queue-pos { background: var(--red); }
 .queue-main { flex: 1; min-width: 0; }
-.queue-name { font-weight: 600; color: var(--navy-800); }
-.queue-sub { font-size: 0.78rem; color: var(--muted); }
+.queue-name { display: block; font-weight: 600; color: var(--navy-800); }
+.queue-sub { display: block; font-size: 0.78rem; color: var(--muted); }
 .queue-tag { flex-shrink: 0; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--red-dark); }
 .role-option {
   border: 2px solid var(--border); border-radius: 12px; padding: 14px; cursor: pointer;

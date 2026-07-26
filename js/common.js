@@ -350,6 +350,29 @@
   WA.ROLE_LADDER = ["question_reader", "methods_checker", "presenter"];
   WA.ROLE_KEYS = Object.keys(WA.ROLES);
 
+  /* The people who hold the fixed roles. They run the club from the other side
+     of the table, so the "who's up next to present" rotation isn't about them —
+     read from the role definitions above so the two can never disagree. */
+  const nameKey = (s) => String(s || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[^a-z\s]/g, " ").replace(/\s+/g, " ").trim();
+
+  WA.FIXED_ROLE_HOLDERS = WA.ROLE_KEYS
+    .map((k) => WA.ROLES[k].usually).filter(Boolean);
+
+  /* Matches on first + last name, so "IRIA DA COSTA", "Iria da Costa" and
+     "Iria Costa" all resolve to the same person. */
+  WA.isFixedRoleHolder = function (fullName) {
+    const parts = nameKey(fullName).split(" ").filter(Boolean);
+    if (!parts.length) return false;
+    const ends = parts[0] + "|" + parts[parts.length - 1];
+    return WA.FIXED_ROLE_HOLDERS.some((n) => {
+      const p = nameKey(n).split(" ").filter(Boolean);
+      if (!p.length) return false;
+      return p[0] + "|" + p[p.length - 1] === ends;
+    });
+  };
+
   WA.roleBadge = function (role) {
     const r = WA.ROLES[role] || { label: role, badge: "badge-attendee" };
     return '<span class="badge ' + r.badge + '">' + WA.esc(r.label) + "</span>";
@@ -645,6 +668,12 @@
     upcoming.forEach((g) => (g.presenters || []).forEach((a) => committed.add(a.user_id)));
     return Object.keys(stats)
       .filter((id) => !stats[id].presenter && !committed.has(id) && stats[id].sessions >= minSessions)
+      // The fixed-role holders keep the club running; the rotation is for
+      // everyone else, and listing them as "up next" only confuses people.
+      .filter((id) => {
+        const p = profilesById && profilesById[id];
+        return !(p && WA.isFixedRoleHolder(p.full_name));
+      })
       .map((id) => ({
         user_id: id,
         profile: (profilesById && profilesById[id]) || null,

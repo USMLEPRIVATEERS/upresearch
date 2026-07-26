@@ -640,6 +640,19 @@
       }
       renderSections();
 
+      /* Deep link: home.html?slot=<iso> opens that session's details modal
+         straight away — used by the notification bell so clicking "X will
+         present Y" lands on the actual session, not just the page. */
+      (function openSlotFromQuery() {
+        const raw = new URLSearchParams(window.location.search).get("slot");
+        if (!raw) return;
+        const d = new Date(raw);
+        if (isNaN(d)) return;
+        const g = groups.find((x) => x.iso === d.toISOString());
+        if (g) openDetails(g);
+        else WA.toast("That session is no longer on the schedule.", "info");
+      })();
+
       /* ---------- host posts / updates a meeting link ---------- */
 
       function wireMeetingForms() {

@@ -48,7 +48,9 @@
         ]);
         if (error) throw error;
         profiles = data || [];
-        stats = WA.computeStats(rows, 365);
+        // Absences are honoured so the counts reflect who actually attended.
+        const abs = await WA.fetchAbsences();
+        stats = WA.computeStats(rows, 365, abs.set);
       } catch (err) {
         $("members-list").textContent = "Could not load members: " + err.message;
         return;

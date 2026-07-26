@@ -73,10 +73,11 @@
         email: "fernando.vasconcellos@bmc.org",
       };
 
-      let rows, confirmations;
+      let rows, confirmations, absences;
       try {
         rows = await WA.fetchAllAvailabilities();
         confirmations = (await WA.fetchConfirmations()).map;
+        absences = (await WA.fetchAbsences()).set;
       }
       catch (err) { $("cert-list").textContent = "Could not load: " + err.message; return; }
 
@@ -88,9 +89,12 @@
         .reverse()
         .map((g) => {
           const row = g.presenters.find((p) => p.user_id === user.id);
-          return { date: g.date, iso: g.iso, article: row.article, confirmed: confirmations.has(g.iso) };
+          return { date: g.date, iso: g.iso, article: row.article,
+                   confirmed: confirmations.has(g.iso),
+                   // Marked absent by the organizing team: no certificate.
+                   absent: WA.wasAbsent(absences, g.iso, user.id) };
         })
-        .filter((c) => c.article);
+        .filter((c) => c.article && !c.absent);
       const mine = allMine.filter((c) => c.confirmed);
       const pending = allMine.filter((c) => !c.confirmed);
 
@@ -103,6 +107,7 @@
           g.presenters.length && confirmations.has(g.iso))
         .reverse()
         .map((g) => {
+          if (WA.wasAbsent(absences, g.iso, user.id)) return null; // didn't attend
           const roles = RECORD_ROLES.filter((r) => (g.byRole[r] || []).some((a) => a.user_id === user.id));
           const art = g.presenters[0] && g.presenters[0].article;
           return roles.length ? { date: g.date, roles, article: art } : null;

@@ -713,7 +713,6 @@
       '<a class="brand" href="home.html">' +
       '<span class="brand-mark">WA</span>' +
       '<span class="brand-text"><strong>Ward Academy</strong><em>Journal Club</em></span></a>' +
-      '<button class="nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>' +
       '<div class="nav-links" id="nav-links">' +
       links.map(([href, label, key]) =>
         '<a href="' + href + '"' + (key === active ? ' class="active"' : "") + ">" + label + "</a>"
@@ -722,7 +721,12 @@
       WA.avatarHtml(profile, "avatar-sm", "") + " " +
       WA.esc((name || "Profile").split(" ")[0]) + "</a>" +
       '<a href="#" id="nav-signout">Sign out</a>' +
-      "</div></div>";
+      "</div>" +
+      '<div class="nav-bell-wrap" id="nav-bell-wrap">' +
+      '<button class="nav-bell" id="nav-bell" aria-label="Notifications" title="Notifications">🔔' +
+      '<span class="nav-bell-badge" id="nav-bell-badge"></span></button></div>' +
+      '<button class="nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>' +
+      "</div>";
     document.getElementById("nav-toggle").addEventListener("click", () => {
       document.getElementById("nav-links").classList.toggle("open");
     });
@@ -758,8 +762,214 @@
       profile = ins.data || { id: user.id, full_name: "" };
     }
     WA.renderNav(activeNav, profile);
+    if (WA.notifications) WA.notifications.init({ user, profile });
     return { user, profile };
   };
+
+  /* Compact "time ago" for notifications. */
+  WA.timeAgo = function (iso) {
+    const t = new Date(iso).getTime();
+    if (isNaN(t)) return "";
+    const s = Math.round((Date.now() - t) / 1000);
+    if (s < 45) return "just now";
+    if (s < 90) return "1 min ago";
+    const m = Math.round(s / 60);
+    if (m < 60) return m + " min ago";
+    const h = Math.round(m / 60);
+    if (h < 24) return h + (h === 1 ? " hour ago" : " hours ago");
+    const d = Math.round(h / 24);
+    if (d < 7) return d + (d === 1 ? " day ago" : " days ago");
+    const w = Math.round(d / 7);
+    if (d < 30) return w + (w === 1 ? " week ago" : " weeks ago");
+    return new Date(iso).toLocaleDateString();
+  };
+
+  /* ============================================================
+     Notification bell. Runs lightweight per-category collectors
+     (RLS keeps them scoped to the current member), diffs against a
+     "last opened" timestamp in localStorage, and renders a badge +
+     dropdown. Fails silently if a table isn't there yet.
+     ============================================================ */
+  WA.notifications = (function () {
+    let ctx = null, items = [], wired = false;
+    const esc = (s) => WA.esc(s);
+    const seenKey = () => "wa_notifs_last_opened_" + (ctx && ctx.user ? ctx.user.id : "x");
+    const cacheKey = () => "wa_notifs_cache_" + (ctx && ctx.user ? ctx.user.id : "x");
+    function getLastOpened() {
+      const v = localStorage.getItem(seenKey());
+      if (v) return v;
+      // First ever load: start clean (don't flood with all history).
+      const now = new Date().toISOString();
+      try { localStorage.setItem(seenKey(), now); } catch (e) {}
+      return now;
+    }
+    function markRead() { try { localStorage.setItem(seenKey(), new Date().toISOString()); } catch (e) {} }
+    const me = () => ctx.user.id;
+    const mk = (ts, icon, html, href, key) => ({ ts, icon, html, href, key });
+
+    async function safe(fn) { try { return (await fn()) || []; } catch (e) { return []; } }
+
+    async function cSessions() {
+      const { data } = await WA.client.from("availabilities")
+        .select("id, role, kind, slot_start, created_at, user_id, profile:profiles(full_name), article:articles(title)")
+        .eq("role", "presenter").order("created_at", { ascending: false }).limit(15);
+      return (data || []).filter((a) => a.user_id !== me()).map((a) => {
+        const who = a.profile ? a.profile.full_name || "A member" : "A member";
+        const art = a.article ? a.article.title : "an article";
+        const when = a.kind === "single" && a.slot_start ? " · " + WA.fmtDateTime(new Date(a.slot_start)) : "";
+        return mk(a.created_at, "📄", "<b>" + esc(who) + "</b> will present <b>" + esc(art) + "</b>" + esc(when), "home.html", "sess-" + a.id);
+      });
+    }
+    async function cMeetings() {
+      const { data } = await WA.client.from("meetings")
+        .select("slot_start, meeting_url, updated_at, host_id").order("updated_at", { ascending: false }).limit(15);
+      const floor = Date.now() - 3600000;
+      return (data || []).filter((m) => m.host_id !== me() && m.meeting_url && new Date(m.slot_start).getTime() >= floor)
+        .map((m) => mk(m.updated_at, "🎥", "Meeting link posted for <b>" + esc(WA.fmtDateTime(new Date(m.slot_start))) + "</b>", "home.html", "meet-" + m.slot_start));
+    }
+    async function cCertificates() {
+      const [av, confs] = await Promise.all([
+        WA.client.from("availabilities").select("slot_start, article:articles(title)").eq("user_id", me()).eq("role", "presenter").eq("kind", "single"),
+        WA.client.from("session_confirmations").select("slot_start, confirmed_at"),
+      ]);
+      if (!av.data || !confs.data) return [];
+      const cmap = new Map(confs.data.map((c) => [new Date(c.slot_start).toISOString(), c]));
+      const out = [];
+      for (const a of av.data) {
+        if (!a.slot_start) continue;
+        const c = cmap.get(new Date(a.slot_start).toISOString());
+        if (c) {
+          const art = a.article ? a.article.title : "your presentation";
+          out.push(mk(c.confirmed_at, "🎓", "Your certificate for <b>" + esc(art) + "</b> is ready", "certificates.html", "cert-" + new Date(a.slot_start).toISOString()));
+        }
+      }
+      return out;
+    }
+    async function cResearchProjects() {
+      const { data } = await WA.client.from("research_projects")
+        .select("id, title, created_at, updated_at").order("updated_at", { ascending: false }).limit(15);
+      return (data || []).filter((p) => p.updated_at && (new Date(p.updated_at) - new Date(p.created_at)) > 3000)
+        .map((p) => mk(p.updated_at, "🔬", "Project <b>" + esc(p.title || "Untitled") + "</b> was updated", "research.html?project=" + p.id, "proj-" + p.id + "-" + p.updated_at));
+    }
+    async function cResearchApps() {
+      const { data } = await WA.client.from("research_applications")
+        .select("id, status, created_at, updated_at, applicant_id, applicant:applicant_id(full_name), recruitment:recruitment_id(created_by, project_id)")
+        .order("created_at", { ascending: false }).limit(25);
+      const out = [];
+      for (const a of data || []) {
+        const rec = a.recruitment || {};
+        if (rec.created_by === me() && a.applicant_id !== me()) {
+          const who = a.applicant ? a.applicant.full_name || "Someone" : "Someone";
+          out.push(mk(a.created_at, "📨", "<b>" + esc(who) + "</b> applied to co-author your project", "research.html?project=" + rec.project_id, "app-" + a.id));
+        }
+        if (a.applicant_id === me() && (a.status === "accepted" || a.status === "rejected")) {
+          const accepted = a.status === "accepted";
+          out.push(mk(a.updated_at || a.created_at, accepted ? "✅" : "ℹ️",
+            accepted ? "You're now a co-author on a research project! 🎉" : "A co-author application wasn't selected this time",
+            accepted ? "research.html?project=" + rec.project_id : "research.html", "appdec-" + a.id));
+        }
+      }
+      return out;
+    }
+    async function cOpenPositions() {
+      const { data } = await WA.client.from("research_recruitments")
+        .select("id, specialty, created_at, created_by").eq("status", "open").order("created_at", { ascending: false }).limit(15);
+      return (data || []).filter((r) => r.created_by !== me())
+        .map((r) => mk(r.created_at, "🤝", "New co-author position in <b>" + esc(r.specialty || "research") + "</b>", "research.html", "rec-" + r.id));
+    }
+
+    async function load() {
+      const groups = await Promise.all([
+        safe(cSessions), safe(cMeetings), safe(cCertificates),
+        safe(cResearchProjects), safe(cResearchApps), safe(cOpenPositions),
+      ]);
+      const seen = new Set();
+      const all = [];
+      for (const g of groups) for (const it of g) {
+        if (!it || !it.ts || seen.has(it.key)) continue;
+        seen.add(it.key); all.push(it);
+      }
+      all.sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
+      items = all.slice(0, 40);
+      try { sessionStorage.setItem(cacheKey(), JSON.stringify(items)); } catch (e) {}
+      render();
+    }
+
+    function unseenCount() {
+      const last = getLastOpened();
+      return items.filter((it) => it.ts > last).length;
+    }
+    function updateBadge() {
+      const b = document.getElementById("nav-bell-badge");
+      if (!b) return;
+      const n = unseenCount();
+      if (n > 0) { b.textContent = n > 9 ? "9+" : String(n); b.classList.add("on"); }
+      else { b.textContent = ""; b.classList.remove("on"); }
+    }
+    function panelHtml() {
+      const last = getLastOpened();
+      const rows = items.length ? items.map((it) => {
+        const unseen = it.ts > last ? " unseen" : "";
+        return '<a class="notif-item' + unseen + '" href="' + esc(it.href) + '">' +
+          '<span class="notif-ic">' + it.icon + "</span>" +
+          '<span class="notif-body"><span class="notif-text">' + it.html + "</span>" +
+          '<span class="notif-time">' + esc(WA.timeAgo(it.ts)) + "</span></span></a>";
+      }).join("") : '<div class="notif-empty"><span class="big">🔔</span>You\'re all caught up</div>';
+      const n = unseenCount();
+      return '<div class="notif-head"><strong>Notifications</strong>' +
+        '<button class="notif-mark" id="notif-mark"' + (n ? "" : " disabled") + ">Mark all read</button></div>" +
+        '<div class="notif-list">' + rows + "</div>";
+    }
+    function render() {
+      updateBadge();
+      const panel = document.getElementById("notif-panel");
+      if (panel && panel.classList.contains("open")) panel.innerHTML = panelHtml();
+    }
+    function ensurePanel() {
+      let panel = document.getElementById("notif-panel");
+      if (!panel) {
+        const wrap = document.getElementById("nav-bell-wrap");
+        if (!wrap) return null;
+        panel = document.createElement("div");
+        panel.className = "notif-panel"; panel.id = "notif-panel";
+        wrap.appendChild(panel);
+      }
+      return panel;
+    }
+    function closePanel() { const p = document.getElementById("notif-panel"); if (p) p.classList.remove("open"); }
+    function openPanel() {
+      const panel = ensurePanel(); if (!panel) return;
+      panel.innerHTML = panelHtml();
+      panel.classList.add("open");
+      const mark = document.getElementById("notif-mark");
+      if (mark) mark.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); markRead(); updateBadge(); const mk2 = document.getElementById("notif-mark"); if (mk2) mk2.setAttribute("disabled", ""); panel.querySelectorAll(".notif-item.unseen").forEach((el) => el.classList.remove("unseen")); });
+      // Acknowledge: badge clears now, but the list keeps this render's highlights.
+      markRead(); updateBadge();
+    }
+    function togglePanel() {
+      const p = document.getElementById("notif-panel");
+      if (p && p.classList.contains("open")) closePanel(); else openPanel();
+    }
+    function wire() {
+      if (wired) return; wired = true;
+      const bell = document.getElementById("nav-bell");
+      if (bell) bell.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); togglePanel(); });
+      document.addEventListener("click", (e) => {
+        const p = document.getElementById("notif-panel");
+        if (!p || !p.classList.contains("open")) return;
+        if (!p.contains(e.target) && e.target.id !== "nav-bell" && !(e.target.closest && e.target.closest("#nav-bell"))) closePanel();
+      });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePanel(); });
+    }
+
+    function init(context) {
+      ctx = context;
+      wire();
+      try { const c = sessionStorage.getItem(cacheKey()); if (c) { items = JSON.parse(c) || []; render(); } } catch (e) {}
+      load();
+    }
+    return { init, reload: load };
+  })();
 
   /* ============================================================
      Co-author recruitment board ("open positions").

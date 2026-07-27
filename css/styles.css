@@ -241,6 +241,19 @@ select.tz-inline {
 }
 .spam-note strong { color: var(--red-dark); }
 
+/* "didn't get the email?" — offered next to the message that sent them looking */
+.resend {
+  margin-top: 10px; padding: 10px 12px; border-radius: 9px;
+  background: #f7f8fb; border: 1px dashed var(--border);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 0.84rem; color: var(--muted);
+}
+.resend-q { font-weight: 600; color: var(--navy-800); }
+.resend-wait strong { color: var(--navy-800); font-variant-numeric: tabular-nums; }
+.resend-msg { flex-basis: 100%; }
+.resend-msg:empty { display: none; }
+.resend-msg.bad { color: var(--err); }
+
 /* ---------------- badges, avatars, chips ---------------- */
 
 .badge {

@@ -102,9 +102,13 @@
         return;
       }
 
+      // Where to land after signing in — an invite link points at a session,
+      // and losing it at the login would defeat the invite.
+      const NEXT = WA.safeNext(new URLSearchParams(window.location.search).get("next"));
+
       // Already signed in? Straight to the app.
       const { data: { session } } = await WA.client.auth.getSession();
-      if (session) { window.location.replace("home.html"); return; }
+      if (session) { window.location.replace(NEXT); return; }
 
       // Add a show/hide toggle to every password field.
       document.querySelectorAll('input[type="password"]').forEach((inp) => {
@@ -229,7 +233,7 @@
           }
           return;
         }
-        window.location.replace("home.html");
+        window.location.replace(NEXT);
       });
 
       // --- sign up ---
@@ -250,7 +254,7 @@
         if (error) { $("signup-error").textContent = "Sign-up failed: " + error.message; return; }
         if (data.session) {
           // Email confirmation disabled in Supabase → signed in immediately.
-          window.location.replace("home.html");
+          window.location.replace(NEXT);
         } else {
           $("signup-ok").innerHTML =
             "Account created! We sent a confirmation link to your email — click it, then come back and sign in.<br>" +

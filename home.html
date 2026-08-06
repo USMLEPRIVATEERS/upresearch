@@ -198,19 +198,32 @@
           .filter((p) => p.article)
           .map((p) => p.article.title + " — " + p.article.article_url)
           .join("\n");
-        const loc = m ? m.meeting_url : "";
+        // Same rule as the button: the calendar entry only carries the call
+        // address for someone who is actually in the session.
+        const loc = m && g.all.some((a) => a.user_id === user.id) ? m.meeting_url : "";
         return '<span class="small" style="white-space:nowrap">' +
           '<a href="' + WA.esc(WA.gcalLink(g.date, title, details, loc)) +
           '" target="_blank" rel="noopener noreferrer">📆 Google Calendar</a>' +
           ' · <a href="#" class="ics-link" data-slot="' + WA.esc(g.iso) + '">.ics</a></span>';
       }
 
+      /* The meeting link is for the people who said they're coming. Handing it
+         to everyone meant members turned up without ever signing up, and the
+         session's record of who took part was wrong. */
+      function lockedLinkNote(g) {
+        return '<span class="muted small">🔒 The meeting link is shown to members who are in this ' +
+          "session. Pick a role and it appears here.</span> " + joinBtn(g);
+      }
+
       function meetingArea(g) {
         const m = meetings.get(g.iso);
         const iAmHost = g.hosts.some((h) => h.user_id === user.id);
+        const iAmIn = g.all.some((a) => a.user_id === user.id);
         const inProgress = now >= g.date && now < new Date(g.date.getTime() + 3600000);
         let html = '<div class="meeting-cta">';
-        if (m) {
+        if (m && !iAmIn) {
+          html += lockedLinkNote(g);
+        } else if (m) {
           const url = WA.safeUrl(m.meeting_url);
           if (url) {
             html += '<a class="btn' + (inProgress ? "" : " secondary") + '" href="' + WA.esc(url) +
@@ -245,21 +258,26 @@
         return html;
       }
 
-      /* One-tap join: adds the viewer as attendee for that exact slot,
-         or shows their current role if they're already in. */
+      /* One button instead of "I'll attend" + a link per missing role: it opens
+         the picker, which shows every role with who already holds it and what's
+         still missing — far clearer than guessing from a row of buttons. */
       function joinArea(g) {
         const mine = g.all.find((a) => a.user_id === user.id);
         if (mine) {
           return '<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center">' +
             WA.roleBadge(mine.role) +
-            ' <span class="small muted">You’re in · <a href="availability.html">manage</a></span>' +
-            openRoleButtons(g, mine) + detailsBtn(g) +
+            ' <span class="small muted">You’re in</span>' +
+            joinBtn(g, "🔄 Change my role") + detailsBtn(g) +
             "</div>";
         }
         return '<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">' +
-          '<button class="btn sm join-btn" data-slot="' + WA.esc(g.iso) + '">✋ I’ll attend</button>' +
-          openRoleButtons(g, null) + detailsBtn(g) +
+          joinBtn(g) + detailsBtn(g) +
           "</div>";
+      }
+
+      function joinBtn(g, label, cls) {
+        return '<button type="button" class="btn sm ' + (cls || "") + '" data-join="' + WA.esc(g.iso) +
+          '">' + WA.esc(label || "✋ I’m in — pick my role") + "</button>";
       }
 
       /* The date at the top of a card opens the same panel, but a heading that
@@ -270,21 +288,6 @@
           '">🔎 See full details</button>';
       }
 
-      /* One-tap buttons for the roles this session still needs, so taking a
-         turn is as easy as attending. */
-      const TAKE_LABEL = {
-        presenter: "Present this one",
-        methods_checker: "Check the methods",
-        question_reader: "Read a question",
-        host: "Host this slot",
-      };
-      function openRoleButtons(g, mine) {
-        return WA.sessionStaffing(g).missing
-          .filter((m) => !(mine && mine.role === m.role))
-          .map((m) => '<a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, m.role)) + '">' +
-            WA.roleIcon(m.role) + " " + WA.esc(TAKE_LABEL[m.role] || WA.roleLabel(m.role)) + "</a>")
-          .join("");
-      }
 
       // Colour-coded status so people can tell at a glance what a slot has.
       function gapText(missing) {
@@ -344,10 +347,8 @@
         const mine = g.all.find((a) => a.user_id === user.id);
         const cta = mine
           ? WA.roleBadge(mine.role) + ' <span class="small muted">you’re in</span>' +
-            (mine.role !== "presenter"
-              ? ' <a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, "presenter")) + '">📄 Present instead</a>' : "")
-          : '<button class="btn sm join-btn" data-slot="' + WA.esc(g.iso) + '">✋ I’ll attend</button>' +
-            '<a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, "presenter")) + '">Present here</a>';
+            joinBtn(g, "🔄 Change my role", "ghost")
+          : joinBtn(g);
         const cta2 = cta + detailsBtn(g);
         return '<div class="card tight session-card ev-' + st.cls + '">' +
           '<div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center">' +
@@ -392,10 +393,13 @@
           '<span class="small" style="opacity:0.85"> · ' + WA.esc(WA.fmtDateTime(g.date)) +
           (g.presenters[0] && g.presenters[0].article
             ? " · " + WA.esc(g.presenters[0].article.title) : "") + "</span></div>" +
-          (url
+          (url && g.all.some((a) => a.user_id === user.id)
             ? '<a class="btn' + (live ? "" : " secondary") + ' sm" href="' + WA.esc(url) +
               '" target="_blank" rel="noopener noreferrer">🎥 Join the call</a>'
-            : '<span class="small" style="opacity:0.85">Meeting link not posted yet</span>');
+            : url
+              ? '<button type="button" class="btn sm" data-join="' + WA.esc(g.iso) +
+                '">✋ I’m in — pick my role</button>'
+              : '<span class="small" style="opacity:0.85">Meeting link not posted yet</span>');
       }
       renderHero();
       setInterval(renderHero, 30000);
@@ -438,40 +442,17 @@
             const details = g.presenters.filter((p) => p.article)
               .map((p) => p.article.title + " — " + p.article.article_url).join("\n");
             const m = meetings.get(g.iso);
-            WA.downloadIcs(g.date, title, details, m ? m.meeting_url : "");
+            const iAmIn = g.all.some((a) => a.user_id === user.id);
+            WA.downloadIcs(g.date, title, details, m && iAmIn ? m.meeting_url : "");
           });
         });
         document.querySelectorAll(".copy-link").forEach((b) => {
           b.addEventListener("click", () => WA.copyText(b.getAttribute("data-url")));
         });
-        document.querySelectorAll(".join-btn").forEach((b) => {
-          b.addEventListener("click", async () => {
-            b.disabled = true;
-            const iso = b.getAttribute("data-slot");
-            const { error } = await WA.client.from("availabilities").insert({
-              user_id: user.id, role: "attendee", kind: "single",
-              slot_start: iso, open_ended: false, expires_at: null, article_id: null,
-            });
-            if (error) {
-              WA.toast("Could not join: " + error.message, "error");
-              b.disabled = false;
-              return;
-            }
-            // Reflect it locally so the card flips to "you're in" without a reload.
-            const g = groups.find((x) => x.iso === iso);
-            if (g) {
-              const me = { user_id: user.id, role: "attendee",
-                profile: { id: user.id, full_name: profile.full_name, specialty: profile.specialty } };
-              g.attendees.push(me);
-              g.all.push(me);
-            }
-            WA.toast("You’re in! Added as attendee for " +
-              (g ? WA.fmtDateTime(g.date) : "this slot") + ".", "success");
-            rows.push({ ...me, kind: "single", slot_start: iso,
-              created_at: new Date().toISOString(), open_ended: false, expires_at: null });
-            renderSections();
-            renderHero();
-            renderQueue(); // signing up changes who's eligible for the rotation
+        document.querySelectorAll("[data-join]").forEach((b) => {
+          b.addEventListener("click", () => {
+            const g = groups.find((x) => x.iso === b.getAttribute("data-join"));
+            if (g) openJoinDialog(g);
           });
         });
         document.querySelectorAll("[data-details]").forEach((b) => {
@@ -537,16 +518,21 @@
           .map((r) => WA.roleIcon(r) + " " + WA.roleLabel(r) + ": " + names(g.byRole[r]));
         if (cast.length) { lines.push(""); cast.forEach((l) => lines.push(l)); }
         lines.push("");
-        lines.push(m && WA.safeUrl(m.meeting_url) ? "🎥 Join: " + m.meeting_url : "🎥 Meeting link: to be posted by the host");
-        lines.push("👉 Details: " + WA.pageUrl("home.html"));
+        // Deliberately not the meeting link: pasting an invite into a group
+        // chat would hand the call to people who never signed up, which is the
+        // whole problem. The link waits for them on the session itself.
+        lines.push("🎥 The meeting link is on the session page, for members who are in it.");
+        lines.push("👉 Take a role and get the link: " + slotLink(g));
         return lines.join("\n");
       }
 
       function openDetails(g) {
         const st = evStatus(g);
         const m = meetings.get(g.iso);
-        const url = m && WA.safeUrl(m.meeting_url);
         const mine = g.all.find((a) => a.user_id === user.id);
+        // Only someone in the session gets the address — in the button, in the
+        // calendar entry and in the .ics alike.
+        const url = mine && m && WA.safeUrl(m.meeting_url);
         const inProgress = new Date() >= g.date && new Date() < new Date(g.date.getTime() + 3600000);
 
         let html = '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px">' +
@@ -556,7 +542,9 @@
 
         // meeting / join
         html += '<div class="meeting-cta" style="margin:0 0 12px">';
-        if (url) {
+        if (url && !mine) {
+          html += lockedLinkNote(g);
+        } else if (url) {
           html += '<a class="btn' + (inProgress ? "" : " secondary") + '" href="' + WA.esc(url) +
             '" target="_blank" rel="noopener noreferrer">🎥 Join the call' + (inProgress ? " — live now" : "") + "</a>" +
             '<button class="btn sm ghost copy-link" data-url="' + WA.esc(url) + '">⧉ Copy link</button>';
@@ -594,20 +582,15 @@
         html += '<div style="border-top:1px solid var(--border); margin-top:12px; padding-top:12px">';
         if (mine) {
           html += '<p class="small" style="margin:0 0 8px">' + WA.roleBadge(mine.role) +
-            ' You’re in this slot · <a href="availability.html">manage</a></p>';
-          if (mine.role !== "presenter" && !g.presenters.length) {
-            html += '<div style="margin-bottom:8px"><a class="btn sm ghost" href="' +
-              WA.esc(WA.slotHref(g.date, "presenter")) + '">📄 Present instead — volunteer to present the article</a></div>';
-          }
+            ' You’re in this slot · <a href="availability.html">manage</a></p>' +
+            '<div style="margin-bottom:8px">' + joinBtn(g, "🔄 Change my role", "ghost") + "</div>";
         } else {
           html += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px">' +
-            '<button class="btn sm join-btn" data-slot="' + WA.esc(g.iso) + '">✋ I’ll attend</button>' +
-            (g.presenters.length ? "" : '<a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, "presenter")) + '">📄 Present</a>') +
-            (g.hosts.length ? "" : '<a class="btn sm ghost" href="' + WA.esc(WA.slotHref(g.date, "host")) + '">⭐ Host this slot</a>') +
-            "</div>";
+            joinBtn(g) + "</div>";
         }
         // share + calendar
         html += '<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center">' +
+          '<button class="btn sm ghost" id="invite-members">🔗 Invite members to take a role</button>' +
           '<button class="btn sm ghost" id="copy-invite">📋 Copy invite</button>' +
           '<a class="btn sm ghost" href="' + WA.esc(WA.gcalLink(g.date,
             "Ward Academy Journal Club" + (g.presenters[0] && g.presenters[0].article ? ": " + g.presenters[0].article.title : ""),
@@ -624,6 +607,8 @@
           b.addEventListener("click", () => WA.copyText(b.getAttribute("data-url"))));
         const ci = root.querySelector("#copy-invite");
         if (ci) ci.addEventListener("click", () => WA.copyText(inviteText(g)));
+        const im = root.querySelector("#invite-members");
+        if (im) im.addEventListener("click", () => WA.copyText(memberInviteText(g)));
         const ics = root.querySelector("#dl-ics");
         if (ics) ics.addEventListener("click", () => {
           const title = "Ward Academy Journal Club" +
@@ -631,21 +616,161 @@
           const details = g.presenters.filter((p) => p.article).map((p) => p.article.title + " — " + p.article.article_url).join("\n");
           WA.downloadIcs(g.date, title, details, url || "");
         });
-        const jb = root.querySelector(".join-btn");
-        if (jb) jb.addEventListener("click", async () => {
-          jb.disabled = true;
-          const { error } = await WA.client.from("availabilities").insert({
-            user_id: user.id, role: "attendee", kind: "single",
-            slot_start: g.iso, open_ended: false, expires_at: null, article_id: null,
+        root.querySelectorAll("[data-join]").forEach((b) =>
+          b.addEventListener("click", () => openJoinDialog(g)));
+      }
+
+      /* ---------- "pick my role" ----------
+         One dialog instead of a row of guesses: every role, who already holds
+         it, and what the session is still short of. Nothing is blocked except
+         a role at its hard cap — the point is to inform the choice, not police
+         it. Presenter is the exception that leaves the dialog: it needs the
+         article, which lives on the availability form. */
+
+      function slotLink(g) {
+        return WA.pageUrl("home.html") + "?slot=" + encodeURIComponent(g.iso);
+      }
+
+      function memberInviteText(g) {
+        const needs = WA.slotRoleNeeds(g).filter(
+          (n) => n.role !== "attendee" && n.missing);
+        const short = needs.length
+          ? needs.map((n) => (n.missing > 1 ? n.missing + " " : "") + n.label.toLowerCase()).join(", ")
+          : "nothing — the line-up is complete, come and take part";
+        return [
+          "🙋 Ward Academy Journal Club",
+          "🗓 " + WA.fmtDateTime(g.date) + " (" + WA.timezoneName() + ")",
+          "",
+          "Still needed: " + short + ".",
+          "",
+          "Open the session and pick a role — it takes one tap:",
+          slotLink(g),
+        ].join("\n");
+      }
+
+      function joinDialogHtml(g, chosen) {
+        const mine = g.all.find((a) => a.user_id === user.id);
+        const rows = WA.slotRoleNeeds(g).map((n) => {
+          const state = WA.roleNeedState(n);
+          const isMine = mine && mine.role === n.role;
+          const dis = n.full && !isMine;
+          return '<button type="button" class="role-pick ' + state +
+            (chosen === n.role ? " chosen" : "") + (isMine ? " current" : "") + '" ' +
+            'data-pick="' + n.role + '"' + (dis ? " disabled" : "") + ">" +
+            '<span class="rp-ic">' + n.icon + "</span>" +
+            '<span class="rp-main"><span class="rp-label">' + WA.esc(n.label) +
+            (isMine ? ' <span class="rp-you">your role now</span>' : "") + "</span>" +
+            '<span class="rp-need ' + state + '">' + WA.esc(WA.roleNeedText(n)) + "</span>" +
+            (n.prep ? '<span class="rp-prep">' + WA.esc(n.prep) +
+              (n.usually ? " · usually " + WA.esc(n.usually) : "") + "</span>" : "") +
+            "</span></button>";
+        }).join("");
+
+        return '<p class="muted small" style="margin:0 0 4px">🗓 <strong>' +
+            WA.esc(WA.fmtDateTime(g.date)) + "</strong></p>" +
+          '<div class="rp-tz">🌍 All times in <span class="rp-tz-slot"></span></div>' +
+          '<p class="small muted" style="margin:10px 0 6px">Pick the role you want. ' +
+            "Roles already covered are marked, so you can see what the session is short of.</p>" +
+          '<div class="role-picks">' + rows + "</div>" +
+          '<div class="rp-foot">' +
+            '<button type="button" class="btn" id="rp-save"' + (chosen ? "" : " disabled") + ">" +
+            (chosen === "presenter" ? "Continue — add the article" : "Save my role") + "</button>" +
+            (mine ? '<button type="button" class="btn sm danger" id="rp-leave">Leave this session</button>' : "") +
+          "</div>";
+      }
+
+      function openJoinDialog(g) {
+        let chosen = null;
+        const mine = () => g.all.find((a) => a.user_id === user.id);
+
+        function paint() {
+          openModal("✋ Take a role — " + WA.fmtDateTime(g.date), joinDialogHtml(g, chosen));
+          const root = $("modal-root");
+
+          // Timezone: detected automatically, changeable here without leaving.
+          const slot = root.querySelector(".rp-tz-slot");
+          slot.innerHTML = WA.tzSelectHtml("rp-tz-select");
+          const sel = root.querySelector("#rp-tz-select");
+          sel.className = "tz-inline";
+          sel.addEventListener("change", () => {
+            WA.setTz(sel.value);
+            paint();
+            renderSections(); renderHero();
           });
-          if (error) { WA.toast("Could not join: " + error.message, "error"); jb.disabled = false; return; }
-          const me = { user_id: user.id, role: "attendee",
-            profile: { id: user.id, full_name: profile.full_name, specialty: profile.specialty } };
-          g.attendees.push(me); g.all.push(me);
-          WA.toast("You’re in! Added as attendee.", "success");
-          closeModal();
-          renderSections(); renderHero();
-        });
+
+          root.querySelectorAll("[data-pick]").forEach((b) =>
+            b.addEventListener("click", () => { chosen = b.getAttribute("data-pick"); paint(); }));
+
+          const save = root.querySelector("#rp-save");
+          if (save) save.addEventListener("click", () => takeRole(g, chosen, save));
+          const leave = root.querySelector("#rp-leave");
+          if (leave) leave.addEventListener("click", () => leaveSlot(g, leave));
+        }
+        paint();
+      }
+
+      async function takeRole(g, role, btn) {
+        if (!role) return;
+        // The presenter has to bring the article, and that form lives on the
+        // availability page — send them there with the slot already filled in.
+        if (role === "presenter") { window.location.href = WA.slotHref(g.date, "presenter"); return; }
+
+        btn.disabled = true;
+        const existing = g.all.find((a) => a.user_id === user.id);
+        let error;
+        if (existing && existing.kind === "single" && existing.id) {
+          ({ error } = await WA.client.from("availabilities")
+            .update({ role: role }).eq("id", existing.id));
+          if (!error) { existing.role = role; }
+        } else {
+          // A standing weekly availability stays as it is; this one date gets
+          // its own row with the role they picked.
+          const ins = await WA.client.from("availabilities").insert({
+            user_id: user.id, role: role, kind: "single",
+            slot_start: g.iso, open_ended: false, expires_at: null, article_id: null,
+          }).select().single();
+          error = ins.error;
+          if (!error) {
+            const me = { id: ins.data && ins.data.id, user_id: user.id, role: role, kind: "single",
+              profile: { id: user.id, full_name: profile.full_name, specialty: profile.specialty } };
+            if (existing) { g.all.splice(g.all.indexOf(existing), 1); (g.byRole[existing.role] || []).splice((g.byRole[existing.role] || []).indexOf(existing), 1); }
+            g.all.push(me); (g.byRole[role] = g.byRole[role] || []).push(me);
+          }
+        }
+        if (error) { WA.toast("Could not save: " + error.message, "error"); btn.disabled = false; return; }
+        rebuildRoleBuckets(g);
+        WA.toast("You’re in as " + WA.roleLabel(role) + ".", "success");
+        closeModal();
+        renderSections(); renderHero(); renderQueue();
+      }
+
+      async function leaveSlot(g, btn) {
+        const existing = g.all.find((a) => a.user_id === user.id);
+        if (!existing) return;
+        if (existing.kind !== "single" || !existing.id) {
+          WA.toast("This comes from your weekly availability — remove it under My Availability, " +
+            "or mark the date as a day off.", "info");
+          return;
+        }
+        if (!confirm("Leave this session? You'll be taken off the line-up.")) return;
+        btn.disabled = true;
+        const { error } = await WA.client.from("availabilities").delete().eq("id", existing.id);
+        if (error) { WA.toast("Could not leave: " + error.message, "error"); btn.disabled = false; return; }
+        g.all.splice(g.all.indexOf(existing), 1);
+        const bucket = g.byRole[existing.role] || [];
+        if (bucket.indexOf(existing) >= 0) bucket.splice(bucket.indexOf(existing), 1);
+        rebuildRoleBuckets(g);
+        WA.toast("You’re out of this session.", "info");
+        closeModal();
+        renderSections(); renderHero(); renderQueue();
+      }
+
+      /* hosts/presenters/attendees are aliases of byRole entries, so they have
+         to point at the same arrays after we mutate them. */
+      function rebuildRoleBuckets(g) {
+        g.hosts = g.byRole.host = g.byRole.host || [];
+        g.presenters = g.byRole.presenter = g.byRole.presenter || [];
+        g.attendees = g.byRole.attendee = g.byRole.attendee || [];
       }
 
       function openModal(title, bodyHtml) {

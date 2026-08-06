@@ -411,6 +411,33 @@ select.tz-inline {
    right on top of the panel above them. */
 main > section + section { margin-top: 30px; }
 
+/* ---- "take a role" picker ---- */
+.rp-tz { font-size: 0.85rem; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.role-picks { display: flex; flex-direction: column; gap: 8px; }
+.role-pick {
+  display: flex; align-items: flex-start; gap: 11px; width: 100%; text-align: left;
+  padding: 11px 13px; border: 1.5px solid var(--border); border-radius: 12px;
+  background: #fff; cursor: pointer; font: inherit; color: inherit;
+}
+.role-pick:hover:not([disabled]) { border-color: var(--red); background: var(--red-soft); }
+.role-pick.chosen { border-color: var(--red); background: var(--red-soft); box-shadow: 0 0 0 2px var(--red-border); }
+.role-pick[disabled] { opacity: 0.55; cursor: not-allowed; }
+.role-pick.current { border-color: var(--navy-800); }
+.rp-ic { flex-shrink: 0; font-size: 1.25rem; line-height: 1.2; }
+.rp-main { min-width: 0; flex: 1; }
+.rp-label { display: block; font-weight: 700; color: var(--navy-800); }
+.rp-you {
+  font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+  color: #fff; background: var(--navy-800); padding: 1px 6px; border-radius: 999px;
+}
+.rp-need { display: block; font-size: 0.82rem; margin-top: 1px; }
+.rp-need.open { color: #15803d; font-weight: 600; }
+.rp-need.partial { color: #8a6100; font-weight: 600; }
+.rp-need.taken { color: var(--muted); }
+.rp-need.full { color: var(--muted); font-style: italic; }
+.rp-prep { display: block; font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+.rp-foot { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+
 .queue-list { display: flex; flex-direction: column; gap: 8px; }
 .queue-item { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 11px; background: #fff; }
 .queue-item.next { border-color: var(--red); background: var(--red-soft); }

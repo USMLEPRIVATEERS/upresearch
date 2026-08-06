@@ -124,12 +124,28 @@ nav#nav {
 .notif-item.unseen { background: var(--red-soft); }
 .notif-item.unseen:hover { background: #fbe3e9; }
 .notif-ic { flex-shrink: 0; font-size: 1.1rem; line-height: 1.4; }
-.notif-body { min-width: 0; }
-.notif-text { font-size: 0.86rem; line-height: 1.35; color: var(--navy-800); }
+.notif-body { min-width: 0; flex: 1; }
+/* Research project names run to a full paragraph. Three lines is enough to
+   recognise one; without the clamp a single item filled the whole panel. */
+.notif-text {
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  font-size: 0.86rem; line-height: 1.35; color: var(--navy-800); overflow-wrap: anywhere;
+}
 .notif-text b { font-weight: 700; }
-.notif-time { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+/* Block, or it runs straight into the text above it ("was updated31 min ago") */
+.notif-time { display: block; font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
 .notif-empty { padding: 28px 16px; text-align: center; color: var(--muted); font-size: 0.88rem; }
 .notif-empty .big { font-size: 1.6rem; display: block; margin-bottom: 6px; }
+
+/* On a phone the bell sits close to the right edge, so a panel hung off it
+   ran past the left edge of the screen and lost its first characters. Below
+   this width it stops hanging off the bell and spans the viewport instead. */
+@media (max-width: 640px) {
+  .notif-panel {
+    position: fixed; top: 60px; left: 10px; right: 10px;
+    width: auto; max-width: none;
+  }
+}
 
 /* Collapse to a hamburger menu while the full row of links would still be
    cramped (there are now 7 sections + profile + sign out). */

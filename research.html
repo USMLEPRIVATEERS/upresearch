@@ -1363,6 +1363,12 @@
          straight over the page behind — the panel looked transparent on a
          phone. The overlay is the scroller, so the panel simply grows. */
       .modal { max-height:none; }
+      /* Full-bleed sheet on a phone. With the overlay's padding in place the
+         sticky header parked below it, leaving a strip where the panel's own
+         text scrolled past above the title. No padding, no strip — and the
+         panel gets the whole width it needs anyway. */
+      .modal-overlay { padding:0 0 24px; }
+      .modal, .modal-header { border-radius:0; }
       /* These titles run to ten lines; a sticky bar that tall would swallow the
          screen. Two lines by default, tap to read the rest. */
       .modal-title { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; cursor:pointer; }

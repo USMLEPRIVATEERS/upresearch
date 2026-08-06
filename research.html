@@ -77,7 +77,12 @@
     .mt-2 { margin-top:.5rem; } .mt-3 { margin-top:1rem; } .p-2 { padding:.5rem; } .p-4 { padding:1.5rem; }
     h1 { font-size:1.6rem; color:var(--navy); }
     .empty-state { padding:2rem 1rem; } .empty-state-icon { font-size:2.6rem; } .empty-state-title { color:var(--navy); margin:.5rem 0; }
-    .modal-overlay { position:fixed; inset:0; background:rgba(10,22,40,.6); z-index:100; display:none; align-items:flex-start; justify-content:center; padding:24px 14px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+    /* No padding at the top: a sticky header parks against the scrollport,
+       which starts inside the padding, and the panel's own text then scrolled
+       through the band above the title. The gap lives on the panel instead, so
+       nothing of the panel can ever be above its header. */
+    .modal-overlay { position:fixed; inset:0; background:rgba(10,22,40,.6); z-index:100; display:none; align-items:flex-start; justify-content:center; padding:0 14px 24px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+    .modal-overlay > .modal { margin-top:24px; }
     .modal-overlay.active { display:flex; }
     /* padding:0 and static close-button position override the global css/styles.css
        .modal / .modal-close rules (meant for the other pages) that otherwise leak in. */
@@ -762,6 +767,9 @@
       const token=++viewToken;
       loadParticipants().catch(()=>{}).then(()=>{
         if(token!==viewToken) return;
+        // Task rows name their assignee from participantsCache, which only
+        // arrives now — repaint them or every task reads as unassigned.
+        renderTasks(currentProject.tasks||[]);
         return loadProjectDriveFolders(currentProject.id).catch((e)=>{
           console.error(e);
           if(token===viewToken) document.getElementById('drive-folders-container').innerHTML=
@@ -801,7 +809,7 @@
         let isOverdue=false, dinfo='';
         if(task.deadline&&!isCompleted){ const diff=calDiffDays(task.deadline,todayKey); isOverdue=diff<0; if(diff<0)dinfo=`${Math.abs(diff)} day${Math.abs(diff)>1?'s':''} overdue`; else if(diff===0)dinfo='Today!'; else if(diff===1)dinfo='Tomorrow'; else if(diff<=7)dinfo=`${diff} days`; }
         const clickAttr = canEdit ? `onclick="editTask(${task.id})"` : '';
-        return `<div class="task-item ${isCompleted?'completed':''} ${isOverdue?'overdue':''}" ${clickAttr}><div class="task-checkbox"><input type="checkbox" ${isCompleted?'checked':''} ${canEdit?'':'disabled'} onclick="event.stopPropagation(); toggleTaskComplete(${task.id}, this.checked)"></div><div class="task-info"><div class="task-title">${calEsc(task.title)}</div><div class="task-meta"><span class="task-stage">${stageLabels[task.stage]||task.stage}</span>${assigneeName?`<span class="task-assignee"><span class="task-assignee-avatar">${calEsc(assigneeInitials)}</span>${calEsc(assigneeName)}</span>`:''}${task.deadline?`<span class="task-deadline ${isOverdue?'text-danger':''}">📅 ${WardApp.formatDate(task.deadline)}${dinfo?` <span style="opacity:.8;">(${dinfo})</span>`:''}</span>`:''}</div></div></div>`;
+        return `<div class="task-item ${isCompleted?'completed':''} ${isOverdue?'overdue':''}" ${clickAttr}><div class="task-checkbox"><input type="checkbox" ${isCompleted?'checked':''} ${canEdit?'':'disabled'} onclick="event.stopPropagation(); toggleTaskComplete(${task.id}, this.checked)"></div><div class="task-info"><div class="task-title">${calEsc(task.title)}</div><div class="task-meta"><span class="task-stage">${stageLabels[task.stage]||task.stage}</span>${assigneeName?`<span class="task-assignee"><span class="task-assignee-avatar">${calEsc(assigneeInitials)}</span>${calEsc(assigneeName)}</span>`:'<span class="task-assignee unassigned">🙋 Nobody assigned</span>'}${task.deadline?`<span class="task-deadline ${isOverdue?'text-danger':''}">📅 ${WardApp.formatDate(task.deadline)}${dinfo?` <span style="opacity:.8;">(${dinfo})</span>`:''}</span>`:''}</div></div></div>`;
       }).join('');
     }
 
@@ -1275,6 +1283,7 @@
     .task-deadline { display:inline-flex; align-items:center; gap:.35rem; background:var(--gray-100); padding:.25rem .6rem; border-radius:8px; font-size:.72rem; color:var(--gray-600); font-weight:500; }
     .task-deadline.text-danger { background:#fef2f2; color:#dc2626; }
     .task-assignee { display:inline-flex; align-items:center; gap:.35rem; background:#fef3c7; padding:.25rem .6rem; border-radius:8px; font-size:.72rem; color:#92400e; font-weight:500; }
+    .task-assignee.unassigned { background:var(--gray-100); color:var(--gray-500); }
     .task-assignee-avatar { width:18px; height:18px; background:#b45309; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.62rem; font-weight:700; }
 
     /* author picker */
@@ -1404,11 +1413,10 @@
          straight over the page behind — the panel looked transparent on a
          phone. The overlay is the scroller, so the panel simply grows. */
       .modal { max-height:none; }
-      /* Full-bleed sheet on a phone. With the overlay's padding in place the
-         sticky header parked below it, leaving a strip where the panel's own
-         text scrolled past above the title. No padding, no strip — and the
-         panel gets the whole width it needs anyway. */
+      /* Full-bleed sheet on a phone — the panel gets the whole width, and the
+         header sits flush against the top edge. */
       .modal-overlay { padding:0 0 24px; }
+      .modal-overlay > .modal { margin-top:0; }
       .modal, .modal-header { border-radius:0; }
       /* These titles run to ten lines; a sticky bar that tall would swallow the
          screen. Two lines by default, tap to read the rest. */

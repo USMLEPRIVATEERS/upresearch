@@ -816,7 +816,11 @@
     async function toggleTaskComplete(taskId, completed){
       const task=currentProject.tasks.find(t=>t.id===taskId); if(!task)return;
       const upd={ updated_at:new Date().toISOString() };
-      if(completed){ upd.stage='tarefa_concluida'; upd.original_stage=task.stage!=='tarefa_concluida'?task.stage:(task.original_stage||'nova_tarefa'); } else { upd.stage=task.original_stage||'nova_tarefa'; }
+      // Stamped here rather than read off updated_at, which moves on any edit —
+      // the rank needs to know whether it landed before the deadline.
+      if(completed){ upd.stage='tarefa_concluida'; upd.completed_at=new Date().toISOString();
+        upd.original_stage=task.stage!=='tarefa_concluida'?task.stage:(task.original_stage||'nova_tarefa'); }
+      else { upd.stage=task.original_stage||'nova_tarefa'; upd.completed_at=null; }
       await WardApp.db.from('research_tasks').update(upd).eq('id',taskId);
       await loadProjects(); currentProject=allProjects.find(p=>p.id===currentProject.id); if(currentProject)viewProject(currentProject.id);
     }

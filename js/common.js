@@ -34,6 +34,18 @@
   WA.basePath = window.location.pathname.replace(/[^/]*$/, "");
   WA.pageUrl = (page) => window.location.origin + WA.basePath + page;
 
+  /* Where to go after signing in. Only ever a page of this site: anything with
+     a scheme, a host or a leading slash is discarded, so a crafted ?next=
+     can't bounce someone off to another domain. */
+  WA.safeNext = function (raw, fallback) {
+    const fb = fallback || "home.html";
+    if (!raw) return fb;
+    const s = String(raw);
+    if (/^[a-z][a-z0-9+.-]*:/i.test(s) || s.indexOf("//") === 0 || s.charAt(0) === "/") return fb;
+    if (!/^[A-Za-z0-9_-]+\.html([?#].*)?$/.test(s)) return fb;
+    return s;
+  };
+
   /* ---------- tiny DOM / formatting helpers ---------- */
 
   WA.esc = function (s) {
@@ -652,6 +664,55 @@
     return (team + crowd) * decay + soon;
   };
 
+  /* ---------- what a slot still needs, role by role ----------
+     Feeds the "pick a role" dialog: for each role, who already holds it and
+     whether more are wanted. `slots` is the target from the role definition
+     (null = as many as want to come); `max` is a hard cap, currently only on
+     question reader. Nothing here blocks a choice except a real `max` — the
+     point is to tell someone what's missing, not to police them. */
+  WA.slotRoleNeeds = function (g) {
+    return WA.ROLE_KEYS.map((role) => {
+      const def = WA.ROLES[role];
+      const held = (g.byRole && g.byRole[role]) || [];
+      const want = def.slots;
+      const cap = def.max || null;
+      const missing = want == null ? null : Math.max(0, want - held.length);
+      return {
+        role: role,
+        label: def.label,
+        icon: def.icon,
+        prep: def.prep || "",
+        usually: def.usually || "",
+        held: held,
+        names: held.map((a) => (a.profile && a.profile.full_name) || "A member"),
+        want: want,
+        missing: missing,
+        full: cap != null && held.length >= cap,
+        cap: cap,
+      };
+    });
+  };
+
+  /* One line saying where a role stands, for the picker. */
+  WA.roleNeedText = function (n) {
+    if (n.role === "attendee") {
+      return n.held.length
+        ? n.held.length + (n.held.length === 1 ? " member coming" : " members coming")
+        : "Nobody yet — you'd be the first";
+    }
+    if (n.full) return "Full (max " + n.cap + ")";
+    if (!n.held.length) return "Nobody yet — still open";
+    if (n.missing) return "Taken by " + n.names.join(", ") + " · " + n.missing + " more needed";
+    return "Taken by " + n.names.join(", ");
+  };
+  WA.roleNeedState = function (n) {
+    if (n.full) return "full";
+    if (n.role === "attendee") return "open";
+    if (!n.held.length) return "open";
+    if (n.missing) return "partial";
+    return "taken";
+  };
+
   /* ---------- presenter queue ----------
      Who is up next: members who have taken part in at least `minSessions`
      sessions and have never presented, most-experienced first. Computed from
@@ -1075,7 +1136,10 @@
     }
     const { data: { session } } = await WA.client.auth.getSession();
     if (!session) {
-      window.location.replace("index.html");
+      // Carry the page they were trying to reach through the login, so an
+      // invite link still lands on the session it pointed at.
+      const here = window.location.pathname.split("/").pop() + window.location.search;
+      window.location.replace("index.html?next=" + encodeURIComponent(here));
       throw new Error("not signed in");
     }
     const user = session.user;

@@ -456,6 +456,14 @@ main > section + section { margin-top: 30px; }
 .rank-table tr.rank-penalty td:last-child { color: var(--err); }
 
 /* ---- "take a role" picker ---- */
+.rp-session {
+  background: #f7f8fb; border: 1px solid var(--border); border-radius: 12px;
+  padding: 11px 13px; margin-bottom: 10px;
+}
+.rp-when { font-weight: 700; color: var(--navy-800); }
+.rp-art { margin-top: 8px; font-size: 0.9rem; color: var(--navy-800); }
+.rp-art-meta { display: block; font-size: 0.76rem; color: var(--muted); font-weight: 600; margin-top: 2px; }
+.rp-cast { margin-top: 6px; font-size: 0.8rem; color: var(--muted); }
 .rp-tz { font-size: 0.85rem; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .role-picks { display: flex; flex-direction: column; gap: 8px; }
 .role-pick {

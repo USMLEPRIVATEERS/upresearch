@@ -23,9 +23,17 @@
       </div>
     </div>
 
-    <label class="field" style="max-width:380px">Search
-      <input type="text" id="search" placeholder="Name, specialty or institution…" />
-    </label>
+    <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end">
+      <label class="field" style="max-width:380px; flex:1 1 260px">Search
+        <input type="text" id="search" placeholder="Name, specialty or institution…" />
+      </label>
+      <label class="field" style="max-width:220px">Order
+        <select id="sort-members">
+          <option value="name">By name</option>
+          <option value="rank">🏅 By rank</option>
+        </select>
+      </label>
+    </div>
 
     <div id="members-list" class="grid-3 mt muted">Loading…</div>
   </main>
@@ -40,7 +48,7 @@
       const $ = (id) => document.getElementById(id);
       try { await WA.initAppPage("members"); } catch (e) { return; }
 
-      let profiles = [], stats = {};
+      let profiles = [], stats = {}, ranks = {};
       try {
         const [{ data, error }, rows] = await Promise.all([
           WA.client.from("profiles").select("*").order("full_name"),
@@ -51,6 +59,15 @@
         // Absences are honoured so the counts reflect who actually attended.
         const abs = await WA.fetchAbsences();
         stats = WA.computeStats(rows, 365, abs.set);
+        // Rank is all-time — it shouldn't drop because older work aged out of
+        // the 12-month window the badges use.
+        const allTime = WA.computeStats(rows, 3650, abs.set);
+        const scores = await WA.fetchResearchScores();
+        if (!scores.missing) {
+          profiles.forEach((p) => {
+            ranks[p.id] = WA.computeRank(allTime[p.id] || {}, scores.map[p.id]);
+          });
+        }
       } catch (err) {
         $("members-list").textContent = "Could not load members: " + err.message;
         return;
@@ -66,6 +83,7 @@
           '<div class="small muted">' + WA.esc(p.specialty || "—") +
           (p.institution ? " · " + WA.esc(p.institution) : "") + "</div>" +
           '<div class="stats">' +
+          (ranks[p.id] ? WA.rankBadge(ranks[p.id]) : "") +
           // Only show the roles this member has actually held, so cards stay readable.
           ["presenter", "methods_checker", "question_reader", "host", "scientific_lead", "clinical_lead"]
             .filter((r) => (s[r] || 0) > 0)
@@ -84,6 +102,10 @@
           (p.specialty || "").toLowerCase().includes(q) ||
           (p.institution || "").toLowerCase().includes(q)
         );
+        if (sortBy === "rank") {
+          list.sort((a, b) => ((ranks[b.id] || {}).points || 0) - ((ranks[a.id] || {}).points || 0) ||
+            String(a.full_name || "").localeCompare(String(b.full_name || "")));
+        }
         // Discreet total; shows "N of TOTAL" while a search is filtering.
         $("member-count").textContent = q
           ? "👥 " + list.length + " of " + totalCount
@@ -93,6 +115,11 @@
           : '<div class="empty-state" style="grid-column:1/-1">No members match your search.</div>';
       }
 
+      let sortBy = "name";
+      const sortSel = $("sort-members");
+      if (sortSel) {
+        sortSel.addEventListener("change", () => { sortBy = sortSel.value; render($("search").value); });
+      }
       $("search").addEventListener("input", (e) => render(e.target.value));
       render("");
     })();

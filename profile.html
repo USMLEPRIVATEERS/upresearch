@@ -72,6 +72,11 @@
         </form>
       </div>
 
+      <div class="card" id="rank-card" style="display:none">
+        <h2>🏅 Rank</h2>
+        <div id="rank-body"></div>
+      </div>
+
       <div class="card">
         <h2>Journal club participation</h2>
         <p class="muted small">Counted from past slots that actually had a presenter
@@ -160,6 +165,48 @@
         .map((r) => '<div class="stat-tile"><div class="num">' + (stats[r] || 0) + "</div>" +
           '<div class="lbl">' + WA.roleIcon(r) + " " + WA.esc(WA.roleLabel(r)) + "</div></div>")
         .join("");
+
+      /* ---------- rank ----------
+         Over everything the member has ever done, not the 12-month window the
+         tiles use: a rank that fell as older work aged out would punish people
+         for having been here longer. */
+      (async function rankCard() {
+        const allTime = WA.computeStats(allRows, 3650, absences)[profileId] || {};
+        const scores = await WA.fetchResearchScores();
+        if (scores.missing) return; // migration pending — no half-built rank
+        const rank = WA.computeRank(allTime, scores.map[profileId]);
+        const isMe = profileId === user.id;
+
+        const rows = rank.lines.map((l) =>
+          '<tr' + (l.penalty ? ' class="rank-penalty"' : "") + "><td>" + l.icon + " " +
+          WA.esc(l.label) + "</td><td>" + l.count + " × " + l.each +
+          "</td><td><b>" + (l.points > 0 ? "+" : "") + l.points + "</b></td></tr>").join("");
+
+        $("rank-body").innerHTML =
+          '<div class="rank-hero rank-' + rank.tier.key + '">' +
+            '<span class="rank-ic">' + rank.tier.icon + "</span>" +
+            "<div><div class='rank-name'>" + WA.esc(rank.tier.name) + "</div>" +
+            "<div class='rank-pts'>" + rank.points + " points</div></div>" +
+          "</div>" +
+          (rank.next
+            ? '<div class="rank-bar"><span style="width:' + rank.progress + '%"></span></div>' +
+              '<p class="small muted" style="margin:6px 0 0">' + rank.toNext +
+              " points to " + rank.next.icon + " " + WA.esc(rank.next.name) + ".</p>"
+            : '<p class="small muted" style="margin:6px 0 0">Top of the ladder.</p>') +
+          (rank.overdue
+            ? '<p class="rank-warn">⚠️ ' + rank.overdue + " research task" +
+              (rank.overdue === 1 ? " is" : "s are") + " past their deadline — that's " +
+              rank.penalty + " points" +
+              (isMe ? ", and it lifts as soon as you finish them." : " while they sit there.") + "</p>"
+            : "") +
+          (rows
+            ? '<table class="rank-table"><tbody>' + rows + "</tbody></table>"
+            : '<p class="small muted">No points yet — join a session and it starts here.</p>') +
+          '<p class="small muted" style="margin-top:10px">Points follow the time something ' +
+          "actually costs: presenting an article is an afternoon of reading, reading a question " +
+          "is ten minutes. Sessions someone was marked absent from don't count.</p>";
+        $("rank-card").style.display = "";
+      })();
 
       /* Where this member is on the ladder, and what the next step is. */
       (function ladderProgress() {

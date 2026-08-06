@@ -244,6 +244,46 @@ create policy "delete own exception"
   on public.availability_exceptions for delete to authenticated
   using (user_id = auth.uid());
 
+-- When a task was actually ticked off. `updated_at` moves on any edit, so it
+-- can't answer "was this delivered before the deadline" — this can.
+alter table public.research_tasks
+  add column if not exists completed_at timestamptz;
+
+-- ============================================================
+-- 10. Rank scores
+-- Research projects are private to their team, so a member reading the table
+-- directly sees only their own — and the leaderboard would show a different
+-- number to every viewer. This view runs with the owner's privileges (the
+-- Postgres default for views), so it returns the same counts to everyone.
+-- It exposes counts only: no titles, no descriptions, no links.
+-- ============================================================
+create or replace view public.research_scores as
+select
+  p.id as user_id,
+  (select count(*) from public.research_projects rp
+     where rp.created_by = p.id) as projects_created,
+  (select count(*) from public.research_projects rp
+     where p.id = any (rp.participants)
+       and rp.created_by is distinct from p.id) as projects_joined,
+  (select count(*) from public.research_tasks t
+     where t.assigned_to = p.id
+       and t.stage = 'tarefa_concluida'
+       and (t.deadline is null
+            or (coalesce(t.completed_at, t.updated_at))::date <= t.deadline)) as tasks_on_time,
+  (select count(*) from public.research_tasks t
+     where t.assigned_to = p.id
+       and t.stage = 'tarefa_concluida'
+       and t.deadline is not null
+       and (coalesce(t.completed_at, t.updated_at))::date > t.deadline) as tasks_late,
+  (select count(*) from public.research_tasks t
+     where t.assigned_to = p.id
+       and t.stage <> 'tarefa_concluida'
+       and t.deadline is not null
+       and t.deadline < current_date) as tasks_overdue
+from public.profiles p;
+
+grant select on public.research_scores to authenticated;
+
 -- "Not yet" on the presenter queue. One row per member who asked to skip their
 -- turn; they drop off the list until another session is actually held, then
 -- come back in the same position. Deleting the row means "I'm ready now".

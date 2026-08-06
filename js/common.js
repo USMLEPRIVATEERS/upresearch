@@ -664,6 +664,126 @@
     return (team + crowd) * decay + soon;
   };
 
+  /* ---------- rank ----------
+     Points are calibrated on the hours a thing actually costs someone, not on
+     how impressive it sounds. Presenting is a whole afternoon of reading plus
+     the session itself; reading a question is ten minutes. Turning up is worth
+     something — it's still an hour of an evening — but it can't be a route to
+     the top on its own.
+
+     Only sessions that actually happened count, and anyone marked absent is
+     skipped, so the rank reflects showing up rather than signing up.
+
+     Each role's figure includes the hour in the room — a role is never worth
+     less than turning up — plus what it costs on top of that. */
+  WA.RANK_POINTS = {
+    // per session, by the role held (the hour + the role's own preparation)
+    presenter: 110,       // + 2–4h reading, preparing and delivering
+    host: 55,             // + opening the room, timekeeping, the write-up after
+    scientific_lead: 55,  // + reading the methods properly, leading that half
+    clinical_lead: 55,    // + the bedside reading and the question block
+    methods_checker: 45,  // + 30–45min of focused appraisal
+    question_reader: 20,  // + 5–10min of preparation
+    attendee: 10,         // an hour of your evening, every week
+
+    // research
+    project_created: 60,  // the idea, the protocol, getting it off the ground
+    project_joined: 30,   // carrying a share of a project through
+    task_on_time: 25,     // the unit of work research actually moves on
+    task_late: 10,        // done is better than not done, just worth less
+    task_overdue: -15,    // while it sits there, and only while it sits there
+  };
+
+  /* Thresholds are set so a first term of real participation reaches Silver,
+     a year of carrying sessions reaches Platinum, and Grandmaster stays rare. */
+  WA.RANK_TIERS = [
+    { key: "bronze",      name: "Bronze",      icon: "🥉", at: 0 },
+    { key: "silver",      name: "Silver",      icon: "🥈", at: 250 },
+    { key: "gold",        name: "Gold",        icon: "🥇", at: 600 },
+    { key: "platinum",    name: "Platinum",    icon: "💎", at: 1200 },
+    { key: "diamond",     name: "Diamond",     icon: "🔷", at: 2200 },
+    { key: "master",      name: "Master",      icon: "👑", at: 3800 },
+    { key: "grandmaster", name: "Grandmaster", icon: "🏆", at: 6000 },
+  ];
+
+  WA.tierFor = function (points) {
+    let tier = WA.RANK_TIERS[0];
+    for (const t of WA.RANK_TIERS) if (points >= t.at) tier = t;
+    return tier;
+  };
+
+  /* `stats` is one member's row from WA.computeStats; `research` is their row
+     from the research_scores view (all counts optional). */
+  WA.computeRank = function (stats, research) {
+    const P = WA.RANK_POINTS;
+    const s = stats || {};
+    const r = research || {};
+    const lines = [];
+    let earned = 0;
+
+    WA.ROLE_KEYS.forEach((role) => {
+      const n = s[role] || 0;
+      if (!n) return;
+      const pts = n * (P[role] || 0);
+      earned += pts;
+      lines.push({ label: WA.ROLES[role].label, icon: WA.ROLES[role].icon, count: n, each: P[role], points: pts });
+    });
+
+    const research_lines = [
+      ["projects_created", "Projects started", "🔬", P.project_created],
+      ["projects_joined", "Projects as co-author", "🤝", P.project_joined],
+      ["tasks_on_time", "Research tasks on time", "✅", P.task_on_time],
+      ["tasks_late", "Research tasks late", "🕗", P.task_late],
+    ];
+    research_lines.forEach(([key, label, icon, each]) => {
+      const n = Number(r[key] || 0);
+      if (!n) return;
+      earned += n * each;
+      lines.push({ label: label, icon: icon, count: n, each: each, points: n * each });
+    });
+
+    // A live state, not a scar: it lifts the moment the task is finished.
+    const overdue = Number(r.tasks_overdue || 0);
+    const penalty = overdue * P.task_overdue; // negative
+    if (overdue) {
+      lines.push({ label: "Tasks overdue right now", icon: "⚠️", count: overdue,
+        each: P.task_overdue, points: penalty, penalty: true });
+    }
+
+    const points = Math.max(0, earned + penalty);
+    const tier = WA.tierFor(points);
+    const idx = WA.RANK_TIERS.indexOf(tier);
+    const next = WA.RANK_TIERS[idx + 1] || null;
+    const progress = next
+      ? Math.min(100, Math.round(((points - tier.at) / (next.at - tier.at)) * 100))
+      : 100;
+
+    return {
+      points: points, earned: earned, penalty: penalty, overdue: overdue,
+      tier: tier, next: next, progress: progress,
+      toNext: next ? next.at - points : 0,
+      lines: lines,
+    };
+  };
+
+  WA.rankBadge = function (rank, opts) {
+    const o = opts || {};
+    return '<span class="rank-badge rank-' + rank.tier.key + (o.sm ? " sm" : "") + '">' +
+      rank.tier.icon + " " + WA.esc(rank.tier.name) +
+      (o.points === false ? "" : ' <b>' + rank.points + "</b>") + "</span>";
+  };
+
+  /* Per-member research counts. Comes from a view, so every viewer gets the
+     same numbers even though the projects themselves are private. */
+  WA.fetchResearchScores = async function () {
+    const res = await WA.client.from("research_scores")
+      .select("user_id, projects_created, projects_joined, tasks_on_time, tasks_late, tasks_overdue");
+    const map = {};
+    if (res.error) return { map: map, missing: true };
+    for (const row of res.data || []) map[row.user_id] = row;
+    return { map: map, missing: false };
+  };
+
   /* ---------- what a slot still needs, role by role ----------
      Feeds the "pick a role" dialog: for each role, who already holds it and
      whether more are wanted. `slots` is the target from the role definition

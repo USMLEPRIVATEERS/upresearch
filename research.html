@@ -100,6 +100,9 @@
     #global-loading.on { display:flex; }
     .rp-spinner { width:42px; height:42px; border:4px solid var(--gray-200); border-top-color:var(--accent); border-radius:50%; animation:rpspin .8s linear infinite; }
     @keyframes rpspin { to { transform:rotate(360deg); } }
+    /* Placeholder for the parts of a project panel that arrive over the wire */
+    .skeleton-row { display:flex; align-items:center; gap:.55rem; color:#64748b; font-size:.88rem; padding:.5rem 0; }
+    .skeleton-spinner { flex-shrink:0; width:16px; height:16px; border:2px solid #e2e8f2; border-top-color:var(--accent); border-radius:50%; animation:rpspin .8s linear infinite; }
   </style>
 </head>
 <body>
@@ -626,8 +629,14 @@
       WardApp.db = WA.client;
       userData = { id: ctx.user.id, full_name: ctx.profile.full_name, specialty: (ctx.profile && ctx.profile.specialty) || '' };
 
+      // Arriving from a notification, the panel can't open until the project
+      // list is in. Say so, rather than showing an empty page for a few seconds.
+      const deepLink = new URLSearchParams(window.location.search).get('project');
+      if (deepLink) WardApp.showLoading();
+
       await loadAllUsers();
       await loadProjects();
+      if (deepLink) WardApp.hideLoading();
       if (WA.positions) WA.positions.mount(document.getElementById('positions-mount'), { user: ctx.user, profile: ctx.profile }, { onChange: loadProjects });
 
       populateStageFilter();
@@ -635,8 +644,11 @@
       document.getElementById('stage-comparison').addEventListener('change', applyStageFilter);
       document.getElementById('task-status-filter').addEventListener('change', applyStageFilter);
 
-      const projectIdParam = new URLSearchParams(window.location.search).get('project');
-      if (projectIdParam) { const pid = Number(projectIdParam); if (pid && allProjects.find(p=>p.id===pid)) viewProject(pid); }
+      if (deepLink) {
+        const pid = Number(deepLink);
+        if (pid && allProjects.find(p=>p.id===pid)) viewProject(pid);
+        else WardApp.showToast('That project is not available to you.', 'error');
+      }
 
       wireModalDismissal();
     });
@@ -729,22 +741,47 @@
       const vt=document.getElementById('view-project-tags'); const tags=currentProject.tags||[]; if(tags.length){ vt.innerHTML=renderProjectTags(tags); vt.style.display='block'; } else { vt.innerHTML=''; vt.style.display='none'; }
       const tasks=currentProject.tasks||[]; const done=tasks.filter(t=>t.stage==='tarefa_concluida').length; const progress=tasks.length?Math.round(done/tasks.length*100):0;
       document.getElementById('project-progress-text').textContent=`${progress}%`; document.getElementById('project-progress-fill').style.width=`${progress}%`;
-      await loadParticipants(); renderTasks(tasks); await loadProjectDriveFolders(currentProject.id);
+      renderTasks(tasks);
       const canEdit=canEditProject(currentProject);
       document.getElementById('add-task-btn').style.display=canEdit?'inline-flex':'none';
       document.getElementById('edit-project-btn').style.display=canEdit?'inline-flex':'none';
       document.getElementById('manage-participants-btn').style.display=canEdit?'inline-flex':'none';
       document.getElementById('delete-project-btn').style.display=(currentProject.created_by===userData.id)?'inline-flex':'none';
       document.getElementById('recruit-project-btn').style.display=(currentProject.created_by===userData.id)?'inline-flex':'none';
+
+      /* Open now, fill in after. Everything above comes from data already in
+         memory; participants and the Drive tree are network calls, and the
+         Drive one goes out to Apps Script — several seconds on a bad day.
+         Waiting for them meant clicking a project appeared to do nothing. */
+      document.getElementById('participants-list').innerHTML=skeletonRow('Loading participants…');
+      document.getElementById('drive-folders-container').innerHTML=skeletonRow('Loading project files…');
       openModal('view-project-modal');
+
+      // A second click while the first is still loading must win: the late
+      // reply from the earlier project has to stay out of the open panel.
+      const token=++viewToken;
+      loadParticipants().catch(()=>{}).then(()=>{
+        if(token!==viewToken) return;
+        return loadProjectDriveFolders(currentProject.id).catch((e)=>{
+          console.error(e);
+          if(token===viewToken) document.getElementById('drive-folders-container').innerHTML=
+            '<p class="text-muted">Could not load the Drive folders — try reopening the project.</p>';
+        });
+      });
+    }
+    let viewToken=0;
+    function skeletonRow(label){
+      return '<div class="skeleton-row"><span class="skeleton-spinner"></span>'+calEsc(label)+'</div>';
     }
     function closeViewProjectModal(){ const url=new URL(window.location); url.searchParams.delete('project'); window.history.pushState({},'',url); closeModal('view-project-modal'); }
     function copyProjectLink(){ if(!currentProject)return; const url=new URL(window.location); url.searchParams.set('project',currentProject.id); WA.copyText(url.toString()); }
     window.addEventListener('popstate',()=>{ const pid=new URL(window.location).searchParams.get('project'); if(pid)viewProject(Number(pid)); else closeModal('view-project-modal'); });
 
     async function loadParticipants(){
+      const t=viewToken;
       const ids=currentProject.participants||[]; if(!ids.length){ document.getElementById('participants-list').innerHTML='<p class="text-muted">No participants</p>'; window.participantsCache=[]; return; }
       const { data }=await WardApp.db.from('profiles').select('id, full_name, specialty').in('id',ids);
+      if(t!==viewToken) return; // a different project was opened meanwhile
       window.participantsCache=data||[]; const sorted=sortUsersByName((data||[]).slice());
       document.getElementById('participants-list').innerHTML=sorted.map(p=>`<div class="participant-chip"><span class="participant-avatar">👤</span><span>${calEsc(_dn(p.full_name)||'Member')}</span></div>`).join('');
     }
@@ -1006,7 +1043,9 @@
     }
 
     async function loadProjectDriveFolders(projectId){
+      const t=viewToken;
       const { data:folders }=await WardApp.db.from('research_project_folders').select('*').eq('project_id',projectId).order('parent_folder_name',{ ascending:true, nullsFirst:true }).order('folder_name');
+      if(t!==viewToken) return; // another project took over the panel
       if(!folders||!folders.length){ document.getElementById('drive-files-section').style.display='none'; return; }
       document.getElementById('drive-files-section').style.display='block';
       const container=document.getElementById('drive-folders-container');
@@ -1016,12 +1055,14 @@
       // deleted by hand there show up here. Falls back to the stored snapshot
       // when the Apps Script has no listProjectTree action.
       if(main && main.folder_id){
-        container.innerHTML='<p class="text-muted">Loading folders from Google Drive…</p>';
+        container.innerHTML=skeletonRow('Reading the live folders from Google Drive…');
         const tree=await fetchDriveTree(main.folder_id);
+        if(t!==viewToken) return;
         if(tree){ driveLive=true; renderDriveTree(tree); return; }
       }
       driveLive=false;
       const { data:files }=await WardApp.db.from('research_project_files').select('*').eq('project_id',projectId);
+      if(t!==viewToken) return;
       renderDriveFolders(folders, files||[]);
     }
 

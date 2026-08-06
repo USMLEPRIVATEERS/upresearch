@@ -83,7 +83,9 @@
        .modal / .modal-close rules (meant for the other pages) that otherwise leak in. */
     .modal { background:#fff; border-radius:var(--radius-lg); width:100%; max-width:560px; box-shadow:0 16px 50px rgba(0,0,0,.32); padding:0; }
     .modal-lg { max-width:720px; } .modal-xl { max-width:900px; } .modal-xxl { max-width:1140px; }
-    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:1.1rem 1.25rem; border-bottom:1px solid var(--gray-200); background:var(--navy); color:#fff; border-radius:var(--radius-lg) var(--radius-lg) 0 0; }
+    /* Sticky so the close button stays reachable on a long project instead of
+       scrolling off the top of the phone. */
+    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:1.1rem 1.25rem; border-bottom:1px solid var(--gray-200); background:var(--navy); color:#fff; border-radius:var(--radius-lg) var(--radius-lg) 0 0; position:sticky; top:0; z-index:2; }
     .modal-title { font-size:1.1rem; font-weight:700; color:#fff; }
     .modal-close { position:static; display:inline-flex; align-items:center; justify-content:center; background:rgba(255,255,255,.15); border:0; color:#fff; width:34px; height:34px; border-radius:8px; font-size:1.4rem; line-height:1; cursor:pointer; flex-shrink:0; }
     .modal-close:hover { background:rgba(255,255,255,.28); }
@@ -227,7 +229,8 @@
   <div id="view-project-modal" class="modal-overlay">
     <div class="modal modal-xxl" id="view-project-modal-content">
       <div class="modal-header">
-        <h3 class="modal-title" id="view-project-title"></h3>
+        <h3 class="modal-title" id="view-project-title"
+            onclick="this.classList.toggle('expanded')"></h3>
         <div class="modal-header-actions" style="display:flex; gap:.5rem; align-items:center">
           <button class="modal-close" onclick="copyProjectLink()" title="Copy link">🔗</button>
           <button class="modal-close" onclick="closeViewProjectModal()">&times;</button>
@@ -715,7 +718,10 @@
     async function viewProject(projectId){
       currentProject=allProjects.find(p=>p.id===projectId); if(!currentProject)return;
       const url=new URL(window.location); url.searchParams.set('project',projectId); window.history.pushState({projectId},'',url);
-      document.getElementById('view-project-title').textContent=currentProject.title;
+      const vpt=document.getElementById('view-project-title');
+      vpt.textContent=currentProject.title;
+      vpt.classList.remove('expanded'); // clamped again for the next project
+      vpt.title='Tap to show the full title';
       document.getElementById('view-project-description').innerHTML=formatDescription(currentProject.description||'');
       document.getElementById('view-project-description').style.display='block'; document.getElementById('description-edit-area').style.display='none'; isEditingDescription=false;
       let meta=''; if(currentProject.deadline)meta+=`<span class="project-meta-item">📅 Deadline: ${WardApp.formatDate(currentProject.deadline)}</span>`; if(currentProject.drive_link)meta+=`<a href="${calEsc(currentProject.drive_link)}" target="_blank" class="project-meta-item link">📁 Google Drive</a>`;
@@ -1352,7 +1358,15 @@
 
     @media (max-width:768px) {
       .modal-xl, .modal-xxl { max-width:100% !important; }
-      .modal { max-height:96vh; }
+      /* No height cap here. It used to be 96vh with the default visible
+         overflow, so a long project painted its text outside the white box and
+         straight over the page behind — the panel looked transparent on a
+         phone. The overlay is the scroller, so the panel simply grows. */
+      .modal { max-height:none; }
+      /* These titles run to ten lines; a sticky bar that tall would swallow the
+         screen. Two lines by default, tap to read the rest. */
+      .modal-title { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; cursor:pointer; }
+      .modal-title.expanded { display:block; -webkit-line-clamp:none; overflow:visible; }
       .cal-toolbar { flex-direction:column; align-items:stretch; }
       .cal-period { margin-left:0; order:-1; width:100%; text-align:center; }
       .cal-day { min-height:60px; padding:3px; } .cal-pill { font-size:.6rem; padding:1px 4px; }

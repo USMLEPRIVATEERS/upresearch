@@ -666,21 +666,56 @@
             "</span></button>";
         }).join("");
 
-        return '<p class="muted small" style="margin:0 0 4px">🗓 <strong>' +
-            WA.esc(WA.fmtDateTime(g.date)) + "</strong></p>" +
+        // What this session is: the article, who presents it, how it stands.
+        // Someone arriving from a notification needs that before committing.
+        const st = evStatus(g);
+        const art = g.presenters[0] && g.presenters[0].article;
+        const summary =
+          '<div class="rp-session">' +
+          '<div class="rp-when">🗓 ' + WA.esc(WA.fmtDateTime(g.date)) + "</div>" +
+          '<span class="ev-chip ' + st.cls + '" style="margin:6px 0 0">' + st.chip + "</span>" +
+          (art
+            ? '<div class="rp-art">📄 <strong>' + WA.esc(art.title) + "</strong>" +
+              (art.study_design || art.specialty
+                ? '<span class="rp-art-meta">' +
+                  WA.esc([art.study_design, art.specialty].filter(Boolean).join(" · ")) + "</span>"
+                : "") + "</div>"
+            : "") +
+          (g.presenters.length
+            ? '<div class="rp-cast">Presented by ' +
+              WA.esc(g.presenters.map((a) => (a.profile && a.profile.full_name) || "a member").join(", ")) +
+              (g.hosts.length
+                ? " · hosted by " +
+                  WA.esc(g.hosts.map((a) => (a.profile && a.profile.full_name) || "a member").join(", "))
+                : "") + "</div>"
+            : "") +
+          "</div>";
+
+        return summary +
           '<div class="rp-tz">🌍 All times in <span class="rp-tz-slot"></span></div>' +
-          '<p class="small muted" style="margin:10px 0 6px">Pick the role you want. ' +
-            "Roles already covered are marked, so you can see what the session is short of.</p>" +
+          '<p class="small muted" style="margin:10px 0 6px">' +
+            (chosen
+              ? "Confirm the role below, or pick a different one — what the session already has is marked."
+              : "Pick the role you want. Roles already covered are marked, so you can see " +
+                "what the session is short of.") + "</p>" +
           '<div class="role-picks">' + rows + "</div>" +
           '<div class="rp-foot">' +
             '<button type="button" class="btn" id="rp-save"' + (chosen ? "" : " disabled") + ">" +
-            (chosen === "presenter" ? "Continue — add the article" : "Save my role") + "</button>" +
+            (chosen === "presenter" ? "Continue — add the article"
+              : chosen ? "✓ Confirm " + WA.esc(WA.roleLabel(chosen).toLowerCase())
+              : "Save my role") + "</button>" +
             (mine ? '<button type="button" class="btn sm danger" id="rp-leave">Leave this session</button>' : "") +
           "</div>";
       }
 
-      function openJoinDialog(g) {
-        let chosen = null;
+      function openJoinDialog(g, presetRole) {
+        // A notification can arrive pointing at a role that has since been
+        // taken to capacity; fall back to the plain picker rather than
+        // offering something that can't be saved.
+        const preset = presetRole && WA.ROLES[presetRole] ? presetRole : null;
+        const need = preset && WA.slotRoleNeeds(g).find((n) => n.role === preset);
+        let chosen = need && need.full ? null : preset;
+        if (preset && !chosen) WA.toast("That role has just been filled — pick another one.", "info");
         const mine = () => g.all.find((a) => a.user_id === user.id);
 
         function paint() {
@@ -1041,13 +1076,25 @@
          straight away — used by the notification bell so clicking "X will
          present Y" lands on the actual session, not just the page. */
       (function openSlotFromQuery() {
-        const raw = new URLSearchParams(window.location.search).get("slot");
+        const qp = new URLSearchParams(window.location.search);
+        const raw = qp.get("slot");
         if (!raw) return;
         const d = new Date(raw);
         if (isNaN(d)) return;
         const g = groups.find((x) => x.iso === d.toISOString());
-        if (g) openDetails(g);
-        else WA.toast("That session is no longer on the schedule.", "info");
+        if (!g) { WA.toast("That session is no longer on the schedule.", "info"); return; }
+
+        // "…needs a methods checker — tap to take it" lands here: open that
+        // session's own picker with the role already ticked, so all that's
+        // left is confirming it.
+        const take = qp.get("take");
+        if (take && WA.ROLES[take]) {
+          const held = (g.byRole[take] || []).some((a) => a.user_id === user.id);
+          if (held) { WA.toast("You already hold that role in this session.", "info"); openDetails(g); }
+          else openJoinDialog(g, take);
+        } else {
+          openDetails(g);
+        }
       })();
 
       /* ---------- host posts / updates a meeting link ---------- */

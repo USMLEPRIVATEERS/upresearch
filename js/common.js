@@ -1321,6 +1321,9 @@
     const mk = (ts, icon, html, href, key, ext) => ({ ts, icon, html, href, key, ext: !!ext });
     /* Deep link that opens the session's details modal on the home page. */
     const slotHref = (iso) => "home.html?slot=" + encodeURIComponent(new Date(iso).toISOString());
+    /* Lands on the session itself with the role already ticked in the picker,
+       so taking a turn is one confirmation rather than a form to fill in. */
+    const takeHref = (iso, role) => slotHref(iso) + "&take=" + encodeURIComponent(role);
 
     async function safe(fn) { try { return (await fn()) || []; } catch (e) { return []; } }
 
@@ -1389,8 +1392,8 @@
     /* Staffing signals for upcoming sessions:
          · a session that now has a presenter and is filling up — worth joining;
          · a session with a presenter still missing a support role — the link
-           opens My Availability with the date, hour and role pre-selected, so
-           taking the turn is one Save away.
+           opens that session's own picker with the role already ticked, so
+           taking the turn is one confirmation away.
        Only sessions with a presenter qualify: those are the ones that happen. */
     async function cStaffing() {
       const nowT = Date.now();
@@ -1424,7 +1427,7 @@
           out.push(mk(newest, meta.icon,
             "<b>" + when + "</b> needs a <b>" + esc(meta.label.toLowerCase()) + "</b>" + label +
             " — tap to take it" + (meta.prep ? " (" + esc(meta.prep) + ")" : ""),
-            WA.slotHref(g.date, gap.role), "gap-" + gap.role + "-" + g.iso));
+            takeHref(g.iso, gap.role), "gap-" + gap.role + "-" + g.iso));
         }
         // A session that just gained its presenter is worth flagging even if
         // the support roles are still open and you're not in it yet.

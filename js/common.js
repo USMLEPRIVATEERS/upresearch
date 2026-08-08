@@ -801,11 +801,18 @@
   /* Per-member research counts. Comes from a view, so every viewer gets the
      same numbers even though the projects themselves are private. */
   WA.fetchResearchScores = async function () {
-    const res = await WA.client.from("research_scores")
-      .select("*");
+    const res = await WA.client.from("research_scores").select("*");
     const map = {};
     if (res.error) return { map: map, missing: true };
-    for (const row of res.data || []) map[row.user_id] = row;
+    const rows = res.data || [];
+    /* An earlier version of this view had no task bands and no "is the project
+       real" guard. Reading it would score placeholder projects and count every
+       task as nothing — wrong numbers presented confidently. Treat a stale view
+       as no view at all: no rank is better than a rank nobody can trust. */
+    if (rows.length && !("tasks_heavy_on_time" in rows[0])) {
+      return { map: map, missing: true, stale: true };
+    }
+    for (const row of rows) map[row.user_id] = row;
     return { map: map, missing: false };
   };
 

@@ -821,7 +821,17 @@
       if(completed){ upd.stage='tarefa_concluida'; upd.completed_at=new Date().toISOString();
         upd.original_stage=task.stage!=='tarefa_concluida'?task.stage:(task.original_stage||'nova_tarefa'); }
       else { upd.stage=task.original_stage||'nova_tarefa'; upd.completed_at=null; }
-      await WardApp.db.from('research_tasks').update(upd).eq('id',taskId);
+
+      let { error }=await WardApp.db.from('research_tasks').update(upd).eq('id',taskId);
+      // completed_at arrives with a migration. Until it has been run, ticking a
+      // task off would fail on the unknown column — and this used to ignore the
+      // result, so the tick silently did nothing. Retry without it: the task
+      // still completes, only its on-time credit waits for the migration.
+      if(error && (error.code==='42703' || error.code==='PGRST204' || /completed_at/.test(error.message||''))){
+        delete upd.completed_at;
+        ({ error }=await WardApp.db.from('research_tasks').update(upd).eq('id',taskId));
+      }
+      if(error){ console.error(error); WardApp.showToast('Could not update the task','error'); return; }
       await loadProjects(); currentProject=allProjects.find(p=>p.id===currentProject.id); if(currentProject)viewProject(currentProject.id);
     }
 

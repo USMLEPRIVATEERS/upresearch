@@ -738,6 +738,10 @@ td.cal-cell.empty:hover { background: var(--red-soft); }
 .stat-tile { background: #fafbfe; border: 1px solid var(--border); border-radius: 12px; padding: 14px; text-align: center; }
 .stat-tile .num { font-size: 1.6rem; font-weight: 800; color: var(--red); }
 .stat-tile .lbl { font-size: 0.76rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); }
+/* The total spans the row above the per-role tiles, so it reads as the headline
+   number rather than as one role among seven. */
+.stat-tile.total { grid-column: 1 / -1; background: var(--red-soft); border-color: var(--red-border); }
+.stat-tile.total .lbl { color: var(--red-dark); }
 
 /* ---------------- auth pages ---------------- */
 

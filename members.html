@@ -89,7 +89,11 @@
             .filter((r) => (s[r] || 0) > 0)
             .map((r) => '<span class="badge ' + WA.ROLES[r].badge + '">' + WA.roleIcon(r) + " " +
               s[r] + " × " + WA.esc(WA.roleLabel(r)) + "</span>").join("") +
-          '<span class="badge badge-attendee">👥 ' + (s.attendee || 0) + " attended</span>" +
+          // Every session they took part in, whatever role they held. The old
+          // count was the attendee role alone, so someone who hosted forty
+          // sessions and never sat in as a plain attendee read as "0 attended".
+          '<span class="badge badge-attendee">👥 ' + (s.sessions || 0) +
+            (s.sessions === 1 ? " session" : " sessions") + "</span>" +
           "</div></div></div></a>";
       }
 

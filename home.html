@@ -325,11 +325,13 @@
             ' <span class="badge badge-host">Host</span></div>';
         }
         // Publish the line-up with names — it shows the rotation is real.
+        // Each role is one chunk, so a wrap never separates a role from its
+        // people or strands a separator at the start of a line.
         const castLine = ["scientific_lead", "clinical_lead", "methods_checker", "question_reader"]
           .filter((r) => (g.byRole[r] || []).length)
-          .map((r) => WA.roleIcon(r) + " " + WA.esc(WA.roleLabel(r)) + ": " +
-            g.byRole[r].map(personLink).join(", "))
-          .join(" &nbsp;·&nbsp; ");
+          .map((r) => '<span class="cast-item">' + WA.roleIcon(r) + " " +
+            WA.esc(WA.roleLabel(r)) + ": " + g.byRole[r].map(personLink).join(", ") + "</span>")
+          .join("");
         if (castLine) html += '<div class="session-host-line">' + castLine + "</div>";
         for (const p of g.presenters) html += articleBlock(p);
         if (g.attendees.length) {

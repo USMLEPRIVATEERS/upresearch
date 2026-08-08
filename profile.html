@@ -158,13 +158,19 @@
       const absences = (await WA.fetchAbsences()).set;
       const stats = WA.computeStats(allRows, 365, absences)[profileId] || {};
       // Show a tile per role held, always including the ladder so the path is visible.
+      // The first tile is the total across every role — the "Attendee" tile counts
+      // only sessions sat through with no role, which on its own reads as if
+      // someone who hosts every week never turns up.
       const ALWAYS = ["presenter", "methods_checker", "question_reader", "attendee"];
-      $("stat-tiles").innerHTML = ["presenter", "methods_checker", "question_reader", "attendee",
-        "host", "scientific_lead", "clinical_lead"]
-        .filter((r) => (stats[r] || 0) > 0 || ALWAYS.indexOf(r) !== -1)
-        .map((r) => '<div class="stat-tile"><div class="num">' + (stats[r] || 0) + "</div>" +
-          '<div class="lbl">' + WA.roleIcon(r) + " " + WA.esc(WA.roleLabel(r)) + "</div></div>")
-        .join("");
+      $("stat-tiles").innerHTML =
+        '<div class="stat-tile total"><div class="num">' + (stats.sessions || 0) + "</div>" +
+        '<div class="lbl">🗓 Sessions taken part in</div></div>' +
+        ["presenter", "methods_checker", "question_reader", "attendee",
+          "host", "scientific_lead", "clinical_lead"]
+          .filter((r) => (stats[r] || 0) > 0 || ALWAYS.indexOf(r) !== -1)
+          .map((r) => '<div class="stat-tile"><div class="num">' + (stats[r] || 0) + "</div>" +
+            '<div class="lbl">' + WA.roleIcon(r) + " " + WA.esc(WA.roleLabel(r)) + "</div></div>")
+          .join("");
 
       /* ---------- rank ----------
          Over everything the member has ever done, not the 12-month window the

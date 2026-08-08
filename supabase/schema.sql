@@ -257,32 +257,88 @@ alter table public.research_tasks
 -- Postgres default for views), so it returns the same counts to everyone.
 -- It exposes counts only: no titles, no descriptions, no links.
 -- ============================================================
-create or replace view public.research_scores as
+-- How much a task actually costs. The stage IS the task type here, so the
+-- weight comes straight from it — no extra field for anyone to fill in or get
+-- wrong. Screening a thousand abstracts and downloading PDFs are not the same
+-- job, and a flat score said they were.
+create or replace function public.task_weight(stage text) returns text
+language sql immutable as $$
+  select case
+    when stage = any (array[
+      'extracao_dados',        -- hours per study, across dozens of studies
+      'leitura_completa',      -- full texts read against the criteria
+      'revisores_1_2',         -- screening the whole search yield
+      'risco_vies_1_2',        -- RoB instrument applied study by study
+      'analise_estatistica',
+      'analises_adicionais',   -- subgroup, sensitivity, meta-regression
+      'escrever_protocolo',
+      'escrever_methods',
+      'escrever_results',
+      'escrever_discussion',   -- the section that takes the longest
+      'responder_revisores',
+      'escrever_rebuttal'
+    ]) then 'heavy'
+    when stage = any (array[
+      'nova_tarefa',           -- a placeholder, not work
+      'exportar_databases',
+      'desduplicar',
+      'baixando_pdfs',
+      'escrever_references',   -- the reference manager does it
+      'ultimos_ajustes'
+    ]) then 'light'
+    else 'medium'
+  end;
+$$;
+
+-- Dropped rather than replaced: the column set changed, and `create or replace
+-- view` refuses that on a view that already exists.
+drop view if exists public.research_scores;
+
+create view public.research_scores as
+with t as (
+  select
+    tk.assigned_to as user_id,
+    -- A finished task carries its type in original_stage; stage is by then
+    -- just 'tarefa_concluida'.
+    public.task_weight(coalesce(nullif(tk.original_stage, ''), tk.stage)) as weight,
+    tk.stage = 'tarefa_concluida' as done,
+    case
+      when tk.deadline is null then true
+      else (coalesce(tk.completed_at, tk.updated_at))::date <= tk.deadline
+    end as on_time,
+    tk.deadline is not null and tk.deadline < current_date as past_due
+  from public.research_tasks tk
+  where tk.assigned_to is not null
+),
+pr as (
+  select
+    rp.id, rp.created_by, rp.participants, rp.status,
+    -- One click creates a row; this is what makes it a project. Until it has
+    -- work in it or someone else on it, starting it earns nothing.
+    (exists (select 1 from public.research_tasks x where x.project_id = rp.id)
+     or coalesce(array_length(rp.participants, 1), 0) > 1) as real_project
+  from public.research_projects rp
+)
 select
   p.id as user_id,
-  (select count(*) from public.research_projects rp
-     where rp.created_by = p.id) as projects_created,
-  (select count(*) from public.research_projects rp
-     where p.id = any (rp.participants)
-       and rp.created_by is distinct from p.id) as projects_joined,
-  (select count(*) from public.research_tasks t
-     where t.assigned_to = p.id
-       and t.stage = 'tarefa_concluida'
-       and (t.deadline is null
-            or (coalesce(t.completed_at, t.updated_at))::date <= t.deadline)) as tasks_on_time,
-  (select count(*) from public.research_tasks t
-     where t.assigned_to = p.id
-       and t.stage = 'tarefa_concluida'
-       and t.deadline is not null
-       and (coalesce(t.completed_at, t.updated_at))::date > t.deadline) as tasks_late,
-  (select count(*) from public.research_tasks t
-     where t.assigned_to = p.id
-       and t.stage <> 'tarefa_concluida'
-       and t.deadline is not null
-       and t.deadline < current_date) as tasks_overdue
+  (select count(*) from pr where pr.created_by = p.id and pr.real_project) as projects_created,
+  (select count(*) from pr where p.id = any (pr.participants)
+     and pr.created_by is distinct from p.id) as projects_joined,
+  (select count(*) from pr where pr.created_by = p.id and pr.real_project
+     and pr.status = 'completed') as projects_completed_created,
+  (select count(*) from pr where p.id = any (pr.participants)
+     and pr.created_by is distinct from p.id and pr.status = 'completed') as projects_completed_joined,
+  (select count(*) from t where t.user_id = p.id and t.done and t.on_time and t.weight = 'light') as tasks_light_on_time,
+  (select count(*) from t where t.user_id = p.id and t.done and not t.on_time and t.weight = 'light') as tasks_light_late,
+  (select count(*) from t where t.user_id = p.id and t.done and t.on_time and t.weight = 'medium') as tasks_medium_on_time,
+  (select count(*) from t where t.user_id = p.id and t.done and not t.on_time and t.weight = 'medium') as tasks_medium_late,
+  (select count(*) from t where t.user_id = p.id and t.done and t.on_time and t.weight = 'heavy') as tasks_heavy_on_time,
+  (select count(*) from t where t.user_id = p.id and t.done and not t.on_time and t.weight = 'heavy') as tasks_heavy_late,
+  (select count(*) from t where t.user_id = p.id and not t.done and t.past_due) as tasks_overdue
 from public.profiles p;
 
 grant select on public.research_scores to authenticated;
+grant execute on function public.task_weight(text) to authenticated;
 
 -- "Not yet" on the presenter queue. One row per member who asked to skip their
 -- turn; they drop off the list until another session is actually held, then

@@ -686,12 +686,31 @@
     question_reader: 20,  // + 5–10min of preparation
     attendee: 10,         // an hour of your evening, every week
 
-    // research
-    project_created: 60,  // the idea, the protocol, getting it off the ground
-    project_joined: 30,   // carrying a share of a project through
-    task_on_time: 25,     // the unit of work research actually moves on
-    task_late: 10,        // done is better than not done, just worth less
-    task_overdue: -15,    // while it sits there, and only while it sits there
+    /* Research. A viable question is the scarce input here — days of scoping
+       searches and dead ends before anything else can start — so starting one
+       outweighs a presentation. It only counts once the project is real (has
+       work in it or someone else on it); creating a row is one click.
+       Finishing is worth as much again, because a started project helps nobody. */
+    project_created: 150,
+    project_joined: 40,
+    project_completed_created: 150,
+    project_completed_joined: 80,
+
+    /* Tasks by what they actually cost. Screening a whole search yield and
+       downloading the PDFs are not the same job; a flat score said they were.
+       The band comes from the task's own stage — see task_weight() in the
+       schema, which is the single place the mapping lives. */
+    task_heavy_on_time: 70,   // extraction, screening, analysis, the long write-ups
+    task_heavy_late: 28,
+    task_medium_on_time: 30,  // search strategy, GRADE, figures, most sections
+    task_medium_late: 12,
+    task_light_on_time: 10,   // exports, deduplication, downloads, references
+    task_light_late: 4,
+
+    /* Flat, deliberately. Someone sitting on the hardest task in the project
+       shouldn't be punished harder than someone sitting on a trivial one —
+       that would just push people towards the easy jobs. */
+    task_overdue: -15,
   };
 
   /* Thresholds are set so a first term of real participation reaches Silver,
@@ -702,8 +721,8 @@
     { key: "gold",        name: "Gold",        icon: "🥇", at: 600 },
     { key: "platinum",    name: "Platinum",    icon: "💎", at: 1200 },
     { key: "diamond",     name: "Diamond",     icon: "🔷", at: 2200 },
-    { key: "master",      name: "Master",      icon: "👑", at: 3800 },
-    { key: "grandmaster", name: "Grandmaster", icon: "🏆", at: 6000 },
+    { key: "master",      name: "Master",      icon: "👑", at: 4500 },
+    { key: "grandmaster", name: "Grandmaster", icon: "🏆", at: 8000 },
   ];
 
   WA.tierFor = function (points) {
@@ -731,9 +750,15 @@
 
     const research_lines = [
       ["projects_created", "Projects started", "🔬", P.project_created],
+      ["projects_completed_created", "Projects started and finished", "🏁", P.project_completed_created],
       ["projects_joined", "Projects as co-author", "🤝", P.project_joined],
-      ["tasks_on_time", "Research tasks on time", "✅", P.task_on_time],
-      ["tasks_late", "Research tasks late", "🕗", P.task_late],
+      ["projects_completed_joined", "Projects finished as co-author", "🏁", P.project_completed_joined],
+      ["tasks_heavy_on_time", "Heavy tasks on time", "🏋️", P.task_heavy_on_time],
+      ["tasks_heavy_late", "Heavy tasks late", "🏋️", P.task_heavy_late],
+      ["tasks_medium_on_time", "Standard tasks on time", "✅", P.task_medium_on_time],
+      ["tasks_medium_late", "Standard tasks late", "🕗", P.task_medium_late],
+      ["tasks_light_on_time", "Light tasks on time", "🪶", P.task_light_on_time],
+      ["tasks_light_late", "Light tasks late", "🕗", P.task_light_late],
     ];
     research_lines.forEach(([key, label, icon, each]) => {
       const n = Number(r[key] || 0);
@@ -777,7 +802,7 @@
      same numbers even though the projects themselves are private. */
   WA.fetchResearchScores = async function () {
     const res = await WA.client.from("research_scores")
-      .select("user_id, projects_created, projects_joined, tasks_on_time, tasks_late, tasks_overdue");
+      .select("*");
     const map = {};
     if (res.error) return { map: map, missing: true };
     for (const row of res.data || []) map[row.user_id] = row;

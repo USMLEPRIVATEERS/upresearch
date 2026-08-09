@@ -523,9 +523,8 @@
           "📚 Ward Academy Journal Club",
           "🗓 " + WA.fmtDateTime(g.date) + " (" + WA.timezoneName() + ")",
         ];
-        if (g.hosts.length) {
-          lines.push("⭐ Host: " + g.hosts.map((h) => h.profile ? (h.profile.full_name || "Member") : "Member").join(", "));
-        }
+        // The presenter opens the invite. The host used to, which put the
+        // organiser above the person whose session it is.
         g.presenters.forEach((p, i) => {
           const nm = p.profile ? (p.profile.full_name || "Member") : "Member";
           lines.push("");
@@ -537,12 +536,12 @@
             if (WA.safeUrl(p.article.article_url)) lines.push("🔗 Article: " + p.article.article_url);
           }
         });
-        // The rest of the line-up, so the invite reads as a published roster.
+        // The rest of the line-up, host included, as the supporting cast.
         const names = (list) => list.map((a) => a.profile ? (a.profile.full_name || "Member") : "Member").join(", ");
-        const cast = ["methods_checker", "question_reader", "scientific_lead", "clinical_lead"]
+        const cast = ["host", "methods_checker", "question_reader", "scientific_lead", "clinical_lead"]
           .filter((r) => (g.byRole[r] || []).length)
           .map((r) => WA.roleIcon(r) + " " + WA.roleLabel(r) + ": " + names(g.byRole[r]));
-        if (cast.length) { lines.push(""); cast.forEach((l) => lines.push(l)); }
+        if (cast.length) { lines.push(""); lines.push("Supported by:"); cast.forEach((l) => lines.push(l)); }
         lines.push("");
         // Deliberately not the meeting link: pasting an invite into a group
         // chat would hand the call to people who never signed up, which is the
@@ -599,7 +598,8 @@
         }
 
         // roster
-        ["scientific_lead", "clinical_lead", "host", "presenter", "methods_checker", "question_reader", "attendee"]
+        // Presenter first: the roster should read in the same order as the card.
+        ["presenter", "host", "scientific_lead", "clinical_lead", "methods_checker", "question_reader", "attendee"]
           .forEach((r) => {
             html += rosterBlock(WA.roleLabel(r), g.byRole[r] || [], WA.roleIcon(r));
           });
@@ -666,15 +666,19 @@
         const short = needs.length
           ? needs.map((n) => (n.missing > 1 ? n.missing + " " : "") + n.label.toLowerCase()).join(", ")
           : "nothing — the line-up is complete, come and take part";
+        // Naming the presenter and the paper is what makes someone want to come;
+        // "still needed" alone reads as a chore.
+        const pres = g.presenters.map((p) => (p.profile && p.profile.full_name) || "a member").join(", ");
+        const art = g.presenters[0] && g.presenters[0].article;
         return [
           "🙋 Ward Academy Journal Club",
           "🗓 " + WA.fmtDateTime(g.date) + " (" + WA.timezoneName() + ")",
-          "",
-          "Still needed: " + short + ".",
-          "",
-          "Open the session and pick a role — it takes one tap:",
-          slotLink(g),
-        ].join("\n");
+        ].concat(
+          pres ? ["", "🎤 " + pres + " is presenting"] : [],
+          art ? ["📄 " + art.title] : [],
+          ["", "Still needed: " + short + ".", "",
+           "Open the session and pick a role — it takes one tap:", slotLink(g)]
+        ).join("\n");
       }
 
       function joinDialogHtml(g, chosen) {

@@ -259,8 +259,7 @@
       function groupDetail(g) {
         let html = "<p><strong>" + WA.hourRange(WA.zonedParts(g.date).hour) + "</strong> · 👥 " +
           g.all.length + " member" + (g.all.length === 1 ? "" : "s") + "</p>";
-        if (g.hosts.length)
-          html += '<p class="small">⭐ <strong>Host:</strong> ' + g.hosts.map(personLink).join(", ") + "</p>";
+        // The presenter comes first here too — the session is theirs.
         for (const p of g.presenters) {
           const art = p.article;
           html += '<div class="article-block"><strong>📄 Presenter:</strong> ' + personLink(p);
@@ -277,6 +276,8 @@
           }
           html += "</div>";
         }
+        if (g.hosts.length)
+          html += '<p class="small">⭐ <strong>Host:</strong> ' + g.hosts.map(personLink).join(", ") + "</p>";
         ["scientific_lead", "clinical_lead", "methods_checker", "question_reader"].forEach((r) => {
           const list = (g.byRole && g.byRole[r]) || [];
           if (list.length) {

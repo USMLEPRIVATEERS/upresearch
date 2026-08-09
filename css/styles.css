@@ -494,6 +494,14 @@ main > section + section { margin-top: 30px; }
 .rp-need.open { color: #15803d; font-weight: 600; }
 .rp-need.partial { color: #8a6100; font-weight: 600; }
 .rp-need.taken { color: var(--muted); }
+.rp-need.room { color: #0f6b62; font-weight: 600; }
+.rp-nudge {
+  margin-top: 12px; padding: 12px 14px; border-radius: 12px;
+  background: #fef3c7; border: 1px solid #ecd9a6; color: #8a6100;
+  font-size: 0.88rem; line-height: 1.5;
+}
+.rp-nudge .btn { margin: 8px 6px 0 0; }
+.rp-nudge-note { display: block; margin-top: 8px; font-size: 0.79rem; opacity: 0.85; }
 .rp-need.full { color: var(--muted); font-style: italic; }
 .rp-prep { display: block; font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
 .rp-foot { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 14px; }

@@ -711,6 +711,12 @@
        shouldn't be punished harder than someone sitting on a trivial one —
        that would just push people towards the easy jobs. */
     task_overdue: -15,
+
+    /* Sitting in as an attendee on a session that was short of a methods
+       checker or a question reader. Only for members with enough history to
+       know how, only for the last two months, and only when there really was
+       a role going spare — see WA.passengerSessions. */
+    passenger_session: -25,
   };
 
   /* Thresholds are set so a first term of real participation reaches Silver,
@@ -733,7 +739,8 @@
 
   /* `stats` is one member's row from WA.computeStats; `research` is their row
      from the research_scores view (all counts optional). */
-  WA.computeRank = function (stats, research) {
+  /* `rider` is this member's entry from WA.passengerSessions (optional). */
+  WA.computeRank = function (stats, research, rider) {
     const P = WA.RANK_POINTS;
     const s = stats || {};
     const r = research || {};
@@ -769,10 +776,20 @@
 
     // A live state, not a scar: it lifts the moment the task is finished.
     const overdue = Number(r.tasks_overdue || 0);
-    const penalty = overdue * P.task_overdue; // negative
+    let penalty = overdue * P.task_overdue; // negative
     if (overdue) {
       lines.push({ label: "Tasks overdue right now", icon: "⚠️", count: overdue,
         each: P.task_overdue, points: penalty, penalty: true });
+    }
+
+    // Same idea as the overdue tasks: it only reflects the last two months and
+    // stops the moment they take a role again.
+    const rode = Number((rider && rider.count) || 0);
+    if (rode) {
+      const p2 = rode * P.passenger_session;
+      penalty += p2;
+      lines.push({ label: "Sat in while a role went unfilled", icon: "💺", count: rode,
+        each: P.passenger_session, points: p2, penalty: true });
     }
 
     const points = Math.max(0, earned + penalty);
@@ -784,7 +801,7 @@
       : 100;
 
     return {
-      points: points, earned: earned, penalty: penalty, overdue: overdue,
+      points: points, earned: earned, penalty: penalty, overdue: overdue, rode: rode,
       tier: tier, next: next, progress: progress,
       toNext: next ? next.at - points : 0,
       lines: lines,
@@ -840,6 +857,9 @@
         want: want,
         missing: missing,
         full: cap != null && held.length >= cap,
+        // Seats above the target but below the hard cap — still worth offering.
+        room: cap != null && held.length >= (want || 0) && held.length < cap
+          ? cap - held.length : 0,
         cap: cap,
       };
     });
@@ -855,6 +875,10 @@
     if (n.full) return "Full (max " + n.cap + ")";
     if (!n.held.length) return "Nobody yet — still open";
     if (n.missing) return "Taken by " + n.names.join(", ") + " · " + n.missing + " more needed";
+    // At target but still under the cap: two readers is enough to run, a third
+    // is welcome. Saying only "taken" would turn people away from a seat that
+    // is still there.
+    if (n.room) return "Taken by " + n.names.join(", ") + " · room for " + n.room + " more";
     return "Taken by " + n.names.join(", ");
   };
   WA.roleNeedState = function (n) {
@@ -862,7 +886,60 @@
     if (n.role === "attendee") return "open";
     if (!n.held.length) return "open";
     if (n.missing) return "partial";
+    if (n.room) return "room";
     return "taken";
+  };
+
+  /* ---------- riding along ----------
+     Sessions someone sat through as a plain attendee while the session was
+     still short of a support role they could have taken. The club cannot run
+     on seven attendees and no methods checker.
+
+     Four conditions, all deliberate, because a penalty that catches the wrong
+     person is worse than none:
+       · the session actually happened and they were not marked absent;
+       · a support role was genuinely unfilled — if the line-up was complete,
+         attending was the only thing left to do and costs nothing;
+       · they already have `minSessions` sessions behind them, so nobody is
+         penalised for not knowing the ropes yet;
+       · it only looks back `days`, so this is about what someone is doing now
+         and clears itself as soon as they start taking a turn. Like the
+         overdue-task penalty, it is a state, not a scar. */
+  WA.RIDER_ROLES = ["methods_checker", "question_reader"];
+
+  WA.passengerSessions = function (allRows, absences, opts) {
+    const o = opts || {};
+    const days = o.days || 60;
+    const minSessions = o.minSessions == null ? 6 : o.minSessions;
+    const now = new Date();
+    const start = new Date(now.getTime() - days * 86400000);
+
+    // Experience is measured over everything, not just the window.
+    const history = WA.computeStats(allRows, 3650, absences);
+    const groups = WA.groupOccurrences(WA.expandAvailabilities(allRows, start, now));
+    const out = {};
+
+    for (const g of groups) {
+      if (g.date > now) continue;          // hasn't happened yet
+      if (!g.presenters.length) continue;  // no presenter → no session
+      const gaps = WA.RIDER_ROLES.filter((r) => {
+        const def = WA.ROLES[r];
+        return (g.byRole[r] || []).length < (def.slots || 0);
+      });
+      if (!gaps.length) continue;          // nothing they could have taken
+
+      for (const a of g.byRole.attendee || []) {
+        if (WA.wasAbsent(absences, g.iso, a.user_id)) continue;
+        if (((history[a.user_id] || {}).sessions || 0) < minSessions) continue;
+        if (!out[a.user_id]) out[a.user_id] = { count: 0, sessions: [], gaps: [] };
+        out[a.user_id].count += 1;
+        out[a.user_id].sessions.push(g.iso);
+        gaps.forEach((r) => {
+          if (out[a.user_id].gaps.indexOf(r) === -1) out[a.user_id].gaps.push(r);
+        });
+      }
+    }
+    return out;
   };
 
   /* ---------- presenter queue ----------

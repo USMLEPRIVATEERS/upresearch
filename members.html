@@ -64,8 +64,9 @@
         const allTime = WA.computeStats(rows, 3650, abs.set);
         const scores = await WA.fetchResearchScores();
         if (!scores.missing) {
+          const riders = WA.passengerSessions(rows, abs.set);
           profiles.forEach((p) => {
-            ranks[p.id] = WA.computeRank(allTime[p.id] || {}, scores.map[p.id]);
+            ranks[p.id] = WA.computeRank(allTime[p.id] || {}, scores.map[p.id], riders[p.id]);
           });
         }
       } catch (err) {

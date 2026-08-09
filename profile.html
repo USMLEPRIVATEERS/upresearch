@@ -180,7 +180,8 @@
         const allTime = WA.computeStats(allRows, 3650, absences)[profileId] || {};
         const scores = await WA.fetchResearchScores();
         if (scores.missing) return; // migration pending — no half-built rank
-        const rank = WA.computeRank(allTime, scores.map[profileId]);
+        const rider = WA.passengerSessions(allRows, absences)[profileId];
+        const rank = WA.computeRank(allTime, scores.map[profileId], rider);
         const isMe = profileId === user.id;
 
         const rows = rank.lines.map((l) =>
@@ -199,6 +200,13 @@
               '<p class="small muted" style="margin:6px 0 0">' + rank.toNext +
               " points to " + rank.next.icon + " " + WA.esc(rank.next.name) + ".</p>"
             : '<p class="small muted" style="margin:6px 0 0">Top of the ladder.</p>') +
+          (rank.rode
+            ? '<p class="rank-warn">💺 ' + rank.rode + " session" + (rank.rode === 1 ? "" : "s") +
+              " in the last two months where " + (isMe ? "you" : "they") + " attended while the " +
+              "session was short of a methods checker or a question reader. " +
+              (isMe ? "Take one of those roles and this stops counting — " +
+                "it only ever looks at the last two months." : "") + "</p>"
+            : "") +
           (rank.overdue
             ? '<p class="rank-warn">⚠️ ' + rank.overdue + " research task" +
               (rank.overdue === 1 ? " is" : "s are") + " past their deadline — that's " +
@@ -213,7 +221,10 @@
           "is ten minutes. Research tasks are weighted the same way — extracting data from " +
           "thirty studies is not the same job as downloading their PDFs. Starting a project " +
           "counts once it has work or a team in it, and counts again when it is finished. " +
-          "Sessions someone was marked absent from don't count.</p>";
+          "Sessions someone was marked absent from don't count. Sitting in as an attendee " +
+          "while a session was short of a methods checker or a question reader costs points, " +
+          "but only after six sessions of experience, only when a role really was going spare, " +
+          "and only for the last two months.</p>";
         $("rank-card").style.display = "";
       })();
 

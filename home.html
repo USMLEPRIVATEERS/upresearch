@@ -155,6 +155,14 @@
       const sessions = groups.filter((g) => g.presenters.length > 0);
       const open = groups.filter((g) => !g.presenters.length && g.all.length > 0 && g.date >= now);
 
+      // How much history the viewer has, so the picker knows whether to ask
+      // them to take a role rather than sit in. Loaded lazily: absences are a
+      // separate query and nothing above the fold needs it.
+      let myStats = {};
+      WA.fetchAbsences()
+        .then((abs) => { myStats = WA.computeStats(rows, 3650, abs.set)[user.id] || {}; })
+        .catch(() => { /* the nudge simply stays quiet */ });
+
       $("loading").classList.add("hidden");
 
       /* ---------- render helpers ---------- */
@@ -693,6 +701,27 @@
             : "") +
           "</div>";
 
+        /* Choosing "attendee" on a session that is short of a support role is
+           the thing that leaves sessions unstaffed. Say so at the moment of
+           choosing, plainly, rather than letting someone find out later that
+           it cost them points. Newcomers are left alone — the message only
+           appears once someone has enough history to know how. */
+        const gaps = WA.slotRoleNeeds(g).filter(
+          (n) => WA.RIDER_ROLES.indexOf(n.role) !== -1 && n.missing);
+        const experienced = (myStats.sessions || 0) >= 6;
+        const nudge = (chosen === "attendee" && gaps.length && experienced)
+          ? '<div class="rp-nudge">⚠️ This session still needs ' +
+            WA.esc(gaps.map((n) => (n.missing > 1 ? n.missing + " " : "") +
+              n.label.toLowerCase()).join(" and ")) +
+            ". You have <strong>" + (myStats.sessions || 0) + " sessions</strong> behind you — " +
+            "could you take one instead? " +
+            gaps.map((n) => '<button type="button" class="btn sm" data-pick="' + n.role +
+              '">' + n.icon + " Take " + WA.esc(n.label.toLowerCase()) + "</button>").join(" ") +
+            '<span class="rp-nudge-note">Attending is always welcome. But sitting in while a ' +
+            "role goes unfilled costs points once you have been around a while — and it stops " +
+            "counting as soon as you take a turn.</span></div>"
+          : "";
+
         return summary +
           '<div class="rp-tz">🌍 All times in <span class="rp-tz-slot"></span></div>' +
           '<p class="small muted" style="margin:10px 0 6px">' +
@@ -700,7 +729,7 @@
               ? "Confirm the role below, or pick a different one — what the session already has is marked."
               : "Pick the role you want. Roles already covered are marked, so you can see " +
                 "what the session is short of.") + "</p>" +
-          '<div class="role-picks">' + rows + "</div>" +
+          '<div class="role-picks">' + rows + "</div>" + nudge +
           '<div class="rp-foot">' +
             '<button type="button" class="btn" id="rp-save"' + (chosen ? "" : " disabled") + ">" +
             (chosen === "presenter" ? "Continue — add the article"

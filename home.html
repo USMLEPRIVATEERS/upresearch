@@ -199,6 +199,10 @@
       }
 
       function calendarExportLinks(g) {
+        // Putting a session in your calendar is for people who are coming to
+        // it. Offering it to everyone invited exactly the habit we are trying
+        // to break: keep the date, skip the sign-up.
+        if (!g.all.some((a) => a.user_id === user.id)) return "";
         const m = meetings.get(g.iso);
         const title = "Ward Academy Journal Club" +
           (g.presenters[0] && g.presenters[0].article ? ": " + g.presenters[0].article.title : "");
@@ -206,9 +210,7 @@
           .filter((p) => p.article)
           .map((p) => p.article.title + " — " + p.article.article_url)
           .join("\n");
-        // Same rule as the button: the calendar entry only carries the call
-        // address for someone who is actually in the session.
-        const loc = m && g.all.some((a) => a.user_id === user.id) ? m.meeting_url : "";
+        const loc = m ? m.meeting_url : "";
         return '<span class="small" style="white-space:nowrap">' +
           '<a href="' + WA.esc(WA.gcalLink(g.date, title, details, loc)) +
           '" target="_blank" rel="noopener noreferrer">📆 Google Calendar</a>' +
@@ -602,11 +604,14 @@
         html += '<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center">' +
           '<button class="btn sm ghost" id="invite-members">🔗 Invite members to take a role</button>' +
           '<button class="btn sm ghost" id="copy-invite">📋 Copy invite</button>' +
-          '<a class="btn sm ghost" href="' + WA.esc(WA.gcalLink(g.date,
-            "Ward Academy Journal Club" + (g.presenters[0] && g.presenters[0].article ? ": " + g.presenters[0].article.title : ""),
-            g.presenters.filter((p) => p.article).map((p) => p.article.title + " — " + p.article.article_url).join("\n"),
-            url || "")) + '" target="_blank" rel="noopener noreferrer">📆 Google Calendar</a>' +
-          '<button class="btn sm ghost" id="dl-ics">📅 .ics</button>' +
+          // Same rule as the card: the calendar entry is for people who are in.
+          (mine
+            ? '<a class="btn sm ghost" href="' + WA.esc(WA.gcalLink(g.date,
+                "Ward Academy Journal Club" + (g.presenters[0] && g.presenters[0].article ? ": " + g.presenters[0].article.title : ""),
+                g.presenters.filter((p) => p.article).map((p) => p.article.title + " — " + p.article.article_url).join("\n"),
+                url || "")) + '" target="_blank" rel="noopener noreferrer">📆 Google Calendar</a>' +
+              '<button class="btn sm ghost" id="dl-ics">📅 .ics</button>'
+            : '<span class="muted small">📆 Pick a role and you can add it to your calendar.</span>') +
           "</div></div>";
 
         openModal("🗓 " + WA.fmtDateTime(g.date), html);

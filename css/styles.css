@@ -355,6 +355,28 @@ select.tz-inline {
    hint buried in the title. */
 .art-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .art-open { font-weight: 700; }
+/* The presenter heads the card — it is their session; the rest support it. */
+.session-lead {
+  display: flex; align-items: center; gap: 11px; margin: 10px 0 0;
+  background: linear-gradient(180deg, var(--red-soft), #fff);
+  border: 1px solid var(--red-border); border-radius: 12px; padding: 10px 13px;
+}
+.session-lead-cap {
+  font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--red-dark); opacity: 0.85;
+}
+.session-lead-name { font-size: 1.02rem; font-weight: 800; color: var(--navy-800); }
+.session-lead-name a { color: var(--navy-800); }
+.cast-cap {
+  font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted); margin-right: 2px;
+}
+.rp-linknote {
+  margin: 10px 0 0; padding: 9px 12px; border-radius: 10px;
+  background: var(--red-soft); border: 1px solid var(--red-border);
+  color: var(--red-dark); font-size: 0.85rem; line-height: 1.45;
+}
+
 .session-host-line {
   /* Wraps: this line carries full names, and a nowrap flex row pushed
      "Lorena Cardoso do Prado" straight out of the box on a phone. */
